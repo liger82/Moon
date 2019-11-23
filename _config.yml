@@ -1,7 +1,7 @@
 # Site
 title:              Stuarting...
-bio:                'Minimal, one column jekyll theme.'
-description:        "Moon is a minimal, one column jekyll theme for your blog."
+bio:                'NLP papers review, Error solutions, etc..'
+description:        "share my studying results"
 reading_time:       true
 words_per_minute:   200
 logo:               'assets/img/logo.png'
@@ -38,6 +38,7 @@ disqus_shortname:   #taylantatli
   #ad-slot:
 #bing-verify:
 email:              liger8268@gmail.com
+wordpress:          https://smartstuartkim.wordpress.com
 #twitter:            username
 #facebook:           username
 github-url:         https://github.com/liger82
