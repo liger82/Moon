@@ -92,7 +92,7 @@ Carnegie Mellon University,    Google Brain,    Google AI
 * 이러한 절차는 각 예측값이 학습하는 동안 노출된 가능한 가장 긴 컨텍스트를 활용할 수 있도록 하고 학습 중 발생하는 context fragmentation 문제도 없애준다. 하지만 이러한 절차는 극단적으로 비용이 많이 든다. 
 
 * 하지만~!! 이 연구에서 제안하는 아키텍쳐는 평가 속도가 상당히 빠르다는 것을 알게 될 것이다.
-
+* $P(x) = \prod P(x_t | x < t )$로 auto-regressive하게 인수분해되는 
 ### 3.2 Segment-Level Recurrence  with State Reuse
 
 * 고정 길이의 컨텍스를 사용하는 것에 한계를 극복하기 위해 Transformer 아키텍쳐에 재귀 메커니즘을 도입함
@@ -104,6 +104,7 @@ Carnegie Mellon University,    Google Brain,    Google AI
 
 ![figure2](https://www.notion.so/image/https%3A%2F%2Fs3-us-west-2.amazonaws.com%2Fsecure.notion-static.com%2Fff6967db-8850-4b49-8b55-d8c1b2fc95e6%2FUntitled.png?table=block&id=e72566d7-4d95-48c7-bb8b-56ff55f92223&width=2020&cache=v2)
 
+* tokens $x = (x_1, … , x_T)$를 가진 corpus가 주어진 상황에서 language modeling의 과제는 $P(x) = \prod P(x_t | x < t )$로 auto-regressive하게 인수분해되는 joint probability(결합확률) $ P(x) $를 추정하는 것
 * gradient(경사도)가 여전히 세그먼트 내에 남아 있지만이 추가 입력을 통해 네트워크에서 history 정보를 활용할 수 있으므로 장기 의존성을 모델링하고 
 context fragmentation을 피할 수 있다.
 * L개의 길이를 가진 두개의 이어진 세그먼트 $$s_T = [x_{T,1} , … , x_{T,L} ], s_{T+1} = [x_{T,1} , … , x_{T,L} ]$$가 있다고 해보자 
