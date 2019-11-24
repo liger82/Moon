@@ -65,9 +65,7 @@ Carnegie Mellon University,    Google Brain,    Google AI
 
 ## 3. Model
 
-* tokens $$x = (x_1, … , x_T)$$를 가진 corpus가 주어진 상황에서 language modeling의 과제는 
-* $$P(x) = \prod P(x_t | x < t )$$로 
-* auto-regressive하게 인수분해되는 joint probability(결합확률) $$ P(x) $$를 추정하는 것
+* tokens $x = (x_1, … , x_T)$를 가진 corpus가 주어진 상황에서 language modeling의 과제는 $P(x) = \prod P(x_t | x < t )$로 <b>auto-regressive</b>하게 인수분해되는 joint probability(결합확률) $ P(x) $를 추정하는 것 
 * 인수분해와 함께 문제는 각 조건부 요인을 추정하는 것으로 감소한다.
 * 조건부 확률을 모델링하는데 표준 신경 접근(standard neural approach)을 고수함
 * 훈련 가능한 신경망을 사용하여 컨텍스트 x < t 를 고정 된 크기의 hidden state로 인코딩하고,이를 단어 임베딩한 것과 곱하여 logits을 얻는다.
@@ -110,4 +108,4 @@ context fragmentation을 피할 수 있다.
 * L개의 길이를 가진 두개의 이어진 세그먼트 $$s_T = [x_{T,1} , … , x_{T,L} ], s_{T+1} = [x_{T,1} , … , x_{T,L} ]$$가 있다고 해보자 
 * $$h_T^n \in R^{L \times d}$$에 의해 T 번째 세그먼트 $$s_T$$에 대해 생성된 n번째 레이어의 hidden state 시퀀스를 나타낸다. 여기서 d는 숨겨진 차원이다.
 * 세그먼트 $$s_{T+1}$$을 위한 n번째 레이어의 hidden state는 (도식적으로) 다음과 같이 만들어진다
-![hidden_state]('../assets/img/post/20191123-transformerXL/xl_1.png')
+![hidden_state](../assets/img/post/20191123-transformerXL/xl_1.png)
