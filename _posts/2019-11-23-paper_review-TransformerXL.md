@@ -28,7 +28,7 @@ Carnegie Mellon University,    Google Brain,    Google AI
     * 장기 의존성 잡아내고, context fragmentation 문제도 해결
 * [성능] Transformer-XL은 
     * RNNs보다 약 80% 더 긴 의존성을 학습
-    * vanilla Transformers보다 450% 더 긴 의존성을 학습
+    * vanilla Transformers보다 45% 더 긴 의존성을 학습
     * 평가에서도 vanilla Transformer보다 짧고, 긴 시퀀스 모두에서 좋은 성능을 보였고 평가속도도 1,800배 이상 빠름
     * 최첨단의 결과를 향상시킴(bpc/perplexity)
         * enwiki8 : 1.06 -> 0.99
@@ -65,10 +65,10 @@ Carnegie Mellon University,    Google Brain,    Google AI
 
 ## 3. Model
 
-* tokens &&x = (x_1, … , x_T)&&를 가진 corpus가 주어진 상황에서 language modeling의 과제는 &&P(x) = $prod;P(x_t | x < t )&&로 <b>auto-regressive하게</b> 인수분해되는 joint probability(결합확률) &&P(x)&&를 추정하는 것
+* tokens $$x = (x_1, … , x_T)$$를 가진 corpus가 주어진 상황에서 language modeling의 과제는 $$P(x) = $prod;P(x_t | x < t )$$로 <b>auto-regressive하게</b> 인수분해되는 joint probability(결합확률) $$P(x)$$를 추정하는 것
 * 인수분해와 함께 문제는 각 조건부 요인을 추정하는 것으로 감소한다.
 * 조건부 확률을 모델링하는데 표준 신경 접근(standard neural approach)을 고수함
-* 훈련 가능한 신경망을 사용하여 컨텍스트 &&x < t&& 를 고정 된 크기의 hidden state로 인코딩하고,이를 단어 임베딩한 것과 곱하여 logits을 얻는다.
+* 훈련 가능한 신경망을 사용하여 컨텍스트 $$x < t$$ 를 고정 된 크기의 hidden state로 인코딩하고,이를 단어 임베딩한 것과 곱하여 logits을 얻는다.
 * logits은 Softmax 함수에 입력되어 다음 토큰에 대한 확률 분포를 산출한다.
 
 ### 3.1 VANILLA TRANSFORMER LANGUAGE MODELS
@@ -105,7 +105,7 @@ Carnegie Mellon University,    Google Brain,    Google AI
 
 * gradient(경사도)가 여전히 세그먼트 내에 남아 있지만이 추가 입력을 통해 네트워크에서 history 정보를 활용할 수 있으므로 장기 의존성을 모델링하고 
 context fragmentation을 피할 수 있다.
-* L개의 길이를 가진 두개의 이어진 세그먼트 &&s_T = [x_{T,1} , … , x_{T,L} ], s_{T+1} = [x_{T,1} , … , x_{T,L} ]$$가 있다고 해보자 
-* $$h_T^n \in R^{L\timesd}$$에 의해 T 번째 세그먼트 s_T에 대해 생성된 n번째 레이어의 hidden state 시퀀스를 나타낸다. 여기서 d는 숨겨진 차원이다.
+* L개의 길이를 가진 두개의 이어진 세그먼트 $$s_T = [x_{T,1} , … , x_{T,L} ], s_{T+1} = [x_{T,1} , … , x_{T,L} ]$$가 있다고 해보자 
+* $$h_T^n \in R^{L \times d}$$에 의해 T 번째 세그먼트 s_T에 대해 생성된 n번째 레이어의 hidden state 시퀀스를 나타낸다. 여기서 d는 숨겨진 차원이다.
 * 세그먼트 s_{T+1}을 위한 n번째 레이어의 hidden state는 (도식적으로) 다음과 같이 만들어진다
 ![hidden_state]('../assets/img/post/20191123-transformerXL/xl_1.png')
