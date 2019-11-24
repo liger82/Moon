@@ -65,7 +65,8 @@ Carnegie Mellon University,    Google Brain,    Google AI
 
 ## 3. Model
 
-* tokens $x = (x_1, … , x_T)$를 가진 corpus가 주어진 상황에서 language modeling의 과제는 $P(x) = \prod P(x_t | x < t )$로 <b>auto-regressive</b>하게 인수분해되는 joint probability(결합확률) $ P(x) $를 추정하는 것 
+* tokens $x = (x_1, … , x_T)$를 가진 corpus가 주어진 상황에서 language modeling의 과제는 $P(x) = \prod P(x_t | x < t )$로 auto-regressive하게 인수분해되는 joint probability(결합확률) $ P(x) $를 추정하는 것
+* $$P(x) = \prod P(x_t | x < t )$$
 * 인수분해와 함께 문제는 각 조건부 요인을 추정하는 것으로 감소한다.
 * 조건부 확률을 모델링하는데 표준 신경 접근(standard neural approach)을 고수함
 * 훈련 가능한 신경망을 사용하여 컨텍스트 x < t 를 고정 된 크기의 hidden state로 인코딩하고,이를 단어 임베딩한 것과 곱하여 logits을 얻는다.
