@@ -92,7 +92,7 @@ Carnegie Mellon University,    Google Brain,    Google AI
 * 이러한 절차는 각 예측값이 학습하는 동안 노출된 가능한 가장 긴 컨텍스트를 활용할 수 있도록 하고 학습 중 발생하는 context fragmentation 문제도 없애준다. 하지만 이러한 절차는 극단적으로 비용이 많이 든다. 
 
 * 하지만~!! 이 연구에서 제안하는 아키텍쳐는 평가 속도가 상당히 빠르다는 것을 알게 될 것이다.
-* $P(x) = \prod P(x_t | x < t )$로 auto-regressive하게 인수분해되는 
+* $$P(x) = \prod P(x_t | x < t )$$로 auto-regressive하게 인수분해되는 
 ### 3.2 Segment-Level Recurrence  with State Reuse
 
 * 고정 길이의 컨텍스를 사용하는 것에 한계를 극복하기 위해 Transformer 아키텍쳐에 재귀 메커니즘을 도입함
