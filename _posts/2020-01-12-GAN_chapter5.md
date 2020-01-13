@@ -15,7 +15,7 @@ comments: true
 Generative model의 또 다른 응용분야에는 style transfer 분야가 있다.
 여기서 우리의 목적은 입력 기반 이미지를 변형시킬 수 있는 모델을 만들어서 주어진 스타일 이미지 셋 같이 동일한 컬렌션으로부터 온 인상을 주는 것이다.
 
-Figure 5-1. Style transfer examples image
+![figure 5-1](../assets/img/post/20200112-GAN_chapter5/GAN-figure5-1.png)
 
 style transfer의 목적은 스타일 이미지의 내재된 분포를 모델링하려는 것이 아니라 **이 이미지들로부터 stylistic component를 추출하고 이 컴포넌트를 베이스 이미지에 내장**하는 것이다.
 베이스 이미지에 스타일 이미지를 덧붙이면 스타일 이미지의 컨텐트가 속이 들여다보이고 색깔이 탁하고 희미해져서 이 방식으로는 완전히 합칠 수 없다. 
@@ -27,4 +27,8 @@ style transfer의 목적은 스타일 이미지의 내재된 분포를 모델링
 
 ## Apples and Oranges
 
+Granny Smith와 Florida는 청과물점을 함께 소유하고 있다. 둘은 효율적으로 가게를 운영하기 위해 각각 다른 영역을 맡고 있다. Granny는 사과를, Florida는 오렌지를 담당한다.
+두 사람 모두 자신이 더 나은 과일 진열품을 가지고 있다고 확신하고 있기 때문에 그들은 다음과 같은 거래에 동의한다: 
+>사과 판매로 얻는 이익은 전적으로 Granny Smith에게 돌아갈 것이고 오렌지의 판매로 얻는 이익은 전적으로 Florida에게로 가게 될 것이다.
 
+불행하게도 두 명 모두 공정한 경쟁을 계획하지 않는다. Florida가 보지 않을 때, Granny는 오렌지 구역으로 슬쩍 넘어가서 오렌지를 빨간색으로 칠해서 사과처럼 보이게 만든다.
