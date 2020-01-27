@@ -71,8 +71,8 @@ pix2pix model은 source에서 target으로 한 방향으로만 작동하지만, 
 ## Your First CycleGAN
 
 ### data
-    * 앞선 이야기에 나오는 사과와 오렌지 예제를 사용한다. 
-    * download script
+* 앞선 이야기에 나오는 사과와 오렌지 예제를 사용한다. 
+* download script
 ```shell script
 bash ./scripts/download_cyclegan_data.sh apple2orange
 ```
