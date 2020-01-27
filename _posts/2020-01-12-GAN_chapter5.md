@@ -7,7 +7,10 @@ tags : [GAN, Generative Deep Learning, Paint, David Foster]
 comments: true
 ---
 
-## 개괄
+[TOC]
+  
+  
+# 개괄
 
 이전 챕터까지 우리가 따라해보려는 데이터셋 하나를 가지고 새로운 샘플을 만들어낼 수 있는 모델을 훈련하는 여러 방법들을 알아보았다.(VAE, GAN 등)
 이번 챕터에서는 여러 데이터셋에 적용해보고, VAEs와 GANs가 내재된 잠재공간과 original pixel space 사이의 매핑을 어떻게 학습하는지 알아볼 것이다.
@@ -17,13 +20,14 @@ Generative model의 또 다른 응용분야에는 style transfer 분야가 있�
 
 ![figure 5-1](../assets/img/post/20200112-GAN_chapter5/GAN-figure5-1.png)
 
-style transfer의 목적은 스타일 이미지의 내재된 분포를 모델링하려는 것이 아니라 **이 이미지들로부터 stylistic component를 추출하고 이 컴포넌트를 베이스 이미지에 내장**하는 것이다.
+style transfer의 목적은 스타일 이미지의 내재된 분포를 모델링하려는 것이 아니라 **이 이미지들로부터 stylistic component를 추출하고 이 컴포넌트를 베이스 
+이미지에 내장**하는 것이다.
 베이스 이미지에 스타일 이미지를 덧붙이면 스타일 이미지의 컨텐트가 속이 들여다보이고 색깔이 탁하고 희미해져서 이 방식으로는 완전히 합칠 수 없다. 
 그리고 한 종류의 스타일 이미지로는 화가의 스타일을 캡쳐할 수 없다. 그래서 그 화가의 전체 이미지에 걸쳐서 스타일(화풍)을 학습할 모델을 만드는 방법을 찾아야 한다.
 그 화가가 베이스 이미지를 작품의 원작을 만들고 그 콜렉션 내의 다른 작품에서 동일한 화풍이 반영되도록 안내하는데 사용한다는 인상을 주고 싶다.
 
 이번 챕터에서는 두 가지 종류의 style transfer model(CycleGAN, Neural Style Transfer)을 어떻게 빌드하는지 배우고, 이 기술들을 사진과 작품에 적용해 볼 것이다.
-청과물 가게 예시로 시작을 하도록 한다.
+청과물 가게 예시로 시작을 하도록 한다.  
 
 ## Apples and Oranges
 
@@ -35,10 +39,12 @@ style transfer의 목적은 스타일 이미지의 내재된 분포를 모델링
 Florida도 동일한 게획을 하고 있고 할머니의 사과들을 오렌지처럼 보이게 하려고 스트레이를 몰래 뿌리려 한다.
 
 손님들이 과일을 셀프계산대로 가져오면 기계에서 잘못된 옵션을 선택하는 경우가 있다. 
-하루의 끝에는 과일별 이익을 합하고 그들의 정책에 따라 분할한다. 할머니는 그녀의 사과 중 하나가 오렌지로 팔릴 때 매번 돈을 잃고, Florida는 그녀의 오렌지가 사과로 팔릴 때 돈을 잃는다.
+하루의 끝에는 과일별 이익을 합하고 그들의 정책에 따라 분할한다. 할머니는 그녀의 사과 중 하나가 오렌지로 팔릴 때 매번 돈을 잃고, Florida는 그녀의 오렌지가 사과로 
+팔릴 때 돈을 잃는다.
 마감 후에 두 주인들은 기분 상하면서도 상대방의 짖궂은 행동을 막는 게 아니라 그들의 과일이 바뀌기 전에 더 원래의 것처럼 보이게 하려고 만든다.
 만약 과일이 제대로 보이지 않는다면, 그들은 다음날 그것을 팔 수 없을 것이고 다시 이윤을 잃을 것이기 때문에, 그들이 이것을 바로 잡는 것이 중요하다.
-또한 일관성을 유지하기 위해, 그들은 위장하는 기술을 자신의 과일로 시험해본다. Florida는 오렌지에 스프레이를 뿌렸을 때 원래 하던 것과 똑같이 보이는지 체크한다. 할머니도 같은 이유로 사과에 사과 그림 그리는 기술을 시험한다. 그들의 기술이 헛되었다는 것을 알게 된다면, 그들은 애써 번 수익을 더 나은 기술을 배우는 데 써야 할 것이다.
+또한 일관성을 유지하기 위해, 그들은 위장하는 기술을 자신의 과일로 시험해본다. Florida는 오렌지에 스프레이를 뿌렸을 때 원래 하던 것과 똑같이 보이는지 체크한다. 
+할머니도 같은 이유로 사과에 사과 그림 그리는 기술을 시험한다. 그들의 기술이 헛되었다는 것을 알게 된다면, 그들은 애써 번 수익을 더 나은 기술을 배우는 데 써야 할 것이다.
 
 이 전체적인 프로세스는 Figure 5-2와 같다.
 
@@ -48,15 +54,17 @@ Florida도 동일한 게획을 하고 있고 할머니의 사과들을 오렌지
 이는 할머니와 Florida의 위장 기술을 더 고도화하게 하는 촉매제가 된다.
 
 이 우스꽝스러운 게임을 몇 주간 해보니, 엄청난 일이 일어났다. 고객들은 진짜와 가짜를 구분할 수 있다고 못했으며 엄청 헷갈려했다.
-
-
+  
 ## CycleGAN
 
 앞선 이야기는 생성 모델과 특히 style transfer(the cycle-consistent adversarial network, or **CycleGAN**) 개발에 대한 우화이다.
-CycleGAN의 원논문에서는 style transfer의 성장에 큰 기여를 했는데 이는 짝을 이룬 예제가 있는 training set 없이, reference 이미지 셋에서 다른 이미지로 스타일을 복사할 수 있는 모델을 훈련하는 것이 어떻게 가능한지를 보여주었다는 것이다.
+CycleGAN의 원논문에서는 style transfer의 성장에 큰 기여를 했는데 이는 짝을 이룬 예제가 있는 training set 없이, reference 이미지 셋에서 
+다른 이미지로 스타일을 복사할 수 있는 모델을 훈련하는 것이 어떻게 가능한지를 보여주었다는 것이다.
 
-*pix2pix* 같은 이전의 style transfer 모델들은 training set의 각 이미지가 source와 target domain 모두에 있어야 했다. 몇몇 스타일 문제 상황(e.g. 흑백 사진에서 컬러 사진으로, 위성 이미지에 대한 지도)에서는 이러한 데이터셋을 만드는 것이 가능하지만 다른 경우에는 불가능하다.
-예를 들어, 우리는 모네가 수련 시리즈를 그린 연못의 원본 사진도 없고, 엠파이어 스테이트 빌딩의 피카소 그림도 없다. 동일한 위치에 말과 얼룩말을 위치시킨 사진을 배열하는 데에도 엄청난 노력이 요구된다. 
+*pix2pix* 같은 이전의 style transfer 모델들은 training set의 각 이미지가 source와 target domain 모두에 있어야 했다. 
+몇몇 스타일 문제 상황(e.g. 흑백 사진에서 컬러 사진으로, 위성 이미지에 대한 지도)에서는 이러한 데이터셋을 만드는 것이 가능하지만 다른 경우에는 불가능하다.
+예를 들어, 우리는 모네가 수련 시리즈를 그린 연못의 원본 사진도 없고, 엠파이어 스테이트 빌딩의 피카소 그림도 없다. 동일한 위치에 말과 얼룩말을 위치시킨 
+사진을 배열하는 데에도 엄청난 노력이 요구된다. 
 
 CycleGAN 논문은 pix2pix 논문이 나오고 몇달 안되서 발표가 되었고 source와 target domain에 pair image가 없는 문제를 해결하는 모델을 어떻게 훈련시키는지 보여주었다.
 Figure 5-4가 두 모델의 차이점을 보여준다.
@@ -67,12 +75,13 @@ pix2pix model은 source에서 target으로 한 방향으로만 작동하지만, 
 
 이제 Keras를 이용해 CycleGAN 모델을 빌드해보겠다.
 
-
-## Your First CycleGAN
+  
+# Your First CycleGAN
 
 ### data
 * 앞선 이야기에 나오는 사과와 오렌지 예제를 사용한다. 
 * download script
+
 ```shell script
 bash ./scripts/download_cyclegan_data.sh apple2orange
 ```
@@ -85,7 +94,7 @@ bash ./scripts/download_cyclegan_data.sh apple2orange
 
 목표는 train dataset을 사용하여 이미지를 domain A(사과)에서 B(오렌지)로 그리고 그 반대로 변환하면서 모델을 훈련시키는 것이다.
 
-
+  
 ## Overview
 
 CycleGAN은 사실 4개의 모델로 구성되어 있다. 두 개의 generator와 두 개의 discriminator이다. 
@@ -116,3 +125,32 @@ gan = CycleGAN(
         , disc_n_filters = 32
         )
 ```
+
+generator의 아키텍쳐부터 살펴보면, 보통 CycleGAN generator는 두 가지 중 하나를 사용한다; *U-Net or ResNet(residual network)*
+pix2pix 논문에서는 U-Net 아키텍쳐를 사용했지만 CycleGAN에서는 ResNet을 사용한다.
+이 챕터에서는 두 가지 모두를 사용해볼 것이다. 먼저, U-Net부터.
+
+  
+## The Generator (U-Net)
+
+Figure 5-6은 U-Net의 아키텍쳐를 보여준다. 왜 U-Net이라고 명명되었는지 바로 알 수 있다.
+
+![figure 5-6](../assets/img/post/20200112-GAN_chapter5/GAN-figure5-6.png)
+
+VAE와 동일한 방식으로 U-Net은 반 쪽짜리 두 개로 이루어져 있다
+* downsampling 반 : input images를 공간적으로 압축하지만 채널은 넓게 늘린다.
+* upsampling 반 : representation값을 공간적으로 팽창시키고 채널 개수는 줄인다.
+
+VAE와 달리, U-Net의 양 쪽에는 skip connection이 동일하게 존재한다.
+* VAE는 선형적이다; 데이터가 네트워크를 통해 input에서 output으로, 하나의 레이어에서 다음 레이어로 흐른다.
+* U-Net은 비선형적이다; 정보를 지름길을 통해 (바로 다음이 아니라) 그 이후의 레이어로 흐르게 하는 skip connection을 지녔다.
+
+**여기서 얻을 수 있는 직관은 네트워크의 다운샘플링 부분에서 뒤에 있는 레이어를 지닌 모델일수록 점점 더 이미지가 무엇인지를 포착하고 어디에 있는 것인지는 잃게 된다는 것이다. 
+U의 정점에서, feature map은 그것이 어디에 있는지 거의 이해하지 못한 채, 이미지에 무엇이 있는지를 문맥적으로 이해하게 될 것이다.**
+예측 분류 모델의 경우, 우리가 요구하는 것은 이것뿐이므로, 우리는 이것을 최종 **Dense layer**에 연결하여 이미지에 특정 클래스가 존재할 확률을 출력할 수 있다.  
+하지만 원래 U-Net application(image segmentation)과 style transfer에서는 원래 이미지 사이즈로 되돌아가는 upsampling을 할 때, 
+downsampling 동안 잃어버린 공간 정보를 각 레이어에 다시 제공한다. 이것이 skip connection이 필요한 이유이다.   
+skip connection은 네트워크가 다운샘플링 프로세스 간에 포착된 고도의 추상적 정보(즉, 이미지 스타일)를 네트워크의 이전 계층에서 다시 공급되고 있는 특정한 공간 정보(즉, 이미지 콘텐츠)와 
+혼합할 수 있도록 한다.  
+skip connection을 구축하려면 새로운 층인 'Concatenate'를 도입해야 한다.
+  
