@@ -27,8 +27,92 @@ style transfer의 목적은 스타일 이미지의 내재된 분포를 모델링
 
 ## Apples and Oranges
 
-Granny Smith와 Florida는 청과물점을 함께 소유하고 있다. 둘은 효율적으로 가게를 운영하기 위해 각각 다른 영역을 맡고 있다. Granny는 사과를, Florida는 오렌지를 담당한다.
+할머니 Smith와 Florida는 청과물점을 함께 소유하고 있다. 둘은 효율적으로 가게를 운영하기 위해 각각 다른 영역을 맡고 있다. 할머니는 사과를, Florida는 오렌지를 담당한다.
 두 사람 모두 자신이 더 나은 과일 진열품을 가지고 있다고 확신하고 있기 때문에 그들은 다음과 같은 거래에 동의한다: 
->사과 판매로 얻는 이익은 전적으로 Granny Smith에게 돌아갈 것이고 오렌지의 판매로 얻는 이익은 전적으로 Florida에게로 가게 될 것이다.
+>사과 판매로 얻는 이익은 전적으로 할머니 Smith에게 돌아갈 것이고 오렌지의 판매로 얻는 이익은 전적으로 Florida에게로 가게 될 것이다.
 
-불행하게도 두 명 모두 공정한 경쟁을 계획하지 않는다. Florida가 보지 않을 때, Granny는 오렌지 구역으로 슬쩍 넘어가서 오렌지를 빨간색으로 칠해서 사과처럼 보이게 만든다.
+불행하게도 두 명 모두 공정한 경쟁을 계획하지 않는다. Florida가 보지 않을 때, 할머니는 오렌지 구역으로 슬쩍 넘어가서 오렌지를 빨간색으로 칠해서 사과처럼 보이게 만든다.
+Florida도 동일한 게획을 하고 있고 할머니의 사과들을 오렌지처럼 보이게 하려고 스트레이를 몰래 뿌리려 한다.
+
+손님들이 과일을 셀프계산대로 가져오면 기계에서 잘못된 옵션을 선택하는 경우가 있다. 
+하루의 끝에는 과일별 이익을 합하고 그들의 정책에 따라 분할한다. 할머니는 그녀의 사과 중 하나가 오렌지로 팔릴 때 매번 돈을 잃고, Florida는 그녀의 오렌지가 사과로 팔릴 때 돈을 잃는다.
+마감 후에 두 주인들은 기분 상하면서도 상대방의 짖궂은 행동을 막는 게 아니라 그들의 과일이 바뀌기 전에 더 원래의 것처럼 보이게 하려고 만든다.
+만약 과일이 제대로 보이지 않는다면, 그들은 다음날 그것을 팔 수 없을 것이고 다시 이윤을 잃을 것이기 때문에, 그들이 이것을 바로 잡는 것이 중요하다.
+또한 일관성을 유지하기 위해, 그들은 위장하는 기술을 자신의 과일로 시험해본다. Florida는 오렌지에 스프레이를 뿌렸을 때 원래 하던 것과 똑같이 보이는지 체크한다. 할머니도 같은 이유로 사과에 사과 그림 그리는 기술을 시험한다. 그들의 기술이 헛되었다는 것을 알게 된다면, 그들은 애써 번 수익을 더 나은 기술을 배우는 데 써야 할 것이다.
+
+이 전체적인 프로세스는 Figure 5-2와 같다.
+
+![figure 5-2](../assets/img/post/20200112-GAN_chapter5/GAN-figure5-2.png)
+
+처음엔 손님들이 속겠지만 갈수록 손님들도 그 속이는 기술에 적응하여 속인 것이 어떤 것인지 점점 구별 능력을 기를 것이다.
+이는 할머니와 Florida의 위장 기술을 더 고도화하게 하는 촉매제가 된다.
+
+이 우스꽝스러운 게임을 몇 주간 해보니, 엄청난 일이 일어났다. 고객들은 진짜와 가짜를 구분할 수 있다고 못했으며 엄청 헷갈려했다.
+
+
+## CycleGAN
+
+앞선 이야기는 생성 모델과 특히 style transfer(the cycle-consistent adversarial network, or **CycleGAN**) 개발에 대한 우화이다.
+CycleGAN의 원논문에서는 style transfer의 성장에 큰 기여를 했는데 이는 짝을 이룬 예제가 있는 training set 없이, reference 이미지 셋에서 다른 이미지로 스타일을 복사할 수 있는 모델을 훈련하는 것이 어떻게 가능한지를 보여주었다는 것이다.
+
+*pix2pix* 같은 이전의 style transfer 모델들은 training set의 각 이미지가 source와 target domain 모두에 있어야 했다. 몇몇 스타일 문제 상황(e.g. 흑백 사진에서 컬러 사진으로, 위성 이미지에 대한 지도)에서는 이러한 데이터셋을 만드는 것이 가능하지만 다른 경우에는 불가능하다.
+예를 들어, 우리는 모네가 수련 시리즈를 그린 연못의 원본 사진도 없고, 엠파이어 스테이트 빌딩의 피카소 그림도 없다. 동일한 위치에 말과 얼룩말을 위치시킨 사진을 배열하는 데에도 엄청난 노력이 요구된다. 
+
+CycleGAN 논문은 pix2pix 논문이 나오고 몇달 안되서 발표가 되었고 source와 target domain에 pair image가 없는 문제를 해결하는 모델을 어떻게 훈련시키는지 보여주었다.
+Figure 5-4가 두 모델의 차이점을 보여준다.
+
+![figure 5-4](../assets/img/post/20200112-GAN_chapter5/GAN-figure5-4.png)
+
+pix2pix model은 source에서 target으로 한 방향으로만 작동하지만, CycleGAN은 동시에 양방향으로 모델을 훈련시킨다. 그래서 CycleGAN의 모델은 source에서 target으로 하는 것만큼 target에서 source로도 이미지를 바꾸는 것을 배운다.
+
+이제 Keras를 이용해 CycleGAN 모델을 빌드해보겠다.
+
+
+## Your First CycleGAN
+
+### data
+    * 앞선 이야기에 나오는 사과와 오렌지 예제를 사용한다. 
+    * download script
+```shell script
+bash ./scripts/download_cyclegan_data.sh apple2orange
+```
+
+데이터는 4개 폴더로 구분된다.
+* trainA : 사과
+* testA : 사과
+* trainB : 오렌지
+* testB : 오렌지
+
+목표는 train dataset을 사용하여 이미지를 domain A(사과)에서 B(오렌지)로 그리고 그 반대로 변환하면서 모델을 훈련시키는 것이다.
+
+
+## Overview
+
+CycleGAN은 사실 4개의 모델로 구성되어 있다. 두 개의 generator와 두 개의 discriminator이다. 
+* 첫 번째 generator(G_AB) : 이미지를 A --> B 로 변환
+* 두 번째 generator(G_BA) : 이미지를 B --> A 로 변환
+
+generator를 훈련시킬 paired images가 없기 때문에 이미지가 generator에 의해 만들어진 것인지 판단하는 두 개의 discriminator도 필요하다.
+* 첫 번째 discriminator(D_A) : domain A의 실제 이미지인지 G_BA가 만들어낸 가짜 이미지의 차이를 식별하도록 학습
+* 두 번째 discriminator(D_B) : domain B의 실제 이미지인지 G_AB가 만들어낸 가짜 이미지의 차이를 식별하도록 학습
+
+위의 관계는 Figure 5-5에서 볼 수 있다.
+![figure 5-5](../assets/img/post/20200112-GAN_chapter5/GAN-figure5-5.png)
+
+* code file
+    * 05_01_cycle-gan_train.ipynb(main)
+    * models/cycleGAN.py
+
+*Example 5-1. Defining the CycleGAN*
+```python
+gan = CycleGAN(
+        input_dim = (128,128,3)
+        , learning_rate = 0.0002
+        , lambda_validation = 1
+        , lambda_reconstr = 10
+        , lambda_id = 2
+        , generator_type = 'u-net'
+        , gen_n_filters = 32
+        , disc_n_filters = 32
+        )
+```
