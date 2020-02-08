@@ -2,13 +2,11 @@
 layout: post
 title: "Generative Deep Learning Chapter 5 : Paint"
 date: 2020-01-12
-excerpt: "Paint"
-tags : [GAN, Generative Deep Learning, Paint, David Foster]
+excerpt: "style transfer 영역에서 두가지 모델(CycleGAN, Neural Style Transfer)의 개념과 빌드하는 방법을 다룬다. "
+tags : [GAN, Generative Deep Learning, Paint, David Foster, CycleGAN, Style transfer]
 comments: true
 ---
 
-[TOC]
-  
   
 # 개괄
 
@@ -83,7 +81,7 @@ pix2pix model은 source에서 target으로 한 방향으로만 작동하지만, 
 * download script
 
 ```shell script
-bash ./scripts/download_cyclegan_data.sh apple2orange
+$bash ./scripts/download_cyclegan_data.sh apple2orange
 ```
 
 데이터는 4개 폴더로 구분된다.
@@ -154,3 +152,131 @@ skip connection은 네트워크가 다운샘플링 프로세스 간에 포착된
 혼합할 수 있도록 한다.  
 skip connection을 구축하려면 새로운 층인 'Concatenate'를 도입해야 한다.
   
+### Concatenate Layer
+
+Concatenate layer는 특정 축(기본은 마지막 축)을 기준으로 이어붙이는 것을 말한다. 
+예를 들어, Keras에서는 2개의 이전 레이어, x와 y를 다음과 같이 이어붙일 수 있다.
+
+> Concatenate()([x,y])
+
+U-Net에서는 Concatenate layer를 사용해서 upsampling layer를 동일한 사이즈의 downsampling layer에 연결한다.
+layer들이 채널의 차원에 따라 이어지기 때문에 채널의 개수는 k에서 2k로 두 배가 된다. 공간의 차원 수는 동일하게 유지된다.
+**여기서 concatenate layer는 단지 이전 레이어들을 붙이는 역할**을 하니 그렇게 신경쓸 필요는 없다.
+
+### Instance Normalization Layer
+
+generator는 또다른 새로운 유형의 레이어를 가지는데 그것이 InstanceNormalization 이다.
+이 CycleGAN의 generator는 BatchNormalization layer가 아닌 InstanceNormalization layer를 사용하는데, 이는 style transfer 문제에서 더 만족스러운 결과를 만들 수 있다.
+
+InstanceNormalization layer는 배치 단위가 아니라 개별 샘플을 각각 정규화한다. 특히 mu와 sigma를 패러미터로 필요하지 않는데 이는 테스트할 때도 훈련과 동일한 방식으로
+샘플마다 정규화를 할 수 있기 때문이다. 단 각 레이어를 정규화하기 위해 사용되는 평균과 표준 편차는 채널별로 나누어 샘플별로 계산된다.
+(반면 BatchNormalization 레이어는 이동 평균을 위해 훈련과정에서 mu와 sigma가 필요하다) 
+
+또한 InstanceNormalization layer에는 스케일(gamma)이나 이동(beta) 패러미터를 사용하지 않기 때문에
+학습되는 가중치가 없다.
+
+다음 figure 5-7은 4개의 다른 정규화를 보여준다.
+
+![figure 5-7](../assets/img/post/20200112-GAN_chapter5/GAN-figure5-7.png)
+
+* 여기에서 N은 배치 축이고, C는 채널 축이다. (H,W)는 공간 축을 나타낸다.
+* 이 정육면체는 정규화 레이어의 입력 tensor를 나타낸다.
+* 파란색의 픽셀은 (이 픽셀에서 계산된) 동일한 평균과 분산으로 정규화된다.
+
+U-Net generator를 만들어 볼 차례이다.
+
+*Example 5-2. Build a U-Net Generator*
+```python
+def build_generator_unet(self):
+    
+    def downsample(layer_input, filters, f_size=4):
+        d = Conv2D(filters, kernel_size=f_size,
+            strides=2, padding='same')(layer_input)
+        d = InstanceNormalization(axis=-1, center=False, scale=False)(d)
+        d = Activation('relu')(d)
+
+        return d
+
+    def upsample(layer_input, skip_input, filters, f_size=4, drop_rate=0):
+        u = UpSampling2D(size=2)(layer_input)
+        u = Conv2D(filters, kernel_size=f_size, strides=1, padding='same')(u)
+        u = InstanceNormalization(axis=-1, center=False, scale=False)(u)
+        u = Activation('relu')(u)
+        if dropout_rate:
+            u = Dropout(dropout_rate)(u)
+
+        u = Concatenate()([u, skip_input])
+        return u
+
+    # image input
+    img = Input(shape=self.img_shape)
+
+    # downsampling
+    # generator는 두 부분으로 나뉜다.
+    # 먼저 strides가 2인 Conv2D 레이어로 이미지를 downsampling한다
+    d1 = downsample(img, self.gen_n_filters)
+    d2 = downsample(d1, self.gen_n_filters*2)
+    d3 = downsample(d2, self.gen_n_filters*4)
+    d4 = downsample(d3, self.gen_n_filters*8)
+   
+    # Upsampling
+    # 그 다음 tensor를 upsampling하여 원본 이미지와 같은 크기로 복원
+    # upsample 함수에는 U-Net 구조를 구성하기 위해 Concatenate layer를 포함한다.
+    u1 = upsample(d4, d3, self.gen_n_filters*4)
+    u2 = upsample(u1, d2, self.gen_n_filters*2)
+    u3 = upsample(u2, d1, self.gen_n_filters)
+    u4 = UpSampling2D(size=2)(u3)
+
+    output = Conv2D(self.channels, kernel_size=4, strides=1,padding='same', activation='tanh')(u4)
+
+    return Model(img, output)
+```
+
+## The Discriminator
+
+기존의 discriminator는 입력 이미지가 진짜인지 아닌지를 판별하는 하나의 숫자를 출력했었다. 
+반면 CycleGAN의 discriminator 는 숫자가 아니라 16 * 16 크기의 채널 하나를 가진 텐서를 출력한다.
+
+이는 CycleGAN이 PatchGAN의 discriminator 구조를 이었기 때문이다.
+PatchGAN의 discriminator 는 이미지 전체에 대해 예측하는 것이 아니라 중첩된 patch로 나누어 각 패치가 진짜인지 
+아닌지를 추측한다. 따라서 그 output이 하나의 숫자가 아니라 각 패치에 대한 예측 확률을 담은 텐서가 되는 것이다.
+
+네크워크에 이미지를 전달하면 패치들을 한꺼번에 예측한다. 이미지를 수동으로 나누어 전달할 필요없다.
+discriminator가 합성곱(convolution) 구조를 가지고 있어서 자동으로 이미지가 패치로 나뉜다.
+
+PatchGAN의 장점은 스타일을 기반(내용이 아니라)으로 한 discriminator의 판별 능력을 손실함수가 측정할 수 있다는 점이다.
+discriminator 예측의 개별 원소는 이미지의 부분에 기반하기에 내용이 아니라 스타일을 사용하여 결정하는 것이다.
+
+*Example 5-3. Build a discriminator*
+```python
+def build_discriminator(self):
+
+    def conv4(layer_input, filters, stride=2, norm=True):
+        y = Conv2D(filters, kernel_size=4, strides=stride,
+                    padding='same')(layer_input)
+
+        if norm:
+            y = InstanceNormalization(axis=-1, center=False, scale=False)(y)
+
+        y = LeakyReLU(0.2)(y)
+
+        return y
+
+    img = Input(shape=self.img_shape)
+
+    # CycleGAN의 discriminator는 연속된 convolution neural net이다.
+    # 처음 레이어를 제외하고 모두 샘플 정규화를 사용한다.
+    y = conv4(img, self.disc_n_filters, strid=2, norm=False) # 128 * 128
+    y = conv4(y, self.disc_n_filters*2, strid=2)             # 64 * 64
+    y = conv4(y, self.disc_n_filters*4, strid=2)             # 32 * 32
+    y = conv4(y, self.disc_n_filters*8, strid=1)             # 16 * 16
+    
+    # 마지막 conv layer에는 하나의 필터만 사용하고, 활성화 함수는 적용하지 않는다.
+    # strides가 1이고 padding을 same으로 줬기 때문에 이미지 크기는 변경없다.
+    # 채널이 1개
+    output = Conv2D(1, kernel_size=4, strids=1, padding='same')(y) # 16 * 16 * 1
+
+    return Model(img, output)
+```
+
+
