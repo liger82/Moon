@@ -185,7 +185,7 @@ InstanceNormalization layer는 배치 단위가 아니라 개별 샘플을 각�
 
 U-Net generator를 만들어 볼 차례이다.
 
-*Example 5-2. Build a U-Net Generator*
+*Example 5-2. Building the U-Net Generator*
 ```python
 def build_generator_unet(self):
     
@@ -232,7 +232,7 @@ def build_generator_unet(self):
     return Model(img, output)
 ```
 
-## The Discriminator
+## The Discriminators
 
 기존의 discriminator는 입력 이미지가 진짜인지 아닌지를 판별하는 하나의 숫자를 출력했었다. 
 반면 CycleGAN의 discriminator 는 숫자가 아니라 16 * 16 크기의 채널 하나를 가진 텐서를 출력한다.
@@ -247,7 +247,7 @@ discriminator가 합성곱(convolution) 구조를 가지고 있어서 자동으�
 PatchGAN의 장점은 스타일을 기반(내용이 아니라)으로 한 discriminator의 판별 능력을 손실함수가 측정할 수 있다는 점이다.
 discriminator 예측의 개별 원소는 이미지의 부분에 기반하기에 내용이 아니라 스타일을 사용하여 결정하는 것이다.
 
-*Example 5-3. Build a discriminator*
+*Example 5-3. Building the discriminators*
 ```python
 def build_discriminator(self):
 
@@ -279,4 +279,152 @@ def build_discriminator(self):
     return Model(img, output)
 ```
 
+## Compiling the CycleGAN
 
+목적은 도메인 A의 이미지를 도메인 B의 이미지로 혹은 그 반대로 바꾸는 모델들을 학습시키는 것이다. 다음이 그 4개의 모델이다.
+* g_AB : 도메인 A의 이미지를 도메인 B의 이미지로 바꾸는 것을 학습
+* g_BA : 도메인 B의 이미지를 도메인 A의 이미지로 바꾸는 것을 학습
+* d_A : 도메인 A의 진짜 이미지와 g_BA가 생성한 가짜 이미지의 차이를 학습
+* d_B : 도메인 B의 진짜 이미지와 g_AB가 생성한 가짜 이미지의 차이를 학습
+
+입력(각 도메인의 이미지)와 출력(binary, 진짜면 1, 가짜면 0)이 있으므로 바로 두 discriminators를 컴파일할 수 있다.
+
+*Example 5-4 Compiling the discriminator*
+```python
+self.d_A = self.build_discriminator()
+self.d_B = self.build_discriminator()
+
+# loss function : Mean Squared Estimation
+# optimizer : Adam Optimizer
+# metrics : accuracy
+self.d_A.compile(loss='mse',
+                 optimizer=Adam(self.learning_rate, 0.5),
+                 metrics=['accuracy'])
+self.d_B.compile(loss='mse',
+                 optimizer=Adam(self.learning_rate, 0.5),
+                 metrics=['accuracy'])
+```
+
+반면에 생성자는 쌍을 이루는 이미지 데이터셋이 없기 때문에 바로 컴파일할 수 없다.
+대신 다음 세가지 조건으로 생성자를 평가한다.
+1. 유효성(Validity) - 각 생성자에에서 만든 이미지가 대응되는 판별자를 속일 수 있는가  
+    (예를들어, g_AB의 출력이 d_A를 속이고 g_BA의 출력이 d_B를 속이는가 )
+2. 재구성(Reconstruction) - 두 생성자를 교대로 사용하면 (양방향 모두에서) 원본 이미지를 얻을 수 있는가?  
+    (CycleGAN은 cyclic reconstruction 조건으로부터 이름을 따왔다.)
+3. 동일성(Identity) - 각 생성자를 자신의 타겟 도메인에 있는 이미지에 적용했을 때 이미지가 바뀌지 않고 그대로 남아있는가?
+
+*Example 5-5 Building the combined model to train the generators*
+```python
+self.g_AB = self.build_generator_unet()
+self.g_BA = self.build_generator_unet()
+
+# For the combined model we will only train the generators
+self.d_A.trainable = False
+self.d_B.trainable = False
+
+# Input images from both domains
+img_A = Input(shape=self.img_shape)
+img_B = Input(shape=self.img_shape)
+
+# 각 이미지를 다른 도메인 이미지로 변환한 가짜이미지를 만든다.
+fake_B = self.g_AB(img_A)
+fake_A = self.g_BA(img_B)
+
+# (1. 유효성)Discriminators determines validity of translated images
+valid_A = self.d_A(fake_A)
+valid_B = self.d_B(fake_B)
+
+# (2. 재구성)가짜이미지를 원래 도메인의 이미지로 변환한다.
+reconstr_A = self.g_BA(fake_B)
+reconstr_B = self.g_AB(fake_A)
+
+# (3. 동일성)Identity mapping of images
+img_A_id = self.g_BA(img_A)
+img_B_id = self.g_AB(img_B)
+
+
+# Combined model trains generators to fool discriminators
+self.combined = Model(inputs=[img_A, img_B],
+                      outputs=[valid_A, valid_B,
+                               reconstr_A, reconstr_B,
+                               img_A_id, img_B_id])
+self.combined.compile(loss=['mse', 'mse',
+                            'mae', 'mae',
+                            'mae', 'mae'],
+                      loss_weights=[self.lambda_validation, self.lambda_validation,
+                                    self.lambda_reconstr, self.lambda_reconstr,
+                                    self.lambda_id, self.lambda_id],
+                      optimizer=Adam(0.0002, 0.5))
+```
+
+결합 모델은 각 도메인의 이미지를 배치로 배치로 받고, 각 도메인에 대해 3개 조건에 맞추어 3개의 출력을 반환한다.
+즉, 총 6개의 출력값이 나온다. GAN의 일반적인 형태처럼 생성자 학습 시에는 판별자의 가중치는 고정한다.
+
+전체 손실은 각 조건에 대한 손실의 가중치 합이다. mse(평균 제곱 오차)는 유효성 조건에 사용된다. 진짜와 가짜 타겟에 대해
+판별자의 출력을 확인한다. mae(평균 절댓값 오차)는 이미지 대 이미지 조건에 사용된다(재구성과 동일성 조)
+
+
+## Training the CycleGAN
+
+discriminator와 generator(여기선 combined model)를 교대로 훈련하는 GAN의 학습 방식을 따른다.
+
+*Example 5-6 Training the CycleGAN*
+```python
+batch_size = 1
+patch = int(self.img_rows / 2**4 )
+self.disc_patch = (patch, patch, 1)
+
+# 진짜 이미지에 대해서는 1, 생성된 이미지에 대해서는 0
+# PatchGAN의 discriminator를 사용하기 때문에 패치마다 하나의 타켓을 설정한다.
+valid = np.ones((batch_size,) + self.disc_patch)
+fake = np.ones((batch_size,) + self.disc_patch)
+
+for epoch in range(self.epoch, epochs):
+    for batch_i, (imgs_A, imgs_B) in enumerate(data_loader.load_batch(batch_size)):
+        # discriminator 학습을 위해서 생성자로 일단 가짜 이미지 배치를 만든다.
+        # 일반적으로 CycleGAN의 배치 크기는 1(하나의 이미지)이다.
+        fake_B = self.g_AB.predict(imgs_A)
+        fake_A = self.g_BA.predict(imgs_B)
+
+        dA_loss_real = self.d_A.train_on_batch(imgs_A, valid)
+        dA_loss_fake = self.d_A.train_on_batch(fake_A, fake)
+        dA_loss = 0.5 * np.add(dA_loss_real, dA_loss_fake)
+
+        dB_loss_real = self.d_B.train_on_batch(imgs_B, valid)
+        dB_loss_fake = self.d_B.train_on_batch(fake_B, fake)
+        dB_loss = 0.5 * np.add(dB_loss_real, dB_loss_fake)
+
+        d_loss = 0.5 * np.add(dA_loss, dB_loss)
+
+        # generator는 앞서 컴파일한 결합 모델을 통해 동시에 학습한다.
+        # 6개의 출력은 컴파일 단계에서 정의한 6개의 손실 함수에 대응된다.
+        g_loss = self.combined.train_on_batch([imgs_A, imgs_B],
+                                              [valid, valid,
+                                              imgs_A, imgs_B,
+                                              imgs_A, imgs_B)
+
+```
+
+## Analysis of the CycleGAN
+
+loss function의 가중치 패러미터를 조정하면서 CycleGAN의 결과가 어떻게 바뀌는지 살펴보는 것도 좋다.
+
+figure 5-8은 figure 5-3에서 보여준 CycleGAN의 결과를 위의 3가지 조건으로 표현한 것이다.
+
+생성자가 입력 이미지를 다른 도메인의 이미지로 잘 변환했기 때문에 성공적으로 학습했다.
+생성자가 교대로 적용될 때 입력 이미지와 재구성 이미지의 차이가 작아보인다. 
+마지막으로 각 생성자는 자신의 타겟 도메인의 이미지를 적용했을 때 이 이미지를 크게 바꾸지 않는다. 
+
+![figure 5-8](../assets/img/post/20200112-GAN_chapter5/GAN-figure5-8.png)
+
+신기한 것은 이 CycleGAN의 원논문에는 3번째 조건(동일성)은 옵션이고, 1,2번째 조건은 필수라고 했는데
+아래 figure 5-9를 보면 3번째 조건도 하는게 좋다는 생각이 든다.
+
+![figure 5-9](../assets/img/post/20200112-GAN_chapter5/GAN-figure5-9.png)
+
+오렌지를 사과로 바꿀 수 있지만 선반의 색이 바뀌었다. 배경색의 변환을 막아주는 동일성 손실 항이 없어서이다.
+동일성 항은 이미지에서 변환에 필요한 부분 이외에는 바꾸지 않도록 생성자에게 제한을 가한다.
+
+이 예제는 3개의 loss function 가중치의 균형을 잘 잡는 것이 중요함을 보여준다. 동일성 손실이 너무 작으면 
+색깔이 바뀌는 문제가 생긴다. 반대로 동일성 손실이 너무 크면 CycleGAN이 입력을 다른 도메인의 이미지처럼
+보이도록 바꾸지 못할 것이다.
