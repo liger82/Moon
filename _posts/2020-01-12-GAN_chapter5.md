@@ -428,3 +428,37 @@ figure 5-8은 figure 5-3에서 보여준 CycleGAN의 결과를 위의 3가지 �
 이 예제는 3개의 loss function 가중치의 균형을 잘 잡는 것이 중요함을 보여준다. 동일성 손실이 너무 작으면 
 색깔이 바뀌는 문제가 생긴다. 반대로 동일성 손실이 너무 크면 CycleGAN이 입력을 다른 도메인의 이미지처럼
 보이도록 바꾸지 못할 것이다.
+
+
+## Creating a CycleGAN to Paint Like Monet
+
+지금까지 CycleGAN의 기본 구조를 살펴보았다. 본 섹션에서는 CycleGAN을 이용한 재미난 적용 예제를 소개한다.
+
+CycleGAN의 원논문의 성과 중 하나는 모델이 주어진 사진을 특정 아티스트 스타일의 그림으로 변환하는 방법을 학습하는 것이다.  
+여기서는 미술 작품을 실제 사진으로 바꾸는 것을 해볼 것이고 모네의 작품을 이용할 것이다. 아래는 모네-사진 데이터셋 다운로드 스크립트이다.
+(기존에 파일이 있어야 한다.)
+
+```shell script
+bash ./script/download_cyclegan_data.sh monet2photo
+```
+
+그리고 다음 예제와 같은 패러미터를 쓰는 모델을 만든다.
+
+*Example 5-7. define the Monet CycleGAN*
+
+```python
+gan = CycleGAN(
+    input_dim = (256, 256, 3),
+    learning_rate = 0.0002,
+    lambda_validation = 1,
+    lambda_reconstr = 10,
+    lambda_id = 5,
+    generator_type = 'resnet',
+    gen_n_filters = 32,
+    disc_n_filters = 64
+)
+```
+
+
+## The Generator (ResNet)
+
