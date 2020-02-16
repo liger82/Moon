@@ -430,7 +430,7 @@ figure 5-8은 figure 5-3에서 보여준 CycleGAN의 결과를 위의 3가지 �
 보이도록 바꾸지 못할 것이다.
 
 
-## Creating a CycleGAN to Paint Like Monet
+# Creating a CycleGAN to Paint Like Monet
 
 지금까지 CycleGAN의 기본 구조를 살펴보았다. 본 섹션에서는 CycleGAN을 이용한 재미난 적용 예제를 소개한다.
 
@@ -441,6 +441,7 @@ CycleGAN의 원논문의 성과 중 하나는 모델이 주어진 사진을 특�
 ```shell script
 bash ./script/download_cyclegan_data.sh monet2photo
 ```
+
 
 그리고 다음 예제와 같은 패러미터를 쓰는 모델을 만든다.
 
@@ -462,3 +463,160 @@ gan = CycleGAN(
 
 ## The Generator (ResNet)
 
+이 섹션에서는 잔차 네트워크(Residual Network) 혹은 ResNet이라 불리는 새로운 생성자 구조를 소개한다.
+ResNet은 이전 레이어의 정보를 네트워크 앞쪽에 있는 한 개 이상의 레이어로 skip한다는 점에서 U-Net과 유사하다.
+하지만 네트워크를 downsampling layer과 그에 상응하는 upsampling layer로 만든 U자 모양으로 구성하는 대신에
+ResNet은 잔차 블록(residual block)을 차례대로 쌓아 구성한다. 각 블록은 다음 층으로 출력을 전달하기 전에 
+입력과 출력을 합하는 skip connection을 가지고 있다. figure 5-10에 하나의 잔차 블록이 있다.
+
+![figure 5-10](../assets/img/post/20200112-GAN_chapter5/GAN-figure5-10.png)
+
+* weight layer는 CycleGAN의 샘플 정규화를 사용한 합성곱 층이다.
+
+아래 예제 코드는 잔차블록을 만드는 코드이다.
+
+*Example 5-8. A residual block in Keras*
+
+```python
+from keras.layers.merge import add
+
+def residual(layer_input, filters):
+    shortcut = layer_input
+    y = Conv2D(filters, kernel_size=(3,3), strides=1, padding='same')(layer_input)
+    y = InstanceNormalization(axis=-1, center=False, scale=False)(y)
+    y = Activation('relu')(y)
+    
+    y = Conv2D(filters, kernel_size=(3,3), strides=1, padding='same')(y)
+    y = InstanceNormalization(axis=-1, center=False, scale=False)(y)
+    
+    return add([shortcut, y])    
+```
+
+ResNet 생성자는 잔차 블록의 양쪽에 다운샘플링과 업샘플링 층이 있다. 전체 ResNet 구조는 figure 5-11과 같다.
+
+![figure 5-11](../assets/img/post/20200112-GAN_chapter5/GAN-figure5-11.png)
+
+ResNet 구조는 수백 또는 수천 개의 층도 훈련할 수 있다고 알려져 있다. 앞쪽으로 갈수록 gradient가 줄어드는 
+vanishing gradient 문제가 없기 때문이다. error gradient가 잔차 블록의 skip connection을 통해
+네트워크에 그대로 역전파(backpropagation)되기 때문이다. 
+또한 층을 추가해도 모델의 정확도를 떨어뜨리지 않는다. 추가적인 특성이 추출되지 않는다며 skip connection으로 인해
+언제든지 이전 층의 특성이 identity mapping을 통과하기 때문이다.
+* identity mapping
+    - 기본 ResNet 구조는 skip connection 과 더해진 후 ReLU 함수를 통과시킨다. 이 CycleGAN의 잔차블록은
+    skip connection 을 합친 후에 적용하는 활성화 함수가 없어서 이전 층의 feature map이 그대로 다음 층으로 전달된다.
+    이를 identity mapping 이라고 한다.
+    
+
+## Analysis of the CycleGAN
+
+CycleGAN 원논문에서는 그림-사진 style transfer를 최고의 상태로 올리기 위해 학습 기간으로 200 epoch을 제안했다.
+figure 5-12는 학습 과정 초기 단계에서 생성자의 출력이다. 모델이 모네 그림을 사진으로 변환하는 것과 그 반대로 변환하는 것을
+배우는 과정이다.
+
+![figure 5-12](../assets/img/post/20200112-GAN_chapter5/GAN-figure5-12.png)
+
+첫 번째 줄에서는 사진에 모네가 사용한 특유의 색깔과 붓질이 점차 드러나는 모습이 보인다. 색은 자연스럽고 경계선은 
+부드럽게 변하고 있다.
+두 번째 줄에서는 반대로 그림이 사진으로 변환하는 방법을 생성자가 배운다.
+
+figure 5-13은 200번 epoch을 돌린 모델이 만든 결과이다.
+
+![figure 5-13](../assets/img/post/20200112-GAN_chapter5/GAN-figure5-13.png)
+
+
+# Neural Style Transfer
+
+Neural Style Transfer는 다른 종류의 style transfer이다. 훈련 셋을 사용하지 않고 이미지의 스타일을 다른 이미지로 전달한다.
+figure 5-14가 그 예이다.
+
+![figure 5-14](../assets/img/post/20200112-GAN_chapter5/GAN-figure5-14.png)
+
+Neural Style Transfer는 3가지 손실 함수의 가중치 합을 기반으로 작동한다. 
+
+* Content loss
+    * 합성된 이미지는 베이스 이미지의 콘텐츠를 동일하게 포함해야 한다.
+
+* Style loss
+    * 합성된 이미지는 스타일 이미지와 동일한 일반적인 스타일을 가져야 한다.
+    
+* Total variance loss
+    * 합성된 이미지는 픽셀처럼 격자 무늬가 나타나지 않고 부드러워야 한다.
+    
+gradient descent 로 이 손실을 최소화한다. 즉 많은 반복을 통해 손실 함수의 nagative gradient 양에 비례하여 픽셀값을 업데이트한다.
+반복할수록 손실은 점차 줄어들어 베이스 이미지의 콘텐츠와 스타일 이미지를 합친 합성 이미지를 얻게 될 것이다.
+
+gradient descent 로 출력을 최적화하는 것은 지금까지 다루었던 생성 모델링 문제와는 다르다. 
+이전에는 VAE나 GAN 같은 뉴럴넷을 훈련하기 위해 오차를 전체 네트워크에 역전파시켰었다. 
+이를 통해 훈련 셋에서 학습한 정보를 일반화하여 새로운 이미지를 생성했다. 
+여기에서는 베이스 이미지와 스타일 이미지 두 개만 가지고 있기에 이 방식을 사용할 수 없다. 앞으로 다루겠지만 사전 학습된 뉴럴넷을 사용해
+손실 함수에 필요한 이미지에 관한 중요한 정보를 얻을 것이다.  
+먼저 각각의 손실 함수에 대해 알아보도록 하겠다. 이 함수들이 neural style transfer 엔진의 핵심이다. 
+
+## Content Loss
+
+content loss는 콘텐츠의 내용과 전반적인 사물의 배치 측면에서 **두 이미지가 얼마나 다른지**를 측정한다. 
+비슷한 장면(예를 들면, 건물의 한 사진과 다른 각도, 다른 빛으로 찍은 같은 건물의 다른 사진)을 담은 두 이미지는 완전히 다른 장면을 포함하는
+두 이미지보다 손실이 작아야 한다. 두 이미지의 픽셀값을 비교하는 것만으로는 부족하다. 두 이미지의 장면이 같더라도 개별 픽셀값이 
+비슷하다고 보장하지 않기 때문이다. content loss는 개별 픽셀값과 무관해야 한다. 건물, 하늘, 강 같은 고차원 특성의 존재와 대략적인 위치를
+기반으로 이미지를 점수화해야 한다.
+
+이런 개념은 딥러닝에 있어 친숙하다. 왜냐면 이미지의 내용을 인식하도록 훈련된 신경망은 이전 층의 단순한 특성을 결합해서 더 깊은 층으로 갈수록 더 높은 수준의 특성을 
+학습하기 때문이다. 딥러닝의 전제라고도 볼 수 있다. 따라서 이미지의 내용을 식별하도록 성공적으로 훈련된 심층신경망이 필요하다.
+네트워크의 깊은 층을 활용하여 주어진 입력 이미지의 고차원 특성을 추출할 수 있다. 베이스 이미지와 현재 합성된 이미지에 대해 이 출력을 계산하여 
+그 출력 사이의 평균제곱오차를 측정하면 content loss function이 된다.
+
+여기서 사용한 사전학습된 네트워크는 VGG19이다. ImageNet dataset에 있는 백만 개 이상의 이미지를 천 개 이상의 범주로 분류하도록 훈련된 
+19개 층을 가진 CNN이다. figure 5-15가 VGG19 네트워크 구조이다.
+
+![figure 5-15](../assets/img/post/20200112-GAN_chapter5/GAN-figure5-15.png)
+
+예제 5-9는 두 이미지 사이의 content loss를 계산하는 코드이다. 이는 공식 케라스 저장소(https://github.com/keras-team/keras/blob/master/examples/neural_style_transfer.py)의 
+neural style transfer 예제를 참조한 것이다. 
+
+*Example 5-9. The content loss function*
+
+```python
+from keras.applications import vgg19
+from keras import backend as K
+
+base_image_path = '/path_to_images/base_image.jpg'
+style_reference_image_path = '/path_to_images/styled_image.jpg'
+
+content_weight = 0.01
+
+# base image와 스타일 이미지를 위한 두 개의 케라스 변수와 생성된 합성 이미지를 담을 placeholder를 정의한다.
+base_image = K.variable(preprocess_image(base_image_path))
+style_reference_image = K.variable(preprocess_image(style_reference_image_path))
+combination_image = K.placeholder((1, img_nrows, img_ncols, 3))
+
+# 세 이미지를 연결하여 VGG10 모델의 입력 텐서를 만든다.
+input_tensor = K.concatenate([base_image,
+                              style_reference_image,
+                              combination_image], axis=0)
+
+# 입력 텐서와 사용할 가중치를 지정하여 VGG19 모델의 객체를 만든다.
+# include_top 매개변수는 이미지 분류를 위한 네트워크의 마지막 fully connected layer의 가중치를 사용하는지 정하는 것이고
+# 여기서는 사용하지 않는다. 여기서 관심있는 것은 입력 이미지에 대한 고 차원 특성을 감지하는 합성곱 층이기 때문이다.
+# 훈련된 원본 모델이 만드는 실제 확률에는 관심이 없다.
+model = vgg19.VGG19(input_tensor=input_tensor,
+                    weights='imagenet', include_top=False)
+
+outputs_dict = dict([(layer.name, layer.output) for layer in model.layers])
+# content loss를 계산하기 위해 사용한 층은 다섯번째 블록의 두 번째 합성곱 층이다.
+# 네트워크에서 더 낮은 층이나 더 깊은 층을 선택하면 손실함수가 정의하는 콘텐츠에 영향을 미친다.
+# 그러므로 생성된 합성 이미지의 성질이 바뀐다.
+layer_features = outputs_dict['block5_conv2']
+
+# VGG19 네트워크에 주입된 입력 텐서에서 베이스 이미지 특성과 합성 이미지의 특성을 추출한다.
+# 각각 첫번째, 세번째이다.
+base_image_features = layer_features[0, :, :, :]
+combination_features = layer_features[2, :, :, :]
+
+def content_loss(content, gen):
+    return K.sum(K.square(gen - content))
+
+# 두 이미지에 대한 레이어의 출력 간에 거리 제곱 합을 계산하고 가중치 패러미터를 곱하여 
+# content loss 를 얻는다.
+content_loss = content_weight * content_loss(base_image_features, 
+                                             combination_features)
+```
