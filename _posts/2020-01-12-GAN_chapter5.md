@@ -442,7 +442,6 @@ CycleGAN의 원논문의 성과 중 하나는 모델이 주어진 사진을 특�
 bash ./script/download_cyclegan_data.sh monet2photo
 ```
 
-
 그리고 다음 예제와 같은 패러미터를 쓰는 모델을 만든다.
 
 *Example 5-7. define the Monet CycleGAN*
@@ -570,7 +569,8 @@ content loss는 콘텐츠의 내용과 전반적인 사물의 배치 측면에�
 
 ![figure 5-15](../assets/img/post/20200112-GAN_chapter5/GAN-figure5-15.png)
 
-예제 5-9는 두 이미지 사이의 content loss를 계산하는 코드이다. 이는 공식 케라스 저장소(https://github.com/keras-team/keras/blob/master/examples/neural_style_transfer.py)의 
+예제 5-9는 두 이미지 사이의 content loss를 계산하는 코드이다. 
+이는 공식 케라스 저장소(https://github.com/keras-team/keras/blob/master/examples/neural_style_transfer.py)의 
 neural style transfer 예제를 참조한 것이다. 
 
 *Example 5-9. The content loss function*
@@ -620,3 +620,39 @@ def content_loss(content, gen):
 content_loss = content_weight * content_loss(base_image_features, 
                                              combination_features)
 ```
+
+## Style Loss
+
+어떻게 두 이미지 사이의 스타일 유사도를 측정할 수 있을까?
+
+Neural style transfer 원논문에서 제시한 해결책은 다음과 같은 가정을 기반으로 한다.
+> 스타일이 비슷한 이미지는 특정 레이어의 특성 맵 사이에 동일한 상관관계(correlation) 패턴을 가진다.
+
+예를 들어 설명해보면, VGG19 네트워크의 어떤 레이어에서 한 채널은 녹색 부분을 감지하고 다른 채널은 뾰족함을 감지하고
+또 다른 채널은 갈색 부분을 감지한다고 가정해보자.
+
+figure 5-16이 3개의 입력에 대한 채널의 출력(feature map)을 나타낸다
+
+![figure 5-16](../assets/img/post/20200112-GAN_chapter5/GAN-figure5-16.png)
+
+이미지 A와 B의 스타일이 비슷하게 보인다. 둘 다 풀이 전경을 채운다. 또한 feature map에서 녹색 채널과 뾰족함 채널이 유사한 위치에서 강하게 활성화되고 있다.
+반면, C는 그렇지 않다. C는 갈색과 뾰족함 채널이 동일한 영역에서 활성화되고 있다. 
+두 개의 feature map이 얼마나 동시에 활성화되는지를 수치적으로 측정하려면 feature map을 펼치고 내적(scalar product, dot product)을 계산하면 된다.
+(내적은 두 벡터 간 동일 위치의 값을 곱한 후 모두 더하면 된다) 그 값이 크면 feature map 사이의 상관관계가 큰 것이고 작으면 상관관계가 작은 것이다.
+
+레이어에 있는 모든 feature 사이의 내적을 담은 행렬을 정의할 수 있다. 이를 **gram matrix**라고 한다.
+figure 5-17은 각 이미지에 대한 3개의 feature 사이의 내적을 gram matrix로 보여준다.
+
+![figure 5-17](../assets/img/post/20200112-GAN_chapter5/GAN-figure5-17.png)
+
+스타일이 비슷한 이미지 A와 B가 비슷한 gram matrix를 가진다. 콘텐츠는 다르더라도 gram matrix는 비슷할 수 있다. 
+따라서 style loss를 계산하려면 베이스 이미지와 합성된 이미지에 대한 네트워크의 여러 층에서 gram matrix를 계산해야 한다.
+그 다음 두 gram matrix의 제곱 오차 합(sum of squared errors)을 사용하여 유사도를 비교한다. 
+베이스 이미지(S)와 생성된 이미지(G) 사이의 style loss는 크기가 $M_l$(높이 * 너비)이고 $N_l$개의 채널을 가진 레이어(*l*)을 이용해 다음과 같은 수식으로
+쓸 수 있다.
+
+$$ L_{GM}(S, G, l) = \frac{1}{4N_l^2M_l^2} \displaystyle\sum_{ij} (GM[l](S)_{ij} - GM[l](G)_{ij})^2 $$
+
+
+
+ 
