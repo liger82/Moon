@@ -648,7 +648,7 @@ figure 5-17은 각 이미지에 대한 3개의 feature 사이의 내적을 gram 
 스타일이 비슷한 이미지 A와 B가 비슷한 gram matrix를 가진다. 콘텐츠는 다르더라도 gram matrix는 비슷할 수 있다. 
 따라서 style loss를 계산하려면 베이스 이미지와 합성된 이미지에 대한 네트워크의 여러 층에서 gram matrix를 계산해야 한다.
 그 다음 두 gram matrix의 제곱 오차 합(sum of squared errors)을 사용하여 유사도를 비교한다. 
-베이스 이미지(S)와 생성된 이미지(G) 사이의 style loss는 크기가 $M_l$ (높이 * 너비)이고 /N_l/ 개의 채널을 가진 레이어(*l*)을 이용해 다음과 같은 수식으로
+베이스 이미지(S)와 생성된 이미지(G) 사이의 style loss는 크기가 $ M_l $ (높이 * 너비)이고 $$ N_l $$ 개의 채널을 가진 레이어(*l*)을 이용해 다음과 같은 수식으로
 쓸 수 있다.
 
 $$ L_{GM}(S, G, l) = \frac{1}{4N_l^2M_l^2} \displaystyle\sum_{ij} (GM[l](S)_{ij} - GM[l](G)_{ij})^2 $$
