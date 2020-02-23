@@ -648,11 +648,136 @@ figure 5-17은 각 이미지에 대한 3개의 feature 사이의 내적을 gram 
 스타일이 비슷한 이미지 A와 B가 비슷한 gram matrix를 가진다. 콘텐츠는 다르더라도 gram matrix는 비슷할 수 있다. 
 따라서 style loss를 계산하려면 베이스 이미지와 합성된 이미지에 대한 네트워크의 여러 층에서 gram matrix를 계산해야 한다.
 그 다음 두 gram matrix의 제곱 오차 합(sum of squared errors)을 사용하여 유사도를 비교한다. 
-베이스 이미지(S)와 생성된 이미지(G) 사이의 style loss는 크기가 $ M_l $ (높이 * 너비)이고 $$ N_l $$ 개의 채널을 가진 레이어(*l*)을 이용해 다음과 같은 수식으로
+베이스 이미지(S)와 생성된 이미지(G) 사이의 style loss는 크기가 $$M_l$$ (높이 * 너비)이고 $$ N_l $$ 개의 채널을 가진 레이어(*l*)을 이용해 다음과 같은 수식으로
 쓸 수 있다.
 
 $$ L_{GM}(S, G, l) = \frac{1}{4N_l^2M_l^2} \displaystyle\sum_{ij} (GM[l](S)_{ij} - GM[l](G)_{ij})^2 $$
 
+이 두 이미지의 전체 style loss는 크기가 다른 여러 층에서 계산한 style의 가중치 합이다.
+채널의 수($$N_l$$)와 층의 크기($$M_l$$)로 스케일을 조정해 다음과 같이 계산한다.
 
+$$ L_{style}(S,G) = \displaystyle\sum_{l=0}^{L} w_lL_{GM}(S,G,l) $$
 
+ example 5-10은 style loss를 계산하는 케라스 코드이다.
  
+*Example 5-10. Style loss function*
+
+```python
+style_loss = 0.0
+
+def gram_matrix(x):
+    features = K.batch_flatten(K.permute_dimensions(x, (2, 0, 1)))
+    gram = K.dot(features, K.transpose(features))
+    return gram
+
+def style_loss(style, combination):
+    S = gram_matrix(style)
+    C = gram_matrix(combination)
+    channels = 3
+    size = img_nrows * img_ncols
+    return K.sum(K.square(S - C)) / (4.0 * (channels ** 2) * (size ** 2))
+
+# 5개의 층에서 style loss를 계산한다. VGG19 모델의 5개 블록에 있는 첫번째 합성곱 층
+feature_layers = ['block1_conv1', 'block2_conv1', 
+                  'block3_conv1', 'block4_conv1',
+                  'block5_conv1']
+
+for layer_name in feature_layers:
+    layer_features = outputs_dict[layer_name]
+    # VGG19 네트워크로 주입된 입력 텐서에서 style image의 feature map과 합성된 이미지의 feature map을 추출한다.
+    style_reference_features = layer_features[1, :, :, :]
+    combination_features = layer_features[2, :, :, :]
+    sl = style_loss(style_reference_features, combination_features)
+    # 가중치 패러미터와 계산에 참여한 층의 개수로 style loss의 스케일을 조정한다.
+    style_loss += (style_weight / len(feature_layers)) * sl
+```
+
+
+## Total Variance Loss
+
+Total variance loss는 합성된 이미지의 노이즈를 측정한 것이다. 이미지의 노이즈를 측정하기 위해 오른쪽으로 
+한 픽셀을 이동하고 원본 이미지와 이동한 이미지 간의 차이를 제곱하여 더한다. 균형을 맞추기 위해 동일한 작업을
+한 픽셀 아래로 이동하여 수행한다. 이 두 항의 합이 Total Variance Loss 이다.
+
+example 5-11은 Total Variance Loss를 계산하는 케라스 코드이다.
+
+*Example 5-11. The variance loss function*
+
+```python
+def total_variation_loss(x):
+    # 한 픽셀 아래로 이동한 후 차이를 계산하여 제곱
+    a = K.square(
+        x[:, :img_nrows - 1, :img_ncols - 1, :] - x[:, 1:, :img_ncols -1, :]
+    )
+    # 한 픽셀 오른쪽으로 이동한 후 차이를 계산하여 제곱
+    b = K.square(
+        x[:, :img_nrows - 1, :img_ncols - 1, :] - x[:, :img_nrows - 1, 1:, :]
+    )
+    return K.sum(K.pow(a+b, 1.25))
+# 가중치를 곱해서 total variation loss를 계산한다.
+tv_loss = total_variation_weight * total_variation_loss(combination_image)
+
+# 전체 loss는 content loss, style loss, total variation loss를 합하여 계산한다.
+loss = content_loss + style_loss + tv_loss
+
+```
+
+
+## Running the Neural Style Transfer
+
+학습 과정은 손실함수를 최소화하기 위해, 합성된 이미지의 각 픽셀에 대해 경사하강법을 실행하는 것이다.
+전체 코드(neural_style_transfer.py) 중 example 5-12는 훈련 반복 부분을 보여준다.
+
+*Example 5-12. The training loop for the neural style transfer model*
+
+```python
+from scipy.optimize import fmin_l_bfgs_b
+
+iterations = 1000
+#  베이스 이미지로 합성된 이미지를 초기화한다.
+x = preprocess_image(base_image_path)
+
+for i in range(iterations):
+    # 매 반복마다 현재 합성된 이미지를 (일렬로 펼쳐서) scipy.optimize 패키지의 fmin_l_bfgs_b 최적화 함수로 전달한다.
+    # 이 함수는 L-BFGS-B 알고리즘을 사용하여 경사하강법의 한 스텝을 수행한다.
+    x, min_val, info = fmin_l_bfgs_b(
+        # 여기에서 evaluator는 앞서 언급한 전체 손실과 입력 이미지에 대한 
+        # 손실의 gradient(기울기)를 계산하기 위한 메서들 가진 객체이다.
+        evaluator.loss,
+        x.flatten(),
+        fprime=evaluator.grads,
+        maxfun=20
+    )
+```
+
+
+## Analysis of the Neural Style Transfer Model
+
+Figure 5-18은 다음과 같은 패러미터로 neural style transfer를 학습하는 과정에서 만든 3개의 출력이다.
+* content_weight : 1
+* style_weight : 100
+* total_variance_weight : 20
+
+![figure 5-18](../assets/img/post/20200112-GAN_chapter5/GAN-figure5-18.png)
+
+반복 스텝이 많아질수록 베이스 이미지를 점점 스타일 이미지의 스타일을 따라 만들고 있다. 그러면서도 베이스 이미지의
+전체적인 컨텐츠 구조는 유지하고 세세한 것들을 바꾸고 있다.
+
+이 구조로 다양한 실험을 할 수 있다. 손실 함수의 가중치 패러미터나 콘텐츠 유사도를 결정하는데 사용할 레이어를 바꿀 수 있다.
+이런 변화가 합성 이미지와 훈련 속도에 어떻게 영향을 미치는지 확인해볼 수 있다. 스타일 손실 함수에 있는 각 층에 부여된 가중치를
+줄여서 더 미세한 스타일이나 좀 더 큰 스타일 특성을 따르도록 조정할 수도 있다.
+
+
+## Summary
+
+* 이 장에서는 새로운 그림을 생성하는 방법인 CycleGAN과 Neural style transfer를 살펴보았다
+* CycleGAN으로 모델을 훈련하여 미술가의 일반적인 스타일을 학습하고 사진에 이를 적용해보았다.
+    * 이는 미술가가 사진에 있는 장면을 그린 것과 같은 출력을 보여준다.
+    * 이 모델은 사진-> 그림도 가능하지만 그 반대도 가능하다.
+    * CycleGAN에서는 각 도메인의 이미지 쌍이 필요하지 않아서 매우 강력하고 유연하다는 장점을 지닌다.
+* Neural style transfer를 사용하면 한 이미지의 스타일을 베이스 이미지로 적용할 수 있다.
+    * 3개의 손실 함수를 사용하여 베이스 이미지의 컨텐츠 구조는 바꾸지 않으면서 스타일을 바꿀 수 있다.
+    
+* 다음 챕터에서는 이미지 기반의 생성 모델링에서 벗어나 텍스트 기반 생성 모델링에 대해 다뤄보도록 한다. 
+
+
