@@ -438,9 +438,7 @@ CycleGAN의 원논문의 성과 중 하나는 모델이 주어진 사진을 특�
 여기서는 미술 작품을 실제 사진으로 바꾸는 것을 해볼 것이고 모네의 작품을 이용할 것이다. 아래는 모네-사진 데이터셋 다운로드 스크립트이다.
 (기존에 파일이 있어야 한다.)
 
-```shell script
-bash ./script/download_cyclegan_data.sh monet2photo
-```
+> bash ./script/download_cyclegan_data.sh monet2photo
 
 그리고 다음 예제와 같은 패러미터를 쓰는 모델을 만든다.
 
