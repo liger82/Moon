@@ -23,7 +23,7 @@ Rasa는 빌더 형태가 아닌 대화형 에이전트(챗봇)를 만들 수 있
 
 1. conda environment 만들기(환경 이름은 rasa로 했습니다.)
 
-```shell script
+```
 # env 만들기
 conda create --name rasa python==3.7
 
@@ -33,7 +33,7 @@ conda activate rasa
 
 2. rasa 설치하고 rasa project 만들기
 
-```shell script
+```
 # rasa 설치
 pip install rasa
 
