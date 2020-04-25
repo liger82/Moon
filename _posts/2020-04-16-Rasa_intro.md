@@ -103,6 +103,12 @@ rasa에서는 두 종류의 training data format를 지원하고 있습니다.
    * common_examples가 train data
    * regex_features는 정규식으로 intent와 entity를 잡고 싶을 때 사용할 수 있습니다.
 
+### Training data를 만들 때 유의사항
+* 인텐트당 10~15개의 예시를 목표로 만든다.
+* 다만 더 많으면 더 좋다
+* 정확한 예시가 더 좋다
+* 다양한 예시가 더 좋다
+* 그 예시가 실제 인텐트에 부합하는 문장인지 확인하다.
 
 config.yml 파일을 보면 현재 파이프라인이 어떻게 구성되어 있는지 볼 수 있습니다.
 rasa init 직후에 보면 다음과 같습니다.
