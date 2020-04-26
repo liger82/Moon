@@ -132,8 +132,8 @@ NADST model 은 세 가지 파트로 구성되어 있다.
 ### 전제
 
 $$ 
-Dialogue history X = (x_{1}, x_{2}, ... , x_{N}) 
-(domain, slot) pair X_{ds} = ((d_{1}, s_{1}), ... , (d_{G}, s_{H}))
+Dialogue history X = (x_{1}, x_{2}, ... , x_{N})  
+(domain, slot) pair X_{ds} = ((d_{1}, s_{1}), ... , (d_{G}, s_{H}))  
 G = total number of domains , H = total number of slots
 $$
 
@@ -141,7 +141,7 @@ $$
 이 논문에서는 이를 slot value 를 concatenate 하는 형태로 재구성하였다.
 
 $$
-Y^(d_{i}, s_{j}): Y = (Y^(d_{1}, s_{1}), ..., Y^(d_{I}, s_{J})) = (y_{1}^(d_{1}, s_{1}), y_{2}^(d_{2}, s_{2}), ..., y_{1}^(d_{I}, s_{J}), y_{2}^(d_{I}, s_{J}), ...)
-I = number of domains in the output dialogue state
-J = number of slots in the output dialogue state   
+Y^{d_i, s_j}: Y = (Y^{d_{1}, s_{1}}, ..., Y^{d_{I}, s_{J}}) = (y_{1}^{d_{1}, s_{1}}, y_{2}^{d_{2}, s_{2}}, ..., y_{1}^{d_{I}, s_{J}}, y_{2}^{d_{I}, s_{J}}, ...)  
+I = number of domains in the output dialogue state  
+J = number of slots in the output dialogue state  
 $$ 
