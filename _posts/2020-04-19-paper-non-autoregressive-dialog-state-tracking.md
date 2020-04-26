@@ -7,11 +7,11 @@ tags : [virtual assistant, chatbot, Rasa, 챗봇, tutorial, 설치]
 comments: true
 ---
 
-Author : Hung Le, Richard Socher†, Steven C.H. Hoi
-Institution : Salesforce Research, Singapore Management University
-Publication Date : Feb 19, 2020
-Conference Paper at ICLR 2020
----
+>Author : Hung Le, Richard Socher†, Steven C.H. Hoi  
+>Institution : Salesforce Research, Singapore Management University  
+>Publication Date : Feb 19, 2020  
+>Conference Paper at ICLR 2020
+
 
 # Abstract
 
@@ -96,7 +96,7 @@ NADST model은 dialog state를 생성하기 위해 모든 도메인에서 가능
 
 DST는 task-oriented dialogues, 특히 관련 slot 들의 세세한 추적이 필요한 복잡한 도메인의 대화에서 중요한 요소이다.
 전통적으로 DST 는 NLU 와 함께 사용했었다. dialog state 를 업데이트하기 위해 사용자 발화에 태깅한 NLU의 출력값을 DST model 의 입력값으로 사용했다.  
-최근에는 NLU 와 DST 를 합쳐서 credit assignment problem(CAP3)을 해결하고  NLU 의 필요성을 제거했다. 
+최근에는 NLU 와 DST 를 합쳐서 credit assignment problem(CAP)을 해결하고  NLU 의 필요성을 제거했다. 
 DST 모델은 2가지로 나뉜다.
 1. fixed-vocabulary
     - 구축된 slot ontology를 이용해서 각 대화 상태 후보를 생성한다
@@ -108,3 +108,40 @@ DST 모델은 2가지로 나뉜다.
     - NADST는 현재의 다른 모델과도 달리, slots 과 domains 간 의존성도 고려한다. 
 
 ## Non-Autoregressive Decoding 
+
+### Non-autoregressive decoding in NMT
+대부분 Non-autoregressive decoding 은 NMT에서 번역 속도를 빠르게 하기 위해서 사용되어 왔다.
+decoding process 에서 target sequence 를 디코드하기 위해 source sequence 를 긴 sequence 에 projecting 하고, CTC loss를 적용하는 *sequence labeling task*를 수행한다.
+여기에 regularization terms 를 추가하여 반복된 토큰과 불완전한 문장들 같은 번역 에러를 줄이려고 했다. 
+
+### Non-autoregressive decoding in DST
+NMT에서의 문제 해결 방식을 DST에 적용한 것이다. dialogue state 를 sub-sequences(slot value 를 fertility 만큼 concatenate 한 것으로 정의)로 구성된 구조화된 sequence 로 재구성하였다.
+이러한 형태의 dialogue state 는 dialogue state annotation 자체에서 쉽게 추론할 수 있는 반면, NMT에서 직접 이용할 수 없다. 
+NMT의 긴 문장에 비해 슬롯 값의 낮은 의미 복잡성은 DST에 non-autoregressive 접근 방식을 채택하기 쉽게 한다. 
+연구자의 검토에 따르면, 본 논문이 생성 기반 DST 에 대해 non-autoregressive 프레임워크를 최초로 적용한 것이다. 
+이 접근방식은 슬롯에 걸친 joint state tracking 을 가능하게 하며, 그 결과, 더 나은 성능을 보이고 추론할 때 지연 시간을 더 줄여준다.
+
+
+# 3. Approach
+
+NADST model 은 세 가지 파트로 구성되어 있다.
+1. encoders
+2. fertility decoder
+3. state decoder 
+
+### 전제
+
+$$ 
+Dialogue history X = (x_{1}, x_{2}, ... , x_{N}) 
+(domain, slot) pair X_{ds} = ((d_{1}, s_{1}), ... , (d_{G}, s_{H}))
+G = total number of domains , H = total number of slots
+$$
+
+전통적으로, dialogue state 의 output 형태는 (slot, value) 튜플이었다.
+이 논문에서는 이를 slot value 를 concatenate 하는 형태로 재구성하였다.
+
+$$
+Y^(d_{i}, s_{j}): Y = (Y^(d_{1}, s_{1}), ..., Y^(d_{I}, s_{J})) = (y_{1}^(d_{1}, s_{1}), y_{2}^(d_{2}, s_{2}), ..., y_{1}^(d_{I}, s_{J}), y_{2}^(d_{I}, s_{J}), ...)
+I = number of domains in the output dialogue state
+J = number of slots in the output dialogue state   
+$$ 
