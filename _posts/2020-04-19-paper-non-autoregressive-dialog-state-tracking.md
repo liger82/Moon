@@ -155,15 +155,20 @@ where $$ Y^{d_g, s_h}_f \in $${0, max(SlotLength)}
 각 게이트 g 는 3가지 value('none', 'dontcare', and 'generate') 로 제한된다. 이 값들은 fertility decoding process 를 지원하기 위해
 높은 수준의 분류 신호를 만드는 데 사용된다. 게이트의 결과값은 다음과 같은 sequence 로 정의된다.   
 $$ Y_{gate} = Y^{d_1, s_1}_g, ..., Y^{d_G, s_H}_g $$  
+
 예측된 fertility 값들은 non-autoregressive decoding 을 위한 state decoder 의 입력으로 들어갈 sequence 를 형성하기 위해 사용된다.
-sequence 는 ($$ d_s, s_h $$)를 $$Y^{d_s, s_h}_f$$ 만큼 반복하고 순서대로 연결되어 있는 sub-sequences 를 포함한다.
+sequence 는 ($$ d_s, s_h $$)를 $$Y^{d_s, s_h}_f$$ 만큼 반복하고 순서대로 연결되어 있는 sub-sequences 를 포함한다.  
     - $$ X_{ds X fert} = ((d_1, s_1)^{Y^{d_1, s_1}_f}, ..., (d_G, s_H)^{Y^{d_G, s_H}_f} ) $$ and
     $$ \| X_{ds X fert} \| = \| Y \| $$ 
+디코더가 dialogue history 가 있는 attention layer 를 통해 이 sequence 를 투영시킨다.
+decoding process 동안, dialogue history 의 hidden states 에 대한 메모리를 유지시킨다. state decoder 로부터 나온 결과값은 그 메모리에 참여하기 위한 쿼리로 사용되고
+dialogue history 에서 토큰을 복사하여 dialogue state 를 생성한다. 
 
-
-
-
-
+이전 dialogue turn 으로부터 정보를 통합하여 현재 dialogue turn 의 state 를 예측한다.  
+    - 부분적으로 delexicalized dialogue history $$ X_{del} = (x_{1,del}, ..., x_{N,del}) $$ 를 모델의 입력값으로 사용한다.
+    - dialogue history 는 이전에 디코딩된 slot values 와 일치하는 real-value 토큰을 domain-slot 에 의해 표현된 토큰에서 삭제함으로써 마지막 시스템 발언까지 비어휘화한다. 
+    - token $$x_n$$이 주어지고, 현재 dialogue turn 을 t 라고 할 때, 토큰은 다음과 같이 비어휘화된다.  
+![formula1](../assets/img/post/20200419-NADST/nadst_1.png)
 
 
 
