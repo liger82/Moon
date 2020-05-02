@@ -131,15 +131,50 @@ NADST model 은 세 가지 파트로 구성되어 있다.
 
 ### 전제
 
-Dialogue history $$ X = (x_{1}, x_{2}, ... , x_{N}) $$  
+*Dialogue history* $$ X = (x_{1}, x_{2}, ... , x_{N}) $$  
 (domain, slot) pair $$ X_{ds} = ((d_{1}, s_{1}), ... , (d_{G}, s_{H}))$$  
-$$G = total number of domains, H = total number of slots$$
+*G* = total number of domains  
+*H* = total number of slots
 
 전통적으로, dialogue state 의 output 형태는 (slot, value) 튜플이었다.
 이 논문에서는 이를 slot value 를 concatenate 하는 형태로 재구성하였다.
 
-\[ Y^{d_i, s_j}: Y = (Y^{d_{1}, s_{1}}, ..., Y^{d_{I}, s_{J}}) = (y_{1}^{d_{1}, s_{1}}, y_{2}^{d_{2}, s_{2}}, ..., y_{1}^{d_{I}, s_{J}}, y_{2}^{d_{I}, s_{J}}, ...) \]  
-$ I = number of domains in the output dialogue state $  
-$$ J = number of slots in the output dialogue state $$
+$$ Y^{d_i, s_j}: Y = (Y^{d_{1}, s_{1}}, ..., Y^{d_{I}, s_{J}}) = (y_{1}^{d_{1}, s_{1}}, y_{2}^{d_{2}, s_{2}}, ..., y_{1}^{d_{I}, s_{J}}, y_{2}^{d_{I}, s_{J}}, ...) $$  
+*I* = number of domains in the output dialogue state  
+*J* = number of slots in the output dialogue state
 
- 
+인코더는 토큰 레벨 임베딩과 위치 인코딩을 사용하여 input dialogue history 와 (*domain, slot*) pair 들을 연속적인 representation 으로 인코딩한다.  
+인코딩된 도메인과 슬랏은 stacked self-attention 과 feed-forward network 에 input 으로 들어가서 dialogue history 에서 나오는 관련된 신호들을 얻고,
+각 (domain, slot) pair ($$ d_g, s_h $$) 에 대해, fertility $$ Y^{d_1, s_1}_f $$를 생성한다.  
+fertility decoder 의 output 은 다음과 같은 sequence 로 정의된다.  
+$$ Y_{fert} = Y^{d_1, s_1}_f, ..., Y^{d_G, s_H}_f $$  
+where $$ Y^{d_g, s_h}_f \in $${0, max(SlotLength)}  
+예를 들어, 본 논문에서 사용하는 MultiWOZ dataset 에서 학습 데이터에 의하면 {0, max(SlotLength)} = 9 이다.  
+
+또한 보조적인 예측 기능으로 slot gating mechanism 을 추가하였다. 
+각 게이트 g 는 3가지 value('none', 'dontcare', and 'generate') 로 제한된다. 이 값들은 fertility decoding process 를 지원하기 위해
+높은 수준의 분류 신호를 만드는 데 사용된다. 게이트의 결과값은 다음과 같은 sequence 로 정의된다.   
+$$ Y_{gate} = Y^{d_1, s_1}_g, ..., Y^{d_G, s_H}_g $$  
+예측된 fertility 값들은 non-autoregressive decoding 을 위한 state decoder 의 입력으로 들어갈 sequence 를 형성하기 위해 사용된다.
+sequence 는 ($$ d_s, s_h $$)를 $$Y^{d_s, s_h}_f$$ 만큼 반복하고 순서대로 연결되어 있는 sub-sequences 를 포함한다.
+    - $$ X_{ds X fert} = ((d_1, s_1)^{Y^{d_1, s_1}_f}, ..., (d_G, s_H)^{Y^{d_G, s_H}_f} ) $$ and
+    $$ \| X_{ds X fert} \| = \| Y \| $$ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
