@@ -1,9 +1,9 @@
 ---
 layout: post
 title: "[paper review] Non-autoregressive dialog state tracking"
-date: 2020-04-16
+date: 2020-04-19
 excerpt: ""
-tags : [virtual assistant, chatbot, Rasa, 챗봇, tutorial, 설치]
+tags : [virtual assistant, chatbot, DST, dialogue state tracking, latency problem, salesforce, ICLR 2020, paper review]
 comments: true
 ---
 
@@ -158,17 +158,45 @@ $$ Y_{gate} = Y^{d_1, s_1}_g, ..., Y^{d_G, s_H}_g $$
 
 예측된 fertility 값들은 non-autoregressive decoding 을 위한 state decoder 의 입력으로 들어갈 sequence 를 형성하기 위해 사용된다.
 sequence 는 ($$ d_s, s_h $$)를 $$Y^{d_s, s_h}_f$$ 만큼 반복하고 순서대로 연결되어 있는 sub-sequences 를 포함한다.  
-    - $$ X_{ds X fert} = ((d_1, s_1)^{Y^{d_1, s_1}_f}, ..., (d_G, s_H)^{Y^{d_G, s_H}_f} ) $$ and
+    * $$ X_{ds X fert} = ((d_1, s_1)^{Y^{d_1, s_1}_f}, ..., (d_G, s_H)^{Y^{d_G, s_H}_f} ) $$ and
     $$ \| X_{ds X fert} \| = \| Y \| $$ 
 디코더가 dialogue history 가 있는 attention layer 를 통해 이 sequence 를 투영시킨다.
 decoding process 동안, dialogue history 의 hidden states 에 대한 메모리를 유지시킨다. state decoder 로부터 나온 결과값은 그 메모리에 참여하기 위한 쿼리로 사용되고
 dialogue history 에서 토큰을 복사하여 dialogue state 를 생성한다. 
 
 이전 dialogue turn 으로부터 정보를 통합하여 현재 dialogue turn 의 state 를 예측한다.  
-    - 부분적으로 delexicalized dialogue history $$ X_{del} = (x_{1,del}, ..., x_{N,del}) $$ 를 모델의 입력값으로 사용한다.
-    - dialogue history 는 이전에 디코딩된 slot values 와 일치하는 real-value 토큰을 domain-slot 에 의해 표현된 토큰에서 삭제함으로써 마지막 시스템 발언까지 비어휘화한다. 
-    - token $$x_n$$이 주어지고, 현재 dialogue turn 을 t 라고 할 때, 토큰은 다음과 같이 비어휘화된다.  
+    * 부분적으로 delexicalized dialogue history $$ X_{del} = (x_{1,del}, ..., x_{N,del}) $$ 를 모델의 입력값으로 사용한다.  
+    * dialogue history 는 이전에 디코딩된 slot values 와 일치하는 real-value 토큰을 domain-slot 에 의해 표현된 토큰에서 삭제함으로써 마지막 시스템 발언까지 비어휘화한다.   
+    * token $$x_n$$이 주어지고, 현재 dialogue turn 을 t 라고 할 때, 토큰은 다음과 같이 비어휘화된다.  
 ![formula1](../assets/img/post/20200419-NADST/nadst_1.png)
+
+예를 들어, "저렴한 호텔을 찾고 있어"라는 발화를 delexicalize 하면 "**호텔_가격범위** 호텔을 찾고 있어"가 된다. 
+이전 turn 의 "저렴한" 이라는 단어가 "호텔_가격범위" 라는 slot 으로 예측된 것이다.   
+이러한 접근법은 DST model 그 자체로부터 상태를 예측하고자 할 때, NLU module 에 의지하지 않으면서 delexicalized 형태의 dialogue history 를 사용할 수 있게 한다.
+비슷한 방식으로 dialogue history 를 delexicalize 하기 위해 이전 turn 의 system action 을 사용한다. 
+
+### Figure 1. NADST 전체 구조
+
+![figure1](../assets/img/post/20200419-NADST/figure1.png)
+
+* 빨간색 : encoder
+    * 인코더는 (1) dialogue history 의 sequence, (2) 부분적으로 delexicalized dialogue history, (3) domain 과 slot 토큰 이 세 가지를 연속적인 representations 로 인코딩한다.
+* 파란색 : fertility decoder
+    * fertility decoder 는 3개의 attention mechanism 을 가지고 dialogue history 의 (domain, slot) 쌍들에 있는 잠재적인 의존성을 학습한다.
+    * 결과값은 fertility 와 slot gate 를 생성하는 데 사용한다.
+* 초록색 : state decoder
+    * subsequences of (domain, slot) x *fertility* 로 구성된 input sequence 를 받아서 완전한 dialogue state sequence 를, slot value 를 이어놓은 형태로 디코딩한다.
+    (State Decoder receives the input sequence including sub-sequences of (domain, slot)×fertility to decode a complete dialogue state sequence as concatenation of component slot values.)  
+* 구조도를 간단하게 그리기 위해서, feed-forward, residual connection, layer-normalization layer 는 생략하였다. 
+
+## 3.1 Encoders
+
+....계속 할 예정....
+
+
+
+
+
 
 
 
