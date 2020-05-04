@@ -131,7 +131,7 @@ NADST model 은 세 가지 파트로 구성되어 있다.
 
 ### 전제
 <center>
-$$Dialogue&nbsp;history&nbsp; X = (x_{1}, x_{2}, ... , x_{N}) $$  
+$$\text{Dialogue history X} = (x_{1}, x_{2}, ... , x_{N}) $$  
 $$(domain, slot) pair  X_{ds} = ((d_{1}, s_{1}), ... , (d_{G}, s_{H}))$$  
 <i>G = total number of domains<br>
 H = total number of slots</i></center>
@@ -148,7 +148,7 @@ J = number of slots in the output dialogue state</i></center>
 각 (domain, slot) pair ($$ d_g, s_h $$) 에 대해, fertility $$ Y^{d_1, s_1}_f $$를 생성한다.  
 fertility decoder 의 output 은 다음과 같은 sequence 로 정의된다.  
 <center>$$ Y_{fert} = Y^{d_1, s_1}_f, ..., Y^{d_G, s_H}_f $$  
-$$where&nbsp;Y^{d_g, s_h}_f \in&nbsp;\{0, max(SlotLength)\}$$</center>    
+$$\text{where} Y^{d_g, s_h}_f \in&nbsp; \{0, max(SlotLength) \} $$</center>    
 예를 들어, 본 논문에서 사용하는 MultiWOZ dataset 에서 학습 데이터에 의하면 *{0, max(SlotLength)}* = 9 이다.  
 
 또한 보조적인 예측 기능으로 slot gating mechanism 을 추가하였다. 
@@ -158,8 +158,8 @@ $$where&nbsp;Y^{d_g, s_h}_f \in&nbsp;\{0, max(SlotLength)\}$$</center>
 
 예측된 fertility 값들은 non-autoregressive decoding 을 위한 state decoder 의 입력으로 들어갈 sequence 를 형성하기 위해 사용된다.
 sequence 는 ($$ d_s, s_h $$)를 $$Y^{d_s, s_h}_f$$ 만큼 반복하고 순서대로 연결되어 있는 sub-sequences 를 포함한다.  
-<center> $$ X_{ds \times fert} = ((d_1, s_1)^{Y^{d_1, s_1}_f}, ..., (d_G, s_H)^{Y^{d_G, s_H}_f} ) $$ and
-$$ \| X_{ds \times fert} \| = \| Y \| $$</center>  
+<center> $$ X_{ds \times fert} = ((d_1, s_1)^{Y^{d_1, s_1}_f}, ..., (d_G, s_H)^{Y^{d_G, s_H}_f} ) \text{and}
+\| X_{ds \times fert} \| = \| Y \| $$</center>  
 디코더가 dialogue history 가 있는 attention layer 를 통해 이 sequence 를 투영시킨다.
 decoding process 동안, dialogue history 의 hidden states 에 대한 메모리를 유지시킨다. state decoder 로부터 나온 결과값은 그 메모리에 참여하기 위한 쿼리로 사용되고
 dialogue history 에서 토큰을 복사하여 dialogue state 를 생성한다. 
@@ -217,7 +217,7 @@ X 와 $$X_{del}$$의 마지막 임베딩은 다음과 같이 정의된다.
 <center>$$ Z = Z_{emb} + PE(X) \in \mathbb{R}^{N \times d} $$</center>  
 <center>$$ Z_{del} = Z_{emb, del} + PE(X_{del}) \in \mathbb{R}^{N \times d} $$</center>  
 
-![context_encoder](../assets/img/post/20200419-NADST/context_encoder.png =300x)
+<img src="../assets/img/post/20200419-NADST/context_encoder.png" alt="context_encoder" style="width:60%;"/>
 
 
 ### Domain and Slot Encoder
