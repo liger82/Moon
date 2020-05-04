@@ -131,7 +131,7 @@ NADST model 은 세 가지 파트로 구성되어 있다.
 
 ### 전제
 <center>
-$$Dialogue history  X = (x_{1}, x_{2}, ... , x_{N}) $$  
+$$Dialogue&nbsp;history&nbsp; X = (x_{1}, x_{2}, ... , x_{N}) $$  
 $$(domain, slot) pair  X_{ds} = ((d_{1}, s_{1}), ... , (d_{G}, s_{H}))$$  
 <i>G = total number of domains<br>
 H = total number of slots</i></center>
@@ -148,7 +148,7 @@ J = number of slots in the output dialogue state</i></center>
 각 (domain, slot) pair ($$ d_g, s_h $$) 에 대해, fertility $$ Y^{d_1, s_1}_f $$를 생성한다.  
 fertility decoder 의 output 은 다음과 같은 sequence 로 정의된다.  
 <center>$$ Y_{fert} = Y^{d_1, s_1}_f, ..., Y^{d_G, s_H}_f $$  
-$$where  Y^{d_g, s_h}_f \in {0, max(SlotLength)}$$</center>    
+$$where&nbsp;Y^{d_g, s_h}_f \in&nbsp;\{0, max(SlotLength)\}$$</center>    
 예를 들어, 본 논문에서 사용하는 MultiWOZ dataset 에서 학습 데이터에 의하면 *{0, max(SlotLength)}* = 9 이다.  
 
 또한 보조적인 예측 기능으로 slot gating mechanism 을 추가하였다. 
@@ -217,7 +217,7 @@ X 와 $$X_{del}$$의 마지막 임베딩은 다음과 같이 정의된다.
 <center>$$ Z = Z_{emb} + PE(X) \in \mathbb{R}^{N \times d} $$</center>  
 <center>$$ Z_{del} = Z_{emb, del} + PE(X_{del}) \in \mathbb{R}^{N \times d} $$</center>  
 
-![context_encoder](../assets/img/post/20200419-NADST/context_encoder.png =60%)
+![context_encoder](../assets/img/post/20200419-NADST/context_encoder.png =300x)
 
 
 ### Domain and Slot Encoder
