@@ -179,20 +179,19 @@ dialogue history 에서 토큰을 복사하여 dialogue state 를 생성한다.
 
 ![figure1](../assets/img/post/20200419-NADST/figure1.png)
 
-* 빨간색 : encoder
+* <span style="color:red">빨간색 : encoder</span>
     * 인코더는 (1) dialogue history 의 sequence, (2) 부분적으로 delexicalized dialogue history, (3) domain 과 slot 토큰 이 세 가지를 연속적인 representations 로 인코딩한다.
-* 파란색 : fertility decoder
+* <span style="color:blue">파란색 : fertility decoder</span>
     * fertility decoder 는 3개의 attention mechanism 을 가지고 dialogue history 의 (domain, slot) 쌍들에 있는 잠재적인 의존성을 학습한다.
     * 결과값은 fertility 와 slot gate 를 생성하는 데 사용한다.
-* 초록색 : state decoder
+* <span style="color:green">초록색 : state decoder</span>
     * subsequences of (domain, slot) x *fertility* 로 구성된 input sequence 를 받아서 완전한 dialogue state sequence 를, slot value 를 이어놓은 형태로 디코딩한다.
     (State Decoder receives the input sequence including sub-sequences of (domain, slot)×fertility to decode a complete dialogue state sequence as concatenation of component slot values.)  
 * 구조도를 간단하게 그리기 위해서, feed-forward, residual connection, layer-normalization layer 는 생략하였다. 
 
 ## 3.1 Encoders
 
-....계속 할 예정....
-
+인코더는 dialogue history X 를 연속적인 representations 형태의 sequence 로 임베딩한다.
 
 
 
