@@ -140,8 +140,8 @@ NADST model 은 세 가지 파트로 구성되어 있다.
 이 논문에서는 이를 slot value 를 concatenate 하는 형태로 재구성하였다.
 <center>
 $$ Y^{d_i, s_j}: Y = (Y^{d_{1}, s_{1}}, ..., Y^{d_{I}, s_{J}}) = (y_{1}^{d_{1}, s_{1}}, y_{2}^{d_{2}, s_{2}}, ..., y_{1}^{d_{I}, s_{J}}, y_{2}^{d_{I}, s_{J}}, ...) $$  
-*I* = number of domains in the output dialogue state  
-*J* = number of slots in the output dialogue state</center>
+<i>I = number of domains in the output dialogue state  
+J = number of slots in the output dialogue state</i></center>
 
 인코더는 토큰 레벨 임베딩과 위치 인코딩을 사용하여 input dialogue history 와 (*domain, slot*) pair 들을 연속적인 representation 으로 인코딩한다.  
 인코딩된 도메인과 슬랏은 stacked self-attention 과 feed-forward network 에 input 으로 들어가서 dialogue history 에서 나오는 관련된 신호들을 얻고,
