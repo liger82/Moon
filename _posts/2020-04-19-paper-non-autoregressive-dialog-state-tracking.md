@@ -235,9 +235,25 @@ $$X$$ 와 $$X_{del}$$의 마지막 임베딩은 다음과 같이 정의된다.
 ![domain_slot_encoder](../assets/img/post/20200419-NADST/domain_slot_encoder.png)
 
 여기서 $$ \oplus $$는 concatenation 동작을 의미한다.
-    
+전형적인 transformer decoder 의 입력값과 다른 점은 non-autoregressive 디코딩 프로세스에서 fertility decoder 및 state decoder 의 입력 시퀀스를 이동(shift)하지 않았다는 것이다.
+즉, 모든 결과 토큰은 위치 i 를 기반으로 한다.(i-1이나 i+1이 아니라)    
+
 
 ## 3.2 Fertility Decoder
+
+$$Z$$ (인코딩된 dialogue history), $$Z_{del}$$ (인코딩된 delexicalized dialogue history), $$Z_{ds}$$ (인코딩된 (domain, slot) 쌍)이 주어진 상황에서
+맥락(contextual) 신호는 학습되어 각 $$z_{ds}$$ 벡터로 attention layer 의 시퀀스를 통해 전달된다.
+representations 를 multiple sub-spaces 에 투영하고자 multi-head attention mechanism 을 도입하였다. 
+attention mechanism 은 query(Q), key(K), value(V) 사이에서 scaled dot-product attention 으로 정의된다.
+
+![attention1](../assets/img/post/20200419-NADST/attention1.png)
+
+각 multi-head attention 은 position-wise feed-forward network 를 따른다. feed-forward 는 각 위치에 동일하게 적용되었다. 
+두 개의 선형 레이어를 그 사이에 ReLU 활성화 함수와 함께 사용했다. fertility decoder 는 3개의 attention layer 로 구성되며, 각 레이어는 관련 맥락 신호를 학습하고
+다음 attention 레이어에 대한 입력으로 맥락 신호들을 $$z_{ds}$$ 벡터에 통합한다. 
+
+![attention2](../assets/img/post/20200419-NADST/attention2.png)
+
 
 ## 3.3 State Decoder
 
