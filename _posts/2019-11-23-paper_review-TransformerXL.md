@@ -7,17 +7,18 @@ tags : [paper review, TransformerXL, long-term dependency, NLP]
 comments: true
 ---
 
+>Authors : Zihang Dai,    Zhilin Yang,   Yiming Yang,   William W. Cohen, Jaime Carbonell,   Quoc V. Le ,    Ruslan Salakhutdinov
+>Institution : Carnegie Mellon University,    Google Brain,    Google AI
+>Publication Date : June 2, 2019
+>ACL 2019
+>github : [https://github.com/kimiyoung/transformer-xl](https://github.com/kimiyoung/transformer-xl){:target="_blank"}
+>paper : [https://arxiv.org/abs/1901.02860](https://arxiv.org/abs/1901.02860){:target="_blank"}
+
+
 기존에 논문 리뷰를 스터디를 통해 해왔었고 이를 저만 보는 것이 아니라 공개하고 싶어서 github page로 남깁니다. 
 psygrammer라는 그룹에서 '바벨봇' 스터디를 통해 자연어 처리 논문 리뷰를 격주로 진행하고 있습니다. 
 이 논문은 19년도 초에 리뷰했던 것으로 기억합니다. 당시에 자연어 처리에 낯설어서 논문 이해하는데도 부족함이 있을 것이라 생각합니다.
-즉, 실수가 있을 수 있음을 감안해주시기 바랍니다.
-
-
-# <center>Transformer-XL : Attentive  Language Models Beyond A Fixed-Length Context</center>
-
-Zihang Dai,    Zhilin Yang,   Yiming Yang,   William W. Cohen, 
-Jaime Carbonell,   Quoc V. Le ,    Ruslan Salakhutdinov
-Carnegie Mellon University,    Google Brain,    Google AI
+즉, 실수가 있을 수 있음을 감안해주시고 잘못된 것이 있으면 댓글로 알려주시면 감사하겠습니다.
  
 
 ## Abstract
@@ -38,8 +39,6 @@ Carnegie Mellon University,    Google Brain,    Google AI
         * Penn Treebank : 55.3 -> 54.5
 * Pretrained Model
 * hyperparameters are available in both Tensorflow and PyTorch
-* github : [https://github.com/kimiyoung/transformer-xl](https://github.com/kimiyoung/transformer-xl){:target="_blank"}
-* paper : [https://arxiv.org/abs/1901.02860](https://arxiv.org/abs/1901.02860){:target="_blank"}
 
 ## 1. Introduction
 

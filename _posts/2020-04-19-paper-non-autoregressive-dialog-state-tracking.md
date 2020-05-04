@@ -7,10 +7,11 @@ tags : [virtual assistant, chatbot, DST, dialogue state tracking, latency proble
 comments: true
 ---
 
->Author : Hung Le, Richard Socher†, Steven C.H. Hoi  
+>Authors : Hung Le, Richard Socher†, Steven C.H. Hoi  
 >Institution : Salesforce Research, Singapore Management University  
 >Publication Date : Feb 19, 2020  
 >Conference Paper at ICLR 2020
+>paper : [https://arxiv.org/abs/2002.08024](https://arxiv.org/abs/2002.08024){:target="_blank"}
 
 
 # Abstract
@@ -201,7 +202,7 @@ dialogue history 에서 토큰을 복사하여 dialogue state 를 생성한다.
 이와 유사하게 부분적으로 delexicalized dialogue history $$ X_{del}$$도 다음과 같이 연속적인 representations 로 표현된다.
 <center>$$ Z_{del} \in \mathbb{R}^{N \times d} $$</center>  
 
-dialogue state 생성을 위한 단어 복사를 하기 위해 포인터 네트워크로 전달될 인코딩된 dialogue history Z 를 메모리에 저장한다.
+dialogue state 생성을 위한 단어 복사를 하기 위해 포인터 네트워크(pointer network)로 전달될 인코딩된 dialogue history Z 를 메모리에 저장한다.
 이는 OOV(out of vocabulary) 문제 해결에 도움이 된다.  
 각 (domain, slot) 쌍을 continuous representation $$z_{ds}$$으로 인코딩하여 decoder 의 input 으로 사용한다.  
 <center>$$z_{ds} \in \mathbb{R}^{d}$$</center>  
@@ -225,11 +226,11 @@ $$X$$ 와 $$X_{del}$$의 마지막 임베딩은 다음과 같이 정의된다.
 ### Domain and Slot Encoder
 
 각 (domain, slot) 쌍은 대응하는 domain 과 slot 의 두 개의 분리된 임베딩 벡터를 사용해서 인코딩된다. 
-각 domain *g*와 slot *h* 가 continuous representation 으로 임베딩된 것을 $$z_d_g /text{ 와 } z_s_h \in \mathbb{R}^d$$ 라고 한다.
+각 domain *g*와 slot *h* 가 continuous representation 으로 임베딩된 것을 $$ z_{d_g} /text{ 와 } z_{s_h} \in \mathbb{R}^d $$ 라고 한다.
 최종 벡터는 요소별 합(element-wise summation)으로 결합되며 다음과 같다:  
-<center>$$ z_{d_g, s_h} = z_d_g + z_s_h \in \mathbb{R}^d $$</center>
+<center> $$ z_{d_g, s_h} = z_{d_g} + z_{s_h} \in \mathbb{R}^d $$ </center>
 
-앞서 말했듯이, domain과 slot 토큰을 임베딩하기 위해 임베딩 가중치를 2개의 디코더에서 공유한다. 
+앞서 말했듯이, domain 과 slot 토큰을 임베딩하기 위해 임베딩 가중치를 2개의 디코더에서 공유한다. 
 하지만 state decoder 의 input 의 경우, 순차적 정보를 입력값인 $$X_{ds \times fert}$$ 에 주입하여 위치별 정보를 target state sequence 를 디코딩할 때 요소로 사용한다.
 
 ![domain_slot_encoder](../assets/img/post/20200419-NADST/domain_slot_encoder.png)
@@ -254,14 +255,68 @@ attention mechanism 은 query(Q), key(K), value(V) 사이에서 scaled dot-produ
 
 ![attention2](../assets/img/post/20200419-NADST/attention2.png)
 
+attention mechanism 을 이 모델에 적용하기 위해 연구자들은 모델이 명백하게 (1) 첫 번째 attention layer 에서 (domain, slot) 쌍들 간에 잠재적 의존성과
+(2) 뒤이은 attention layer 들에서 맥락 의존성의 신호를 얻도록 하였다.  
+입력값으로 delexicalized dialogue history 를 추가한 것은 중요한 맥락 신호를 줄 수 있다. 
+모델이 real-value tokens 와 generalized domain-slot tokens 사이의 매핑을 학습할 수 있기 때문이다.
+이러한 의존성들을 더 잘 잡아내기 위해, $$ Z_{ds}^{T_{fert}}$$ 만큼 attention sequence 를 반복한다.
+attention 의 현재 단계를 t 라 할 때, 이전 attention layer(t-1) 에서 오는 결과는 $$Z_{ds}^{t}$$를 계산하기 위해 현재 레이어의 입력값으로 쓰인다.  
+마지막 attention layer($$ Z_{ds}^{T_{fert}}$$)에서 출력값은 fertility 와 gate 값을 예측하기 위해 
+두 개의 독립적인 선형 변환을 거친다. 손실함수는 표준의 cross-entropy 를 사용했다.
+   
+![attention3](../assets/img/post/20200419-NADST/attention3.png)
+
 
 ## 3.3 State Decoder
 
+gate 는 (gen, none, dontcare) 세 가지 중 하나의 레이블로 예측된다. gate 가 gen 이고 fertility 가 0 이상인 (domain, slot) 만 state decoder 의 입력값으로 사용된다.
+
+![gate and fertility](../assets/img/post/20200419-NADST/generate_fert_gate.png)
+
+state decoder 의 입력값으로 $$ Z_{ds \times fert}$$를 사용하고, fertility decoder 에서 사용하는 attention sequence 를 적용하여
+맥락 신호들을 각 $$ Z_{ds \times fert}$$ 벡터에 통합시켰다. domain/slot 수준보다는 토큰 수준의 의존성이 더 잘 잡힌다. 
+$$ T_{state}$$ 만큼 attention sequence 를 반복한 후에, 마지막 출력값인 $$ Z^{T_{state}}_{ds \times fert}$$ 는 state 를 예측하기 위해 사용된다. 다음과 같다.  
+
+![state decoder 1](../assets/img/post/20200419-NADST/state_decoder1.png)
+
+$$W_{state} \in \mathbb{R}^{d \times \|V\|} $$ *V* : the set of output vocabulary  
+open-vocabulary DST 모델이라서 알려진 slot ontology 를 가정하지는 않지만 dialogue history 로부터 후보군을 만들 수 있어서 어휘 셋을 상정할 수 있다.  
+추론시 oov 문제를 해결하기 위해 pointer network 를 Transformer decoder 에 통합시켰다.  
+    * <span style="color:grey">Pointer network 는 attention mechanism 을 간략화해서 output dimension 이 input sequence 의 길이에 따라 변할 수 있게 하였다. 
+    Attention weight 을 그대로 예측의 softmax 값으로 사용하는 것이다. Input 의 일부를 point 한다는 의미에서 pointer network 라고 한다.</span>  
+이는 저장해놓은 encoded dialogue history(Z) 에서 oov 한 state 를 찾겠다는 의미이다. 이를 수식으로 표현하면, state decoder 의 출력값과 Z 사이의 내적(dot-product) attention 을 수행한다.
+ 
+![state decoder 2](../assets/img/post/20200419-NADST/state_decoder2.png)
+
+예측된 state 의 마지막 확률값($$P_{state}$$)은 두 확률값의 가중치 합으로 정의된다.
+
+![state decoder 3](../assets/img/post/20200419-NADST/state_decoder3.png)
+
+여기서 $$ W_{gen} \in \mathbb{R}^{3d \times 1} $$ 이고 $$Z_{exp}$$는 $$Z_{ds \times fert}$$의 차원(dimension)을 맞추기 위한 Z의 확장된 벡터이다.
+마지막 확률값도 cross-entropy loss function 을 사용해서 state generation 을 학습한다.  
+
+![state decoder 4](../assets/img/post/20200419-NADST/state_decoder4.png)
+
+## 3.4 Optimization
+
+3 개의 loss(state, gate, fertility) 값의 가중치 합이 최소화되도록, 함께 학습하는 방식으로 모든 패러미터를 최적화하였다.
+
+![opt](../assets/img/post/20200419-NADST/optimization.png)
 
 
+---
+
+# 4 Experiments
+
+## 4.1 Dataset
+
+...to be continued...
 
 
+---
+# References
 
+* pointer network 참조 : [https://jiminsun.github.io/2019-02-15/Vinyals-2015/](https://jiminsun.github.io/2019-02-15/Vinyals-2015/){:target="_blank"}
 
 
 
