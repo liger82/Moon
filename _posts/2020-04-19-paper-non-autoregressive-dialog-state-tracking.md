@@ -90,6 +90,7 @@ NADST model은 dialog state를 생성하기 위해 모든 도메인에서 가능
 4. Ablation study 를 통해서 이 논문에서 제안하는 모델이 slot 간에 잠재적인 Signal 을 학습하고, 또 효과가 있다는 것을 보여준다. 
 또한 slot 의 sets 을 더 정확하게 dialogue domain 에서 생성한다는 것을 보여준다.
 
+---
 # 2. Related Work
 
 ## Dialog State Tracking(DST)
@@ -121,7 +122,7 @@ NMT의 긴 문장에 비해 슬롯 값의 낮은 의미 복잡성은 DST에 non-
 연구자의 검토에 따르면, 본 논문이 생성 기반 DST 에 대해 non-autoregressive 프레임워크를 최초로 적용한 것이다. 
 이 접근방식은 슬롯에 걸친 joint state tracking 을 가능하게 하며, 그 결과, 더 나은 성능을 보이고 추론할 때 지연 시간을 더 줄여준다.
 
-
+---
 # 3. Approach
 
 NADST model 은 세 가지 파트로 구성되어 있다.
@@ -132,7 +133,7 @@ NADST model 은 세 가지 파트로 구성되어 있다.
 ### 전제
 <center>
 $$\text{Dialogue history X} = (x_{1}, x_{2}, ... , x_{N}) $$  
-$$(domain, slot) pair  X_{ds} = ((d_{1}, s_{1}), ... , (d_{G}, s_{H}))$$  
+$$\text{(domain, slot) pair } X_{ds} = ((d_{1}, s_{1}), ... , (d_{G}, s_{H}))$$  
 <i>G = total number of domains<br>
 H = total number of slots</i></center>
 
@@ -148,7 +149,7 @@ J = number of slots in the output dialogue state</i></center>
 각 (domain, slot) pair ($$ d_g, s_h $$) 에 대해, fertility $$ Y^{d_1, s_1}_f $$를 생성한다.  
 fertility decoder 의 output 은 다음과 같은 sequence 로 정의된다.  
 <center>$$ Y_{fert} = Y^{d_1, s_1}_f, ..., Y^{d_G, s_H}_f $$  
-$$\text{where} Y^{d_g, s_h}_f \in&nbsp; \{0, max(SlotLength) \} $$</center>    
+$$\text{where } Y^{d_g, s_h}_f \in&nbsp; \{0, max(SlotLength) \} $$</center>    
 예를 들어, 본 논문에서 사용하는 MultiWOZ dataset 에서 학습 데이터에 의하면 *{0, max(SlotLength)}* = 9 이다.  
 
 또한 보조적인 예측 기능으로 slot gating mechanism 을 추가하였다. 
@@ -156,9 +157,9 @@ $$\text{where} Y^{d_g, s_h}_f \in&nbsp; \{0, max(SlotLength) \} $$</center>
 높은 수준의 분류 신호를 만드는 데 사용된다. 게이트의 결과값은 다음과 같은 sequence 로 정의된다.   
 <center>$$ Y_{gate} = Y^{d_1, s_1}_g, ..., Y^{d_G, s_H}_g $$</center>  
 
-예측된 fertility 값들은 non-autoregressive decoding 을 위한 state decoder 의 입력으로 들어갈 sequence 를 형성하기 위해 사용된다.
-sequence 는 ($$ d_s, s_h $$)를 $$Y^{d_s, s_h}_f$$ 만큼 반복하고 순서대로 연결되어 있는 sub-sequences 를 포함한다.  
-<center> $$ X_{ds \times fert} = ((d_1, s_1)^{Y^{d_1, s_1}_f}, ..., (d_G, s_H)^{Y^{d_G, s_H}_f} ) \text{and}
+예측된 fertility 값들은 non-autoregressive decoding 에서 state decoder 의 입력으로 들어갈 sequence 를 형성하기 위해 사용된다.
+sequence 는 ($$ d_s, s_h $$)를 $$Y^{d_s, s_h}_f$$ 만큼 반복하고 순서대로 연결되어 있는 sub-sequences 로 이루어진다.  
+<center> $$ X_{ds \times fert} = ((d_1, s_1)^{Y^{d_1, s_1}_f}, ..., (d_G, s_H)^{Y^{d_G, s_H}_f} ) \text{ and }
 \| X_{ds \times fert} \| = \| Y \| $$</center>  
 디코더가 dialogue history 가 있는 attention layer 를 통해 이 sequence 를 투영시킨다.
 decoding process 동안, dialogue history 의 hidden states 에 대한 메모리를 유지시킨다. state decoder 로부터 나온 결과값은 그 메모리에 참여하기 위한 쿼리로 사용되고
@@ -167,7 +168,8 @@ dialogue history 에서 토큰을 복사하여 dialogue state 를 생성한다.
 이전 dialogue turn 으로부터 정보를 통합하여 현재 dialogue turn 의 state 를 예측한다.  
     * 부분적으로 delexicalized dialogue history $$ X_{del} = (x_{1,del}, ..., x_{N,del}) $$ 를 모델의 입력값으로 사용한다.  
     * dialogue history 는 이전에 디코딩된 slot values 와 일치하는 real-value 토큰을 domain-slot 에 의해 표현된 토큰에서 삭제함으로써 마지막 시스템 발언까지 비어휘화한다.   
-    * token $$x_n$$이 주어지고, 현재 dialogue turn 을 t 라고 할 때, 토큰은 다음과 같이 비어휘화된다.  
+    * token $$x_n$$이 주어지고, 현재 dialogue turn 을 t 라고 할 때, 토큰은 다음과 같이 delexicalize 된다.  
+    
 ![formula1](../assets/img/post/20200419-NADST/nadst_1.png)
 
 예를 들어, "저렴한 호텔을 찾고 있어"라는 발화를 delexicalize 하면 "**호텔_가격범위** 호텔을 찾고 있어"가 된다. 
@@ -208,22 +210,32 @@ $$z_{ds}$$ 는 디코딩 프로세스에서 slot 과 fertility 예측을 위한 
 
 ### Context Encoder
 
+<img src="../assets/img/post/20200419-NADST/context_encoder.png" alt="context_encoder" style="width:50%;"/>
+
 context encoder 는 토큰 수준의 학습가능한 임베딩 레이어와 layer normalization을 포함하고 있다. 또한 사인, 코사인 함수를 따르는 위치 인코딩 레이어도 가지고 있다.
 토큰 수준의 벡터들과 위치 인코딩 벡터들을 결합시킬 때 요소별 합산(element-wise summation)을 사용한다.  
 raw dialogue history 와 dexicalized dialogue history 를 임베딩하기 위해 임베딩 가중치를 공유한다.
 또한 임베딩 가중치는 fertility decoder 와 state decoder 모두의 입력값으로 인코딩하기 위해 공유되는 것이다. 
-X 와 $$X_{del}$$의 마지막 임베딩은 다음과 같이 정의된다.  
+$$X$$ 와 $$X_{del}$$의 마지막 임베딩은 다음과 같이 정의된다.  
 <center>PE = positional embedding</center>  
 <center>$$ Z = Z_{emb} + PE(X) \in \mathbb{R}^{N \times d} $$</center>  
 <center>$$ Z_{del} = Z_{emb, del} + PE(X_{del}) \in \mathbb{R}^{N \times d} $$</center>  
-
-<img src="../assets/img/post/20200419-NADST/context_encoder.png" alt="context_encoder" style="width:60%;"/>
 
 
 ### Domain and Slot Encoder
 
 각 (domain, slot) 쌍은 대응하는 domain 과 slot 의 두 개의 분리된 임베딩 벡터를 사용해서 인코딩된다. 
+각 domain *g*와 slot *h* 가 continuous representation 으로 임베딩된 것을 $$z_d_g /text{ 와 } z_s_h \in \mathbb{R}^d$$ 라고 한다.
+최종 벡터는 요소별 합(element-wise summation)으로 결합되며 다음과 같다:  
+<center>$$ z_{d_g, s_h} = z_d_g + z_s_h \in \mathbb{R}^d $$</center>
 
+앞서 말했듯이, domain과 slot 토큰을 임베딩하기 위해 임베딩 가중치를 2개의 디코더에서 공유한다. 
+하지만 state decoder 의 input 의 경우, 순차적 정보를 입력값인 $$X_{ds \times fert}$$ 에 주입하여 위치별 정보를 target state sequence 를 디코딩할 때 요소로 사용한다.
+
+![domain_slot_encoder](../assets/img/post/20200419-NADST/domain_slot_encoder.png)
+
+여기서 $$ \oplus $$는 concatenation 동작을 의미한다.
+    
 
 ## 3.2 Fertility Decoder
 
