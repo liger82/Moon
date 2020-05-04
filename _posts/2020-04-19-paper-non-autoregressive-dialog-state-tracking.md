@@ -130,36 +130,36 @@ NADST model 은 세 가지 파트로 구성되어 있다.
 3. state decoder 
 
 ### 전제
-
+<center>
 *Dialogue history* $$ X = (x_{1}, x_{2}, ... , x_{N}) $$  
 (domain, slot) pair $$ X_{ds} = ((d_{1}, s_{1}), ... , (d_{G}, s_{H}))$$  
 *G* = total number of domains  
-*H* = total number of slots
+*H* = total number of slots</center>
 
 전통적으로, dialogue state 의 output 형태는 (slot, value) 튜플이었다.
 이 논문에서는 이를 slot value 를 concatenate 하는 형태로 재구성하였다.
-
+<center>
 $$ Y^{d_i, s_j}: Y = (Y^{d_{1}, s_{1}}, ..., Y^{d_{I}, s_{J}}) = (y_{1}^{d_{1}, s_{1}}, y_{2}^{d_{2}, s_{2}}, ..., y_{1}^{d_{I}, s_{J}}, y_{2}^{d_{I}, s_{J}}, ...) $$  
 *I* = number of domains in the output dialogue state  
-*J* = number of slots in the output dialogue state
+*J* = number of slots in the output dialogue state</center>
 
 인코더는 토큰 레벨 임베딩과 위치 인코딩을 사용하여 input dialogue history 와 (*domain, slot*) pair 들을 연속적인 representation 으로 인코딩한다.  
 인코딩된 도메인과 슬랏은 stacked self-attention 과 feed-forward network 에 input 으로 들어가서 dialogue history 에서 나오는 관련된 신호들을 얻고,
 각 (domain, slot) pair ($$ d_g, s_h $$) 에 대해, fertility $$ Y^{d_1, s_1}_f $$를 생성한다.  
 fertility decoder 의 output 은 다음과 같은 sequence 로 정의된다.  
-$$ Y_{fert} = Y^{d_1, s_1}_f, ..., Y^{d_G, s_H}_f $$  
-where $$ Y^{d_g, s_h}_f \in $${0, max(SlotLength)}  
+<center>$$ Y_{fert} = Y^{d_1, s_1}_f, ..., Y^{d_G, s_H}_f $$  
+where $$ Y^{d_g, s_h}_f \in $${0, max(SlotLength)}</center>    
 예를 들어, 본 논문에서 사용하는 MultiWOZ dataset 에서 학습 데이터에 의하면 {0, max(SlotLength)} = 9 이다.  
 
 또한 보조적인 예측 기능으로 slot gating mechanism 을 추가하였다. 
 각 게이트 g 는 3가지 value('none', 'dontcare', and 'generate') 로 제한된다. 이 값들은 fertility decoding process 를 지원하기 위해
 높은 수준의 분류 신호를 만드는 데 사용된다. 게이트의 결과값은 다음과 같은 sequence 로 정의된다.   
-$$ Y_{gate} = Y^{d_1, s_1}_g, ..., Y^{d_G, s_H}_g $$  
+<center>$$ Y_{gate} = Y^{d_1, s_1}_g, ..., Y^{d_G, s_H}_g $$</center>  
 
 예측된 fertility 값들은 non-autoregressive decoding 을 위한 state decoder 의 입력으로 들어갈 sequence 를 형성하기 위해 사용된다.
 sequence 는 ($$ d_s, s_h $$)를 $$Y^{d_s, s_h}_f$$ 만큼 반복하고 순서대로 연결되어 있는 sub-sequences 를 포함한다.  
-    * $$ X_{ds X fert} = ((d_1, s_1)^{Y^{d_1, s_1}_f}, ..., (d_G, s_H)^{Y^{d_G, s_H}_f} ) $$ and
-    $$ \| X_{ds X fert} \| = \| Y \| $$ 
+<center> $$ X_{ds \times fert} = ((d_1, s_1)^{Y^{d_1, s_1}_f}, ..., (d_G, s_H)^{Y^{d_G, s_H}_f} ) $$ and
+$$ \| X_{ds \times fert} \| = \| Y \| $$</center>  
 디코더가 dialogue history 가 있는 attention layer 를 통해 이 sequence 를 투영시킨다.
 decoding process 동안, dialogue history 의 hidden states 에 대한 메모리를 유지시킨다. state decoder 로부터 나온 결과값은 그 메모리에 참여하기 위한 쿼리로 사용되고
 dialogue history 에서 토큰을 복사하여 dialogue state 를 생성한다. 
@@ -195,14 +195,14 @@ dialogue history 에서 토큰을 복사하여 dialogue state 를 생성한다.
 
 인코더는 dialogue history X 를 연속적인 representations 형태의 sequence 로 임베딩한다.
 연속적인 representations 는 다음과 같이 표현된다.  
-$$ Z = (z_1, ..., z_N) \in \mathbb{R}^{N \times d} $$  
+<center>$$ Z = (z_1, ..., z_N) \in \mathbb{R}^{N \times d} $$</center>  
 이와 유사하게 부분적으로 delexicalized dialogue history $$ X_{del}$$도 다음과 같이 연속적인 representations 로 표현된다.
-$$ Z_{del} \in \mathbb{R}^{N \times d} $$  
+<center>$$ Z_{del} \in \mathbb{R}^{N \times d} $$</center>  
 
 dialogue state 생성을 위한 단어 복사를 하기 위해 포인터 네트워크로 전달될 인코딩된 dialogue history Z 를 메모리에 저장한다.
 이는 OOV(out of vocabulary) 문제 해결에 도움이 된다.  
 각 (domain, slot) 쌍을 continuous representation $$z_{ds}$$으로 인코딩하여 decoder 의 input 으로 사용한다.  
-$$z_{ds} \in \mathbb{R}^{d}$$  
+<center>$$z_{ds} \in \mathbb{R}^{d}$$</center>  
 $$z_{ds}$$ 는 디코딩 프로세스에서 slot 과 fertility 예측을 위한 맥락(상황, contextual) 신호를 저장하는데 사용된다.  
 
 
@@ -213,7 +213,7 @@ context encoder 는 토큰 수준의 학습가능한 임베딩 레이어와 laye
 raw dialogue history 와 dexicalized dialogue history 를 임베딩하기 위해 임베딩 가중치를 공유한다.
 또한 임베딩 가중치는 fertility decoder 와 state decoder 모두의 입력값으로 인코딩하기 위해 공유되는 것이다. 
 X 와 $$X_{del}$$의 마지막 임베딩은 다음과 같이 정의된다.  
-PE = positional embedding  
+<center>PE = positional embedding</center>  
 <center>$$ Z = Z_{emb} + PE(X) \in \mathbb{R}^{N \times d} $$</center>  
 <center>$$ Z_{del} = Z_{emb, del} + PE(X_{del}) \in \mathbb{R}^{N \times d} $$</center>  
 
