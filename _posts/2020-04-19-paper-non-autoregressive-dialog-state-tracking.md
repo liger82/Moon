@@ -177,7 +177,7 @@ dialogue history 에서 토큰을 복사하여 dialogue state 를 생성한다.
 
 ### Figure 1. NADST 전체 구조
 
-![figure1](../assets/img/post/20200419-NADST/figure1.png)
+![figure1](../assets/img/post/20200419-NADST/figure1_v2.png)
 
 * <span style="color:red">빨간색 : encoder</span>
     * 인코더는 (1) dialogue history 의 sequence, (2) 부분적으로 delexicalized dialogue history, (3) domain 과 slot 토큰 이 세 가지를 연속적인 representations 로 인코딩한다.
@@ -214,8 +214,8 @@ raw dialogue history 와 dexicalized dialogue history 를 임베딩하기 위해
 또한 임베딩 가중치는 fertility decoder 와 state decoder 모두의 입력값으로 인코딩하기 위해 공유되는 것이다. 
 X 와 $$X_{del}$$의 마지막 임베딩은 다음과 같이 정의된다.  
 PE = positional embedding  
-<span style="text-align:center">$$ Z = Z_{emb} + PE(X) \in \mathbb{R}^{N \times d} $$</span>  
-$$ Z_{del} = Z_{emb, del} + PE(X_{del}) \in \mathbb{R}^{N \times d} $$  
+<center>$$ Z = Z_{emb} + PE(X) \in \mathbb{R}^{N \times d} $$</center>  
+<center>$$ Z_{del} = Z_{emb, del} + PE(X_{del}) \in \mathbb{R}^{N \times d} $$</center>  
 
 ![context_encoder](../assets/img/post/20200419-NADST/context_encoder.png)
 
