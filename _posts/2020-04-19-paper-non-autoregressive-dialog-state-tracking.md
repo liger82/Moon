@@ -10,7 +10,7 @@ comments: true
 >Authors : Hung Le, Richard Socher†, Steven C.H. Hoi  
 >Institution : Salesforce Research, Singapore Management University  
 >Publication Date : Feb 19, 2020  
->Conference Paper at ICLR 2020
+>Conference Paper at ICLR 2020  
 >paper : [https://arxiv.org/abs/2002.08024](https://arxiv.org/abs/2002.08024){:target="_blank"}
 
 
@@ -282,8 +282,8 @@ $$ T_{state}$$ 만큼 attention sequence 를 반복한 후에, 마지막 출력�
 $$W_{state} \in \mathbb{R}^{d \times \|V\|} $$ *V* : the set of output vocabulary  
 open-vocabulary DST 모델이라서 알려진 slot ontology 를 가정하지는 않지만 dialogue history 로부터 후보군을 만들 수 있어서 어휘 셋을 상정할 수 있다.  
 추론시 oov 문제를 해결하기 위해 pointer network 를 Transformer decoder 에 통합시켰다.  
-    * <span style="color:grey">Pointer network 는 attention mechanism 을 간략화해서 output dimension 이 input sequence 의 길이에 따라 변할 수 있게 하였다. 
-    Attention weight 을 그대로 예측의 softmax 값으로 사용하는 것이다. Input 의 일부를 point 한다는 의미에서 pointer network 라고 한다.</span>  
+(<span style="color:grey">Pointer network <sup>*1</sup>는 attention mechanism 을 간략화해서 output dimension 이 input sequence 의 길이에 따라 변할 수 있게 하였다. 
+Attention weight 을 그대로 예측의 softmax 값으로 사용하는 것이다. Input 의 일부를 point 한다는 의미에서 pointer network 라고 한다.</span>)  
 이는 저장해놓은 encoded dialogue history(Z) 에서 oov 한 state 를 찾겠다는 의미이다. 이를 수식으로 표현하면, state decoder 의 출력값과 Z 사이의 내적(dot-product) attention 을 수행한다.
  
 ![state decoder 2](../assets/img/post/20200419-NADST/state_decoder2.png)
@@ -310,14 +310,39 @@ open-vocabulary DST 모델이라서 알려진 slot ontology 를 가정하지는 
 
 ## 4.1 Dataset
 
-...to be continued...
+![dataset](../assets/img/post/20200419-NADST/dataset.png)
+
+MultiWOZ 는 multi domain, task-oriented dialogue dataset 이다. 이 논문에서는 2017년 초판이 아닌 2019년에 나온 버전을 사용한다.
+각 대화는 하나의 도메인 이상을 가지고 있다.  
+대화를 전처리 할 때,(Wu et al., 2019) 에 나오는 전처리 스크립트 폼을 따라서 토크나이징, 소문자화, delexicalizing 하였다.  
+    * [Wu et al., 2019](https://www.aclweb.org/anthology/P19-1078/){:target="_blank"}  
+총 35 개의 (domain, slot) 쌍을 확인했다. 하나의 대화에 평균적으로 14.7 턴이 존재한다.
+
+
+## 4.2 Training Procedure
+
+dialogue state Y 예측하는 것을 학습하기 위해 **label smoothing** 을 사용했다.(fertility, gate 예측에는 사용하지 않는다.)  
+    * label smoothing<sup>*2</sup> : model 이 overfitting 하거나 overconfidence 일 때, 사용한다. mislabeled data 가 있을 때 smoothing 하여 모델이 잘못된 label 에 fit 하지 않도록 한다.
+    주로 uniform distribution 과 결합하는 방식으로 smoothing 한다.  
+
+학습할 때, 100% teacher-forcing learning 전략<sup>*3</sup>을 사용하는데, state decoder 의 입력값으로 $$X_{ds \times fert}$$의 ground-truth 를 사용한다.
+delexicalized dialogue history 에 대해서도 동일 전략을 사용한다.
+    * teacher-forcing learning 은 주로 recurrent 구조에서 사용된다. recurrent 구조에서 이전 출력값을 다음 입력값으로 사용하는 방식을 사용한다. 
+    이 경우 이전 출력값이 잘못된 예측이라면 그 다음의 모든 값이 잘못 예측될 것이다. 그래서 다음 입력값으로 ground-truth 를 사용하는 것이다. 
+    teacher-forcing 을 사용하면 사용하지 않은 경우보다 더 빠른 학습이 가능하다. 왜냐하면 초기에 잘 틀리지 않아서 정확도가 빠르게 올라간다.
+    * multi-modal 학습이 쉽지 않기 때문에 학습의 안정성을 높이기 위해 사용한 것을 보인다.   
+     
+![teacher-forcing](https://miro.medium.com/max/842/1*U3d8D_GnfW13Y3nDgvwJSw.png)
+
+추론할 때는,  
 
 
 ---
 # References
 
-* pointer network 참조 : [https://jiminsun.github.io/2019-02-15/Vinyals-2015/](https://jiminsun.github.io/2019-02-15/Vinyals-2015/){:target="_blank"}
-
+1. pointer network 참조 : [https://jiminsun.github.io/2019-02-15/Vinyals-2015/](https://jiminsun.github.io/2019-02-15/Vinyals-2015/){:target="_blank"}
+2. label smoothing : [https://towardsdatascience.com/what-is-label-smoothing-108debd7ef06](https://towardsdatascience.com/what-is-label-smoothing-108debd7ef06){:target="_blank"}
+3. teacher-forcing learning : [참조 블로그](https://blog.naver.com/PostView.nhn?blogId=sooftware&logNo=221790750668&categoryNo=0&parentCategoryNo=0&viewDate=&currentPage=1&postListTopCurrentPage=1&from=postView){:target="_blank"}
 
 
 
