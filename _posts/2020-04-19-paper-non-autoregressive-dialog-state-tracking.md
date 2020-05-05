@@ -11,7 +11,8 @@ comments: true
 >Institution : Salesforce Research, Singapore Management University  
 >Publication Date : Feb 19, 2020  
 >Conference Paper at ICLR 2020  
->paper : [https://arxiv.org/abs/2002.08024](https://arxiv.org/abs/2002.08024){:target="_blank"}
+>Paper link : [https://arxiv.org/abs/2002.08024](https://arxiv.org/abs/2002.08024){:target="_blank"}  
+>Github : [https://github.com/henryhungle/NADST](https://github.com/henryhungle/NADST){:target="_blank"}  
 
 
 # Abstract
@@ -25,10 +26,10 @@ comments: true
 이 논문에서는 auto-regressive 하지 않은 DST framework를 제안한다.
 
 **NADST의 장점**    
-    * domain과 slot 간의 의존성 factor를 최적화하여 대화 상태를 더 잘 예측하게 한다.(분리된 slot 형태로 예측하는 것보다)
-    * non-autoregressive 특성
-        - 실시간 대화 응답을 생성할 때, DST의 대기시간(latency)를 줄이기 위해 병렬로 디코딩을 할 수 있게 했다.
-        - 토큰 레벨 뿐만 아니라 slot, domain 레벨에서도 slot 사이의 의존성을 감지
+* domain과 slot 간의 의존성 factor를 최적화하여 대화 상태를 더 잘 예측하게 한다.(분리된 slot 형태로 예측하는 것보다)
+* non-autoregressive 특성
+    - 실시간 대화 응답을 생성할 때, DST의 대기시간(latency)를 줄이기 위해 병렬로 디코딩을 할 수 있게 했다.
+    - 토큰 레벨 뿐만 아니라 slot, domain 레벨에서도 slot 사이의 의존성을 감지
 
 * 결과
     * MultiWOZ 2.1 corpus 모든 도메인에서 SOTA를 달성
@@ -81,7 +82,7 @@ sub-sequence 는 (slot token x slot fertility) 로 표현된다. 한 번에 targ
 같은 value가 아니라는 점을 고려해야 한다. 
 NADST model은 dialog state를 생성하기 위해 모든 도메인에서 가능한 모든 시그널과 slot 을 고려한다.
 이것이 DST 평가 척도로 사용하는 joint accuracy 를 직접적으로 높인다.
-    - joint accuracy : slot level 이 아니라 state (set of slots) level 에서 정확도를 측정
+- joint accuracy : slot level 이 아니라 state (set of slots) level 에서 정확도를 측정
       
 이 논문의 Contribution
 1. Non-Autoregressive Dialogue State Tracking(NADST) 제안
@@ -167,9 +168,9 @@ decoding process 동안, dialogue history 의 hidden states 에 대한 메모리
 dialogue history 에서 토큰을 복사하여 dialogue state 를 생성한다. 
 
 이전 dialogue turn 으로부터 정보를 통합하여 현재 dialogue turn 의 state 를 예측한다.  
-    * 부분적으로 delexicalized dialogue history $$ X_{del} = (x_{1,del}, ..., x_{N,del}) $$ 를 모델의 입력값으로 사용한다.  
-    * dialogue history 는 이전에 디코딩된 slot values 와 일치하는 real-value 토큰을 domain-slot 에 의해 표현된 토큰에서 삭제함으로써 마지막 시스템 발언까지 비어휘화한다.   
-    * token $$x_n$$이 주어지고, 현재 dialogue turn 을 t 라고 할 때, 토큰은 다음과 같이 delexicalize 된다.  
+* 부분적으로 delexicalized dialogue history $$ X_{del} = (x_{1,del}, ..., x_{N,del}) $$ 를 모델의 입력값으로 사용한다.  
+* dialogue history 는 이전에 디코딩된 slot values 와 일치하는 real-value 토큰을 domain-slot 에 의해 표현된 토큰에서 삭제함으로써 마지막 시스템 발언까지 비어휘화한다.   
+* token $$x_n$$이 주어지고, 현재 dialogue turn 을 t 라고 할 때, 토큰은 다음과 같이 delexicalize 된다.  
     
 ![formula1](../assets/img/post/20200419-NADST/nadst_1.png)
 
@@ -315,27 +316,135 @@ Attention weight 을 그대로 예측의 softmax 값으로 사용하는 것이�
 MultiWOZ 는 multi domain, task-oriented dialogue dataset 이다. 이 논문에서는 2017년 초판이 아닌 2019년에 나온 버전을 사용한다.
 각 대화는 하나의 도메인 이상을 가지고 있다.  
 대화를 전처리 할 때,(Wu et al., 2019) 에 나오는 전처리 스크립트 폼을 따라서 토크나이징, 소문자화, delexicalizing 하였다.  
-    * [Wu et al., 2019](https://www.aclweb.org/anthology/P19-1078/){:target="_blank"}  
+* [Wu et al., 2019](https://www.aclweb.org/anthology/P19-1078/){:target="_blank"}  
 총 35 개의 (domain, slot) 쌍을 확인했다. 하나의 대화에 평균적으로 14.7 턴이 존재한다.
 
 
 ## 4.2 Training Procedure
 
 dialogue state Y 예측하는 것을 학습하기 위해 **label smoothing** 을 사용했다.(fertility, gate 예측에는 사용하지 않는다.)  
-    * label smoothing<sup>*2</sup> : model 이 overfitting 하거나 overconfidence 일 때, 사용한다. mislabeled data 가 있을 때 smoothing 하여 모델이 잘못된 label 에 fit 하지 않도록 한다.
-    주로 uniform distribution 과 결합하는 방식으로 smoothing 한다.  
+* label smoothing<sup>*2</sup> : model 이 overfitting 하거나 overconfidence 일 때, 사용한다. mislabeled data 가 있을 때 smoothing 하여 모델이 잘못된 label 에 fit 하지 않도록 한다.
+주로 uniform distribution 과 결합하는 방식으로 smoothing 한다.  
 
 학습할 때, 100% teacher-forcing learning 전략<sup>*3</sup>을 사용하는데, state decoder 의 입력값으로 $$X_{ds \times fert}$$의 ground-truth 를 사용한다.
 delexicalized dialogue history 에 대해서도 동일 전략을 사용한다.
-    * teacher-forcing learning 은 주로 recurrent 구조에서 사용된다. recurrent 구조에서 이전 출력값을 다음 입력값으로 사용하는 방식을 사용한다. 
-    이 경우 이전 출력값이 잘못된 예측이라면 그 다음의 모든 값이 잘못 예측될 것이다. 그래서 다음 입력값으로 ground-truth 를 사용하는 것이다. 
-    teacher-forcing 을 사용하면 사용하지 않은 경우보다 더 빠른 학습이 가능하다. 왜냐하면 초기에 잘 틀리지 않아서 정확도가 빠르게 올라간다.
-    * multi-modal 학습이 쉽지 않기 때문에 학습의 안정성을 높이기 위해 사용한 것을 보인다.   
+* teacher-forcing learning 은 주로 recurrent 구조에서 사용된다. recurrent 구조에서 이전 출력값을 다음 입력값으로 사용하는 방식을 사용한다. 
+이 경우 이전 출력값이 잘못된 예측이라면 그 다음의 모든 값이 잘못 예측될 것이다. 그래서 다음 입력값으로 ground-truth 를 사용하는 것이다. 
+teacher-forcing 을 사용하면 사용하지 않은 경우보다 더 빠른 학습이 가능하다. 왜냐하면 초기에 잘 틀리지 않아서 정확도가 빠르게 올라간다.
+* multi-modal 학습이 쉽지 않기 때문에 학습의 안정성을 높이기 위해 사용한 것을 보인다.   
      
 ![teacher-forcing](https://miro.medium.com/max/842/1*U3d8D_GnfW13Y3nDgvwJSw.png)
 
-추론할 때는,  
+추론할 때는, dialogue state 를 턴마다 생성하고 t turn 에서 dialogue history 를 delexicalize 하기 위해 t-1 turn 의 예측 state 값(출력값)을 사용한다.
+$$X_{ds \times fert}$$도 예측값인 $$\hat{Y}_{gate} \text{ 와 } \hat{Y}_{fert}$$ 에 의해 구성되었다. 
 
+* adam optimizer 사용
+* learning rate 는 ([Vaswani et al., 2017](https://www.aclweb.org/anthology/E17-1042/){:target="_blank"})의 전략을 따른다.
+* 모든 패러미터는 uniform distribution 으로 랜덤하게 초기화되었다.
+* 사전학습된 단어 혹은 문자 기반 임베딩 가중치를 사용하지 않는다.
+* hyper parameters 조정에는 grid search 를 활용
+* pytorch 사용
+
+
+## 4.3 Baselines
+
+DST baseline 은 두 가지가 있다. (1) open-vocabulary (2) fixed-vocabulary 접근법이 있다.
+(2)의 경우 추론할 때 unseen slot value 를 찾지 못하는 단점을 지닌다.
+
+
+### 4.3.1 Fixed Vocabulary
+
+* GLAD
+    - 여러 개의 self-attentive RNNs 을 사용하여 slot 사이의 공유된 패러미터들을 위한 *global tracker*와 개별 slot 을 위한 *local tracker*를 학습한다.
+    - 이전 system actions 를 입력값으로 활용한다
+    - 결과값과 ontology 단어들과의 의미적 유사성(semantic similarity)를 계산한다.
+      
+* GCE
+    - GCE 는 GLAD 의 더 간단하고 빠르게 바꾼 버전이다
+    - DST model 의 성능은 유지하면서 slot 특정적인 RNNs 을 없애는 방식을 사용한다
+    
+* MDBT
+    - 시스템 발화, 유저 발화, (slot, value) 쌍을 위한 각각의 인코딩 모듈을 가지고 있다. 
+    - GLAD 와 유사하게, 발화와 ontology 단어들 간의 의미적 유사성을 바탕으로 학습을 한다.
+    
+* FJST and HJST
+    - FJST : Flat Joint State Tracker
+        * Bi-LSTM network 로 구성된 dialogue history encoder
+    - HJST : Hierarchical Joint State Tracker
+        * FJST 와 유사한 아키텍처를 지녔고 다른 점은 dialogue history 를 인코딩할 때 hierarchical LSTM network 를 사용한다.
+        
+* SUMBT
+    - Slot-independent Belief Tracker
+    - (domain, slot) 쌍과 키의 representation 으로서 쿼리 벡터와 BERT 인코딩 dialogue history 로서 value 벡터를 가진 multi-head attention layer 로 구성된다.
+
+### 4.3.2 Open Vocabulary
+
+* TSCP
+    - end-to-end dialogue model
+    - 한 개의 RNN encoder 와 두 개의 RNN decoder 로 구성
+    - TSCP 를 baseline 으로 선택한 이유는 TSCP 가 dialogue state 를 단일 시퀀스로 디코딩하고 이는 NADST 처럼 slot 간의 잠재적 의존성을 요소로 사용하는 것이기 때문이다
+    - DST 요소의 성능만 지표로 삼았다
+    - TSCP 와 달리, NADST 는 예측된 fertilities 의 합으로 각 state sequence 의 길이를 역동적으로 학습할 수 있다는 점이다. TSCP 는 최대 길이에 의존한다.
+        
+* DST Reader
+    - DST 과제를 reading comprehension task 로 재구성한 것이다.
+    - attention 기반 신경망 아키텍처
+    
+* HyST
+    - fixed 와 open vocabulary 방식 중 각 slot 에 맞는 접근법을 선택하는 방식
+    - open vocabulary 의 경우 dialogue history 에서 단어 n-gram 으로 slot 후보군을 형성한다.
+     
+* TRADE
+    - 이 모델이 MultiWOZ 2.0과 2.1에서 현재 SOTA 모델이다.
+    - dialog history encoder, slot gating module, (state 생성을 위한, pointer network 로 구성) RNN decoder 로 구성된다. 
+    - pointer network 에서 토큰 기반이 아니라 인덱 기반 copying mechanism 을 사용한다.
+
+## 4.4 Results
+
+* DST 평가에 흔히 사용하는 joint goal accuracy 를 사용한다. 
+    - 이 측정법은 각 대화 turn 에서 예측된 dialogue state 와 ground-truth 를 비교한다.
+    - 예측값은 모든 slot 의 모든 예측된 값이 그에 대응하는 ground truth 와 정확해야 맞는 것으로 한다.  
+* 모델들을 5번 돌려서 평균값으로 성능으로 삼았다. 
+
+* table 2를 보면 NADST 가 non-autoregressive 한 접근법을 사용했지만 성능도 가장 좋았다.
+    - NADST 가 cross-domain, cross-slot signal 을 학습함으로써 개별 slot 의 정확도가 아니라 joint accuracy 를 최적화하는데 목표했기 때문이다.
+
+![table2](../assets/img/post/20200419-NADST/table2.png)
+
+* table 3를 보면 MultiWOZ 2.0의 restaurant 도메인에서는 joint accuracy 와 slot accuracy 모두 NADST 가 베이스라인 모델들보다 성능이 좋았다.
+    - slot accuracy 는 개별 slot 에 대한 정확도
+
+![table3](../assets/img/post/20200419-NADST/table3.png)
+
+* table 8은 모든 도메인에서 NADST 의 성능을 보여준다.
+
+![table8](../assets/img/post/20200419-NADST/table8.png)
+
+
+### Latency Analysis
+
+* latency 는 예측 state 하나당 well-clock time(microsecond)을 비교하였다. 
+* table 4에서 TRADE, TSCP 모델을 NADST 와 비교하였다.
+    - TSCP 의 경우, 모델 전체가 아니라 DST 요소만의 시간을 산출했고, dialogue state 의 최대 출력 길이(*L*)를 8과 20으로 각각 돌려서 두 개를 비교했다.
+    - NADST 의 경우, 모델의 다양성을 보여주기 위해, T(=$$T_{fert} = T_{state}$$)값을 각각 1, 2, 3으로 해서 총 세개를 돌렸다.
+    - 동일한 단일 GPU 환경에서 실행시켰다.
+* table 4 결과
+    - 성능은 NADST에서 T 가 3일 때 가장 좋고, T 가 1일 때 속도면(latency, speed up)에서 가장 좋았다.
+    - 다만 T=1 일 때는 성능이 베이스라인(TRADE)보다 조금 떨어졌다. 그에 비해 TRADE보다 latency 가 24배나 빠르다. 
+* figure 2 는 dialogue history 길이에 따른 latency 를 보여준다
+    - NADST 모델들은 길이에 따라 latency 에 거의 변동이 없는데, TSCP 는 길수록 latency 도 늘어난다.
+* figure 3 는 figure 2에서 latency 가 너무 작아서 비교가 안 보이는 것을 감안하여 log 를 취하여 비교해본 것이다.
+
+![table4](../assets/img/post/20200419-NADST/table4.png)
+
+![figure2](../assets/img/post/20200419-NADST/figure2.png)
+
+![figure3](../assets/img/post/20200419-NADST/figure3.png)
+
+
+### Ablation Analysis
+
+...to be continued
 
 ---
 # References
