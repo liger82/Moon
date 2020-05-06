@@ -444,7 +444,15 @@ DST baseline 은 두 가지가 있다. (1) open-vocabulary (2) fixed-vocabulary 
 
 ### Ablation Analysis
 
-...to be continued
+모델 평가를 위해 ablation analysis 폭넓게 진행했다.  
+* DST metric : Joint Slot Accuracy ,Slot Accuracy  
+* fertility decoder metric :  Joint Gate Accuracy, Joint Fertility Accuracy
+    - joint slot accuracy 랑 유사한데 단지 예측값이 각각 gate 와 fertility 의 예측값이라는 점이 다르다.
+* Oracle Joint Slot Accuracy, Oracle Slot Accuracy
+    - State decoder 의 input 으로 모델의 예측값이 아닌 ground truth $$X_{ds \times fert} \text{ 와 } X_{del}$$ 로 할 때 state 를 예측한 결과와 비교
+    - 즉, 올바른 input 이 들어갔을 때 올바른 output 이 나오는지 알 수 있음.
+
+![table5](../assets/img/post/20200419-NADST/table5.png)
 
 ---
 # References
