@@ -445,14 +445,79 @@ DST baseline 은 두 가지가 있다. (1) open-vocabulary (2) fixed-vocabulary 
 ### Ablation Analysis
 
 모델 평가를 위해 ablation analysis 폭넓게 진행했다.  
+다음은 metric 에 대한 설명이다.  
 * DST metric : Joint Slot Accuracy ,Slot Accuracy  
 * fertility decoder metric :  Joint Gate Accuracy, Joint Fertility Accuracy
     - joint slot accuracy 랑 유사한데 단지 예측값이 각각 gate 와 fertility 의 예측값이라는 점이 다르다.
 * Oracle Joint Slot Accuracy, Oracle Slot Accuracy
     - State decoder 의 input 으로 모델의 예측값이 아닌 ground truth $$X_{ds \times fert} \text{ 와 } X_{del}$$ 로 할 때 state 를 예측한 결과와 비교
-    - 즉, 올바른 input 이 들어갔을 때 올바른 output 이 나오는지 알 수 있음.
+    - 즉, 올바른 input 이 들어갔을 때 올바른 output 이 나오는지 알 수 있음.  
 
+**결과 해석**
+1. state decoder 를 통과하기 전에 $$X_{ds \times fert} $$의 위치 인코딩이 삭제되면 모델은 실패한다.
+    - joint slot accuracy 가 다른 것들보다 2배 정도 떨어진다(19.56%)
+    - non-autoregressive 디코딩이 가능하도록, 위치 인코딩(PE)이 순차적 속성을 주입하는 일을 담당하기 때문에 위치 인코딩을 삭제할 경우 성능이 떨어지게 된다.
+2. slot gating 이 삭제 되었을 때 약간의 성능 저하가 있다.
+    - 모델들이 "none"과 "doncare" slot 에 대해 1의 fertility 를 예측하는 것을 배워야 하기 때문이다
+3. 입력값으로의 $$X_{del}$$ 값을 삭제하는 것은 모델 성능을 떨어뜨린다
+    - 대부분은 가파르게 joint fertility accuracy 가 떨어져서이다.
+4. pointer generation network를 삭제하여 오직 $$P^{state}_{vocab}$$ 에만 의존하는 것도 모델 성능을 떨어뜨린다
+    - 학습 시 보지 못한 slot value 를 추론할 수 없기 때문이다.
+    - 특히 "restaurant-name", "train-arriveby" 같은 slot 이 해당된다
+     
 ![table5](../assets/img/post/20200419-NADST/table5.png)
+
+
+### Auto-regressive DST
+
+모델의 나머지는 다 동일하고 auto-regressive state decoder 를 쓰는 모델을 만들어 실험을 해보았다.  
+fertility decoder 에서 이 경우는 fertility 가 중복이라 수식 14, 16을 사용하지 않았다. slot gates 예측을 위해 그 결과값은 사용한다.  
+TRADE 와 유사하게, state decoder 로의 입력값으로 각 domain 과 slot 쌍의 임베딩 벡터들을 합하여 사용하고 토큰별로 slot value 를 생성한다.  
+table 6 는 두 개의 데이터셋에서 auto-regressive 버전의 성능을 보여준다.
+
+**결과 해석**
+1. auto-regressive 버전은 NADST 모델의 성능과 크게 다르지 않다. 
+    - NADST 모델이 fertility 를 합리적으로 잘 예측할 수 있고 성능도 auto-regressive 접근법에 비교할만할 정도이다.
+2. auto-regressive 모델은 system action 사용에 덜 민감하다
+    - table 5에서 non-autoregressive 모델의 차이가 더 크다.
+    - 이는 slot gate 를 예측하는 것이 fertility 를 예측하는 것보다 쉬워서라고 예상한다.
+3. 이 실험을 위해 만든 auto-regressive 모델이 기존의 접근법들보다 뛰어나다
+    - slot gate 를 예측하기 위한 모델의 첫 번째 부분에서 학습된 (domain, slot) 쌍 사이의 높은 의존성 때문일 수 있다. 
+ 
+![table6](../assets/img/post/20200419-NADST/table6.png)
+
+
+### Visualization and Qualitative Evaluation
+
+figure 4에는 두 개의 dialogue state 예측 예시와 그에 대응되는 state decoder 내 $$X_{ds \times fert}$$ 의 self-attention 점수를 시각화한 것을 담았다.
+heatmap 에 하이라이트로 친 박스는 비대칭인 domain-slot 쌍 사이의 attention 점수를 표현한 것이다. 색깔별로 보면 된다.
+
+* 첫 번째 행(줄)을 보면, 모델이 두 개의 쌍 (train-leaveat, train-arriveby) 와 (train-departure, train-destination)의 의존성을 잡았다는 것을 발견할 수 있다.
+* 두 번째 행(줄)을 보면, (taxi-departure, taxi-destination) 같은 slot 수준의 의존성도 보이고, attraction-type 과 attraction-name 간에 토큰 수준의 의존성도 보인다.
+
+![figure4](../assets/img/post/20200419-NADST/figure4.png)
+
+
+---
+
+# 5. Conclusion
+
+Non-Autoregressive neural architecture for DST 제안  
+* slot 수준과 token 수준의 의존성을 학습하여 joint accuracy 를 향상시켰다.
+* 병렬 디코딩 전략을 채택하여 dialogue states 를 빠르게 디코딩할 수 있다
+* 다양한 실험 결과 잘 알려진 대표 데이터셋인 MultiWOZ 코퍼스에서 SOTA 를 이뤄냈다.
+* 추론에 들어가는 지연 시간을 획기적으로 줄였다.
+
+
+# My Opinion
+
+서비스에 있어서 중요한 것은 정확도도 있지만 반응속도도 중요하다고 생각합니다.
+현 시대에 조금만 응답이 느려도 발길을 돌리는 사용자들이 많은 상황에서 NADST의 반응속도를 줄인 것은
+본받을만 하다고 생각합니다. 또한 지연시간을 줄이면서도 다양한 수준의 의존성을 잡아내고 다양한 도메인, 멀티턴 대화에서
+학습하여 joint accuracy 를 높인 것 또한 서비스 적용에 도움이 될 것입니다.
+
+end-to-end dialogue system 을 만드는데 있어서 이 논문의 코드도 참고하여 개발할 예정입니다.  
+감사합니다.
 
 ---
 # References
