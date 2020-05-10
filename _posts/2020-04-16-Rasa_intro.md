@@ -151,10 +151,13 @@ domain은 어시스턴트가 있는 세상이라고 표현합니다. 도메인�
 
 템플릿에서 이미지도 url로 올릴 수 있고 custom action도 endpoints.yml에 url 등록해놓으면 api도 콜할 수 있습니다.
 
-....작성 중....
+# 마무리
+
+라사 설치에서 데이터 포맷, 구조 등을 간단히 살펴보았습니다. 다음 포스트에서는 파이프라인에 대해 알아보도록 하겠습니다.
 
 # Reference
 
 * [Rasa Masterclass EP01](https://youtu.be/-F6h43DRpcU){:target="_blank"}
+* [Rasa Masterclass EP02](https://www.youtube.com/watch?v=k5UeywXA28k){:target="_blank"}
 * [https://rasa.com/docs/getting-started/](https://rasa.com/docs/getting-started/){:target="_blank"}
 * [https://rasa.com/docs/rasa/user-guide/rasa-tutorial/#create-a-new-project](https://rasa.com/docs/rasa/user-guide/rasa-tutorial/#create-a-new-project){:target="_blank"}
