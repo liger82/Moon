@@ -3,7 +3,7 @@ layout: post
 title: "Rasa Masterclass Episode 3 : Pre-configured pipelines"
 date: 2020-05-10
 excerpt: ""
-tags : [virtual assistant, chatbot, Rasa, 챗봇, tutorial, pipeline, training]
+tags : [virtual assistant, chatbot, Rasa, 챗봇, tutorial, pipeline, training, test, pre-configured pipelines]
 comments: true
 ---
 
@@ -42,18 +42,18 @@ custom training pipeline 은 에피소드 4에서 다룰 예정이다.
 알맞은 파이프라인을 선택하도 두 개를 비교할 예정이다.
 
 1. **Pretrained_embeddings_spacy** : spaCy library 를 사용하여 사전학습된 언어 모델을 로드함. 단어를 워드 임베딩으로 표현함.  
-    a. 장점  
+    1. 장점  
         - 학습 데이터가 적어도 모델 정확도를 빨리 올리고 학습 시간을 줄일 수 있다.
-    b. 참고사항
+    2. 참고사항
         - 완전하고 정확한 워드 임베딩이 모든 언어에서 가능한 것이 아니다. 공개된 데이터 대부분은 영어이다.
         - 워드 임베딩은 특정 도메인에서 사용하는 단어들을 커버하지 않는다. 학습데이터로 보통 위키피디아와 같은 일반적인 데이터를 사용하기 때문이다.  
 
 2. **Supervised_embeddings** : 사전 학습된 임베딩과 달리, supervised_embeddings 는 NLU training data 를 사용해서 밑바닥부터 모델을 학습시킨다.
-    a. 장점
+    1. 장점
         - 도메인 특정 다너와 메시지에 적응 가능하다. 모델이 사용자 학습 데이터만으로 학습하기 때문이다.
         - 모든 언어에서 사용 가능하다. 사용자가 원하는 언어로 된 데이터를 만들면 된다.
         - 여러 인텐트를 가진 메시지 지원 가능
-    b. 참고사항
+    2. 참고사항
         - 사전 학습 임베딩과 비교했을 때, 모델 정교화에 더 많은 학습 데이터가 필요하다. 추천하는 예시 데이터 개수는 천 개 이상이다.
 
 아래 결정트리를 보고 선택을 하면 좋다.
@@ -64,10 +64,10 @@ custom training pipeline 은 에피소드 4에서 다룰 예정이다.
 # Training the Model
 
 학습 데이터를 만들고 나면 파이프라인 만들 준비가 된 것이다.   
-파이프라인은 config.yml 파일에서 정의된다. 이 파일은 *rasa init* 이라는 명령어를 칠 경우
-알아서 생성된다. 
+파이프라인은 config.yml 파일에서 정의된다. 이 파일은 rasa project 를 만들 때 *rasa init* 이라는 명령어를 칠 경우
+프로젝트와 함께 생성된다. 
 
-supervised_embeddings pipeline 을 만들려면 다음과 같이 쓰면 된다.
+supervised_embeddings pipeline 을 만들려면 config.yml 에 다음과 같이 쓰면 된다.
 
 ```
 language: "en"
