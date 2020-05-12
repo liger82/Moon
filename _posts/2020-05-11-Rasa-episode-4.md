@@ -23,4 +23,10 @@ comments: true
 
 # Training Pipeline Components
 
+에피소드 3에서 알아본 2개의 파이프라인이 어떻게 구성되어 있는지 자세하게 알아본다.
 
+![twopipelines](../assets/img/post/20200511-rasa-episode4/twopreconfiguredpipelines.png)
+
+# References
+
+* [https://blog.rasa.com/the-rasa-masterclass-handbook-episode-4/](https://blog.rasa.com/the-rasa-masterclass-handbook-episode-4/){:target="_blank"}
