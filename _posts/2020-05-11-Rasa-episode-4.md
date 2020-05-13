@@ -97,9 +97,9 @@ featurizer 와 intent classifier 에 어떤 옵션들이 있는지 살펴본다.
 
 ### Featurizers
 
-![bow](../assets/img/post/20200511-rasa-episode4/bow.png)
 
 * CountVectorsFeaturizer
+![bow](../assets/img/post/20200511-rasa-episode4/bow.png)
     - sklearn 의 CountVectorizer 를 사용해서 사용자의 메시지를 BOW(bag-of-words)로 만든다.
     - BOW 는 텍스트의 순서는 무시하는 대신 문장에서 해당 단어가 몇 번 등장했는지에 집중한다.
     - BOW 를 intent classifier 의 입력으로 제공한다.
@@ -112,7 +112,52 @@ featurizer 와 intent classifier 에 어떤 옵션들이 있는지 살펴본다.
         
 ![character ngrams](../assets/img/post/20200511-rasa-episode4/char_ngrams.png)
     
+* SpacyFeaturizer
+    - pre-trained embeddings 를 쓸 때 사용
+    - 각 토큰에 대해 spaCy word vectors 를 반환한다
+        - 그 이후에 인텐트 분류를 위한 SklearnIntent Classifier 를 통과시킨다.
+        
+        
+### Intent Classifiers
 
+* EmbeddingIntentClassifier
+    - CountVectorsFeaturizer 를 사용할 예정이면 EmbeddingIntentClassifier 를 추천
+        - CountVectorsFeaturizer 를 통해 추출한 features 를 EmbeddingIntentClassifier 로 전이시켜서 인텐트를 예측한다.
+    - EmbeddingIntentClassifier 는 사용자 메시지 입력값과 (학습 데이터로부터) 인텐트 레이블을 임베딩 레이어의 각각 마지막 부분인 두 개의 분리된 신경망에 공급함으로써 작동한다.
+    - 임베딩 메시지 입력값과 임베딩 인텐트 레이블 간 코사인 유사도를 계산한다.
+    - 타겟 레이블과의 유사도를 최대화하고 틀린 레이블과의 유사도를 최소화하는 방식으로 supervised embeddings 를 학습한다.
+    - 인텐트 예측 결과는 NLU model 의 마지막 출력값으로 표현된다. 
+
+![EmbeddingIntentClassifier](../assets/img/post/20200511-rasa-episode4/embeddingIntentClassifier.png)
+    
+    
+* SklearnIntentClassifier
+    - pre-trained word embeddings 를 사용할 경우
+    - SpacyFeaturizer 로 추출한 features 뿐만 아니라 pre-trained word embeddings 를 사용하여 SVM(Support Vector Machine) model 을 학습시킨다
+        - SVM 모델은 관찰된 텍스트 feature 에 근거하여 사용자 입력값의 인텐트를 예측한다.
+
+
+두 개의 사전 구성 파이프라인에 맞는 옵셔들은 다음과 같다.  
+
+![summary](../assets/img/post/20200511-rasa-episode4/table_summary.png)
+
+
+# FAQ
+
+NLU model 학습을 진행할 때 가장 자주 등장하는 질문에 대해 답한다.
+
+### Q. 파이프라인에서 구성 요소들의 순서가 문제가 되는가?
+
+A. 그렇다! 일부 구성 요소들은 이전 순서의 출력값이 필요하다. 예를 들어, 토크나이저는 파이프라인의 처음에 와야 한다.
+featurizer 는 intent classifier 이전에 와야 한다.
+
+### Q. NLU 학습 데이터의 클래스 불균형(class imbalance)을 신경써야 하나?
+(클래스 불균형은 학습 데이터 일부 인텐트가 다른 것들보다 많은 예시를 가지고 있는 것을 말한다.)
+
+A. 그렇다! 클래스 불균형은 모델 성능에 영향을 미친다. 이 문제를 완화시키기 위해서 
+라사의 supervised_embeddings 파이프라인은 balanced batching strategy 를 사용한다.
+이 알고리즘은 데이터셋을 균형적으로 만들기 위해 배치들에 클래스를 분배한다.
+희귀한 클래스의 oversampling 과 자주 등장하는 클래스의 undersampling 을 막기 위해, 
 
 
 # Additional Resources
