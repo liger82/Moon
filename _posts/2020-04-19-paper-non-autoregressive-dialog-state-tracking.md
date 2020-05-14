@@ -20,20 +20,20 @@ comments: true
 태스크 중심 대화(task oriented dialogues)를 위한 대화 상태 추적(Dialogue State Tracking, DST) 영역에서 최근 노력들은 오픈 어휘사전, 생성 기반 접근법(모델이 대화 이력 자체에서 slot value 후보를 
 만들어낼 수 있음)을 향하고 있다. 이러한 접근법은 특히, 역동적인 slot value를 가지고 있는 복잡한 대화 도메인에서 좋은 성과를 보였다. 
 하지만 두 가지 측면에서 부족한데 다음과 같다.
-* 모델이 (domain, slot) pair 간 잠재적인 의존성을 감지해내기 위해 domain과 slot에서 신호를 명백하게 배우도록 하지 못한다. 
-* 기존에 모델은 대화가 여러 도메인과 여러 회차(대화를 주고 받는 횟수)로 변화하면 많은 시간을 잡아먹는 auto-regressive 접근법을 따른다.
+* 모델이 (domain, slot) pair 간 잠재적인 의존성을 감지해내지 못 해서 domain과 slot에서 신호를 명백하게 배우지 못한다. 
+* 기존 모델은 대화가 여러 도메인과 여러 회차(대화를 주고 받는 횟수)로 변하면 많은 시간을 잡아먹는 auto-regressive 접근법을 따른다.
 
-이 논문에서는 auto-regressive 하지 않은 DST framework를 제안한다.
+이 논문에서는 auto-regressive 하지 않은 DST(**NADST**) framework를 제안한다.
 
 **NADST의 장점**    
-* domain과 slot 간의 의존성 factor를 최적화하여 대화 상태를 더 잘 예측하게 한다.(분리된 slot 형태로 예측하는 것보다)
+* domain과 slot 간의 의존성 factor를 최적화하여 대화 상태를 더 잘 예측할 수 있다.(분리된 slot 형태로 예측하는 것보다)
 * non-autoregressive 특성
-    - 실시간 대화 응답을 생성할 때, DST의 대기시간(latency)를 줄이기 위해 병렬로 디코딩을 할 수 있게 했다.
+    - 실시간 대화 응답을 만들 때, DST의 대기시간(latency)를 줄이기 위해 병렬로 디코딩을 한다.
     - 토큰 레벨 뿐만 아니라 slot, domain 레벨에서도 slot 사이의 의존성을 감지
 
 * 결과
     * MultiWOZ 2.1 corpus 모든 도메인에서 SOTA를 달성
-    * 시간이 지남에 따라 대화 기록이 늘어날수록 지연되는 시간(latency)이 이전 SOTA 모델보다 줄어들었다.
+    * 시간이 지남에 따라 대화 기록이 늘어서, 예측에 지연되는 시간(latency)이 이전 SOTA 모델보다 줄어들었다.
     
 
 # 1. Introduction
