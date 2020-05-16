@@ -165,8 +165,46 @@ A. 그렇다! 클래스 불균형은 모델 성능에 영향을 미친다. 이 �
 A. 구두점은 토큰으로 추출되지 않아서 모델 학습에 쓰이는 feature 로 표현되지 않는다. 
 즉, 구두점은 라사에서는 결과에 영향을 주지 않는다.
 
+### Q. 소문자, 대문자인 것이 영향을 미치는가? 
+
+한글에는 해당이 없는 문제임. 일단 상황에 따라 다르지만 원한다면 이 또한 설정에서 바꿀 수 있다.
+
+### Q. 학습 데이터에서 일부 인텐트가 굉장히 유사하다. 어떻게 해야 하는가?
+
+유사한 인텐트들을 하나로 합칠 수 있는지 검사해보는 것이 좋다. 
+예를 들어, 사용자가 이름이나 요일을 말하는 시나리오가 있다고 상상해보자.
+이름을 말하는 거라면(**이름 말해주기**) "사라야", 요일을 말하는 거라면(**요일 말해주기**) "월요일이야" 라고 할 것이다.
+NLU 의 관점에서 보면, 이 메세지들은 엔티티가 다른 것을 제외하고 매우 비슷하다.
+이러한 이유로 "이름 말해주기"와 "요일 말해주기"를 "**알리기**"로 합치는 것이 더 낫다.
+
+### Q. 하나의 단어로 이루어진 입력값으로부터 엔티티를 추출하고 싶다면 어떻게 해야 하나?
+
+하나의 단어 입력값으로부터 엔티티를 추출하는 것은 아직도 도전적인 문제이다. 
+가장 좋은 해결책은 특정한 인텐트를 만드는 것이다. 예를 들어, "알리다"는 사용자가 정보를 제공한다는 의미로 여러 도메인에서 "알리다"의 입력값은
+하나의 단어로  
+
+### Q. 파이프라인에 인텐트 분류기를 2 개 이상 추가할 수 있는가?
+
+기술적으로 그렇지만 실질적인 이득이 없다. 마지막 인텐트 분류 모델의 예측이 항상 결과로 표현될 것이기 때문이다.
+
+### Q. 유저의 오타를 어떻게 처리해야 되는가
+
+사용자의 오타는 피할 수 없는 것이지만 문제를 해결하는 몇 가지가 있긴 하다. 
+하나는 custom spell check 를 구현하여 파이프라인에 추가하는 것이다.  
+또 다른 하나는 학습 데이터에 오타가 있는 예를 추가하는 것이다.
+
+# Conclusion
+
+custom pipeline 에서 components 를 고르고자 한다면 최고의 성능을 달성하기 위해서 실험이 필수적이다.  
+다음 에피소드에서는 dialogue management 에 대해 다루도록 하겠다. 
+
 # Additional Resources
 
+* [Rasa Masterclass Ep.#4](https://youtu.be/ET1k9OrsfYQ){:target="_blank"}
+* [Entity Extraction docs](https://rasa.com/docs/rasa/nlu/entity-extraction/){:target="_blank"}
+* [NLU Components docs](https://rasa.com/docs/rasa/nlu/components/){:target="_blank"}
+* [Rasa blog - NLU in Depth: Par1 Intent Classification](https://blog.rasa.com/rasa-nlu-in-depth-part-1-intent-classification/){:target="_blank"}
+* [Rasa blog - NLU in Depth: Par2 Entity Recognition](https://blog.rasa.com/rasa-nlu-in-depth-part-2-entity-recognition/){:target="_blank"}
 
 # References
 
