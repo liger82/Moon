@@ -185,26 +185,26 @@ dialogue history 에서 토큰을 복사하여 dialogue state 를 생성한다.
 * <span style="color:green">초록색 : state decoder</span>
     * sub-sequences of (domain, slot) x *fertility* 로 구성된 input sequence 를 받아서 완전한 dialogue state sequence 를, slot value 를 이어놓은 형태로 디코딩한다.
     (State Decoder receives the input sequence including sub-sequences of (domain, slot)×fertility to decode a complete dialogue state sequence as concatenation of component slot values.)
-<center> $$ X_{ds \times fert} = ((d_1, s_1)^{Y^{d_1, s_1}_f}, ..., (d_G, s_H)^{Y^{d_G, s_H}_f} ) \text{ and }
-\| X_{ds \times fert} \| = \| Y \| $$</center>    
 * 구조도를 간단하게 그리기 위해서, feed-forward, residual connection, layer-normalization layer 는 생략하였다. 
 
 
 
 ## 3.1 Encoders
 
-인코더는 dialogue history X 를 연속적인 representations 형태의 sequence 로 임베딩한다.
+인코더는 세 가지 입력을 사용한다. 
+1. 인코더는 dialogue history *X* 를 연속적인 representations 형태의 sequence 로 임베딩한다.
 연속적인 representations 는 다음과 같이 표현된다.  
+<center>$$\text{Dialogue history X} = (x_{1}, x_{2}, ... , x_{N}) $$</center>
 <center>$$ Z = (z_1, ..., z_N) \in \mathbb{R}^{N \times d} $$</center>  
-이와 유사하게 부분적으로 delexicalized dialogue history $$ X_{del}$$도 다음과 같이 연속적인 representations 로 표현된다.
+2. 이와 유사하게 partially delexicalized dialogue history $$ X_{del}$$도 다음과 같이 연속적인 representations 로 임베딩된다.
 <center>$$ Z_{del} \in \mathbb{R}^{N \times d} $$</center>  
-
-dialogue state 생성을 위한 단어 복사를 하기 위해 포인터 네트워크(pointer network)로 전달될 인코딩된 dialogue history Z 를 메모리에 저장한다.
-이는 OOV(out of vocabulary) 문제 해결에 도움이 된다.  
-각 (domain, slot) 쌍을 continuous representation $$z_{ds}$$으로 인코딩하여 decoder 의 input 으로 사용한다.  
-<center>$$z_{ds} \in \mathbb{R}^{d}$$</center>  
+3. 각 (domain, slot) 쌍을 continuous representation $$z_{ds}$$으로 인코딩하여 decoder 의 input 으로 사용한다. 
 $$z_{ds}$$ 는 디코딩 프로세스에서 slot 과 fertility 예측을 위한 맥락(상황, contextual) 신호를 저장하는데 사용된다.  
+<center>$$z_{ds} \in \mathbb{R}^{d}$$</center>  
 
+인코딩된 dialogue history *Z* 를 메모리에 저장한다.
+*Z* 는 dialogue state 생성시 단어 복사를 하기 위해 포인터 네트워크(pointer network)로 전달된다. 
+이는 OOV(out of vocabulary) 문제 해결에 도움이 된다.  
 
 ### Context Encoder
 
@@ -212,8 +212,8 @@ $$z_{ds}$$ 는 디코딩 프로세스에서 slot 과 fertility 예측을 위한 
 
 context encoder 는 토큰 수준의 학습가능한 임베딩 레이어와 layer normalization을 포함하고 있다. 또한 사인, 코사인 함수를 따르는 위치 인코딩 레이어도 가지고 있다.
 토큰 수준의 벡터들과 위치 인코딩 벡터들을 결합시킬 때 요소별 합산(element-wise summation)을 사용한다.  
-raw dialogue history 와 dexicalized dialogue history 를 임베딩하기 위해 임베딩 가중치를 공유한다.
-또한 임베딩 가중치는 fertility decoder 와 state decoder 모두의 입력값으로 인코딩하기 위해 공유되는 것이다. 
+dialogue history 와 dexicalized dialogue history 를 임베딩하기 위해 임베딩 가중치를 공유한다.
+또한 임베딩 가중치는 fertility decoder 와 state decoder 모두의 입력값으로 인코딩하기 위해서도 공유된다.  
 $$X$$ 와 $$X_{del}$$의 마지막 임베딩은 다음과 같이 정의된다.  
 <center>PE = positional embedding</center>  
 <center>$$ Z = Z_{emb} + PE(X) \in \mathbb{R}^{N \times d} $$</center>  
@@ -223,12 +223,13 @@ $$X$$ 와 $$X_{del}$$의 마지막 임베딩은 다음과 같이 정의된다.
 ### Domain and Slot Encoder
 
 각 (domain, slot) 쌍은 대응하는 domain 과 slot 의 두 개의 분리된 임베딩 벡터를 사용해서 인코딩된다. 
-각 domain *g*와 slot *h* 가 continuous representation 으로 임베딩된 것을 $$ z_{d_g} /text{ 와 } z_{s_h} \in \mathbb{R}^d $$ 라고 한다.
+각 domain *g*와 slot *h* 가 continuous representation 으로 임베딩된 것을 $$ z_{d_g} \text{ 와 } z_{s_h} $$ 라고 한다. ($$z_{d_g}, z_{s_h}\in \mathbb{R}^d $$)
 최종 벡터는 요소별 합(element-wise summation)으로 결합되며 다음과 같다:  
 <center> $$ z_{d_g, s_h} = z_{d_g} + z_{s_h} \in \mathbb{R}^d $$ </center>
 
 앞서 말했듯이, domain 과 slot 토큰을 임베딩하기 위해 임베딩 가중치를 2개의 디코더에서 공유한다. 
-하지만 state decoder 의 input 의 경우, 순차적 정보를 입력값인 $$X_{ds \times fert}$$ 에 주입하여 위치별 정보를 target state sequence 를 디코딩할 때 요소로 사용한다.
+하지만 state decoder 의 input 의 경우, 순차적 정보를 입력값인 $$X_{ds \times fert}$$ 에 주입한다.
+target state sequence 를 디코딩하기 위해 위치별 정보를 요소로 사용한다.
 
 ![domain_slot_encoder](../assets/img/post/20200419-NADST/domain_slot_encoder.png)
 
@@ -236,6 +237,7 @@ $$X$$ 와 $$X_{del}$$의 마지막 임베딩은 다음과 같이 정의된다.
 전형적인 transformer decoder 의 입력값과 다른 점은 non-autoregressive 디코딩 프로세스에서 fertility decoder 및 state decoder 의 입력 시퀀스를 이동(shift)하지 않았다는 것이다.
 즉, 모든 결과 토큰은 위치 i 를 기반으로 한다.(i-1이나 i+1이 아니라)    
 
+# 여기까지 점검했음.
 
 ## 3.2 Fertility Decoder
 
