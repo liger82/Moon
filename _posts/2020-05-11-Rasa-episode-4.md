@@ -3,7 +3,7 @@ layout: post
 title: "Rasa Masterclass Episode 4 : Pipeline components"
 date: 2020-05-11
 excerpt: ""
-tags : [virtual assistant, chatbot, Rasa, 챗봇, tutorial, pipeline, training, test, pre-configured pipelines]
+tags : [virtual assistant, chatbot, Rasa, 챗봇, tutorial, pipeline, training, test, component]
 comments: true
 ---
 
@@ -137,9 +137,13 @@ featurizer 와 intent classifier 에 어떤 옵션들이 있는지 살펴본다.
         - SVM 모델은 관찰된 텍스트 feature 에 근거하여 사용자 입력값의 인텐트를 예측한다.
 
 
-두 개의 사전 구성 파이프라인에 맞는 옵셔들은 다음과 같다.  
+두 개의 사전 구성 파이프라인에 맞는 옵션들은 다음과 같다.  
 
 ![summary](../assets/img/post/20200511-rasa-episode4/table_summary.png)
+
+위에 정리한 내용들은 라사가 지니고 있는 일부 component 이다. 아래 사이트에서 더 많은 component 를 찾아볼 수 있다.
+
+[component](https://rasa.com/docs/rasa/nlu/components/){:target="_blank"}
 
 
 # FAQ
