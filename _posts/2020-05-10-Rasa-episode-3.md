@@ -67,16 +67,24 @@ custom training pipeline 은 에피소드 4에서 다룰 예정이다.
 파이프라인은 config.yml 파일에서 정의된다. 이 파일은 rasa project 를 만들 때 *rasa init* 이라는 명령어를 칠 경우
 프로젝트와 함께 생성된다. 
 
-supervised_embeddings pipeline 을 만들려면 config.yml 에 다음과 같이 쓰면 된다.
+이 챕터에서는 supervised_embeddings pipeline 을 만들려면 config.yml 에 다음과 같이 쓰면 된다고 하는데
+공식 문서에서 아래 기능은 pipeline template 이라고 하며 deprecated 되었다고 한다.
+지금 당장 작동하더라도 pipeline template 은 권하지 않는다. 
 
 ```
 language: "en"
 pipeline: "supervised_embeddings"
 ```
 
+현 시점에서 파이프라인 상세 구성은 무리이니, 플젝 생성될 때 있던 것을 사용하자.
+
 그 다음 (rasa 관련 가상환경을 사용했다면 활성화하고) rasa repository 에서 *rasa train nlu* 라고 명령어를 치면 학습이 시작된다.
 후에 *models* 라는 디렉토리에 모델이 저장된다.
 
+nlu 모델 뿐만 아니라 전체를 학습할 때는 다음과 같이 명령어를 입력하면 된다.
+>rasa train
+
+두 학습의 결과는 모델에서 떨어지는 이름이 조금 차이가 있다. nlu 를 붙이면 모델 이름에 nlu 가 붙어서 나온다.
 
 # Testing the Model
 
@@ -85,11 +93,13 @@ pipeline: "supervised_embeddings"
 
 ![testingthemodel](../assets/img/post/20200510-rasa-episode3/testing_model.png)
 
+상세 분석이 되지 않고 응답만 나오게 하고 싶을 경우는 
+>rasa shell
 
 # 마무리
 
 이번 포스트에서는 사전에 정의되어 있는 파이프라인을 등록하고 테스트 해보는 과정을 진행해보았다.
-다음에는 파이프라인 구성요소를 바꾸어 커스텀 모델을 만드는 것을 다루도록 하겠다.
+다음에는 파이프라인을 구성해보기 전에 component 에 어떤 것들이 있는지 다루도록 하겠다.
 
 
 # References

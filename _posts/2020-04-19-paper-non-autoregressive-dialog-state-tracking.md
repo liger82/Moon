@@ -237,29 +237,34 @@ target state sequence 를 디코딩하기 위해 위치별 정보를 요소로 �
 전형적인 transformer decoder 의 입력값과 다른 점은 non-autoregressive 디코딩 프로세스에서 fertility decoder 및 state decoder 의 입력 시퀀스를 이동(shift)하지 않았다는 것이다.
 즉, 모든 결과 토큰은 위치 i 를 기반으로 한다.(i-1이나 i+1이 아니라)    
 
-# 여기까지 점검했음.
 
 ## 3.2 Fertility Decoder
 
-$$Z$$ (인코딩된 dialogue history), $$Z_{del}$$ (인코딩된 delexicalized dialogue history), $$Z_{ds}$$ (인코딩된 (domain, slot) 쌍)이 주어진 상황에서
-맥락(contextual) 신호는 학습되어 각 $$z_{ds}$$ 벡터로 attention layer 의 시퀀스를 통해 전달된다.
+$$Z$$ (인코딩된 dialogue history), $$Z_{del}$$ (인코딩된 partially delexicalized dialogue history), $$Z_{ds}$$ (인코딩된 (domain, slot) 쌍)이 주어진 상황에서 맥락(contextual) 신호는 학습되고 attention layer 의 시퀀스를 통해 각 $$z_{ds}$$ 벡터로 전달된다.
 representations 를 multiple sub-spaces 에 투영하고자 multi-head attention mechanism 을 도입하였다. 
 attention mechanism 은 query(Q), key(K), value(V) 사이에서 scaled dot-product attention 으로 정의된다.
 
 ![attention1](../assets/img/post/20200419-NADST/attention1.png)
 
 각 multi-head attention 은 position-wise feed-forward network 를 따른다. feed-forward 는 각 위치에 동일하게 적용되었다. 
-두 개의 선형 레이어를 그 사이에 ReLU 활성화 함수와 함께 사용했다. fertility decoder 는 3개의 attention layer 로 구성되며, 각 레이어는 관련 맥락 신호를 학습하고
-다음 attention 레이어에 대한 입력으로 맥락 신호들을 $$z_{ds}$$ 벡터에 통합한다. 
+두 개의 선형 레이어를 그 사이에 ReLU 활성화 함수와 함께 사용했다. fertility decoder 는 3개의 attention layer 로 구성되며, 
+각 레이어는 관련 맥락 신호를 학습하고 맥락 신호들을 $$z_{ds}$$ 벡터에 통합한다. 
+다음 attention 레이어에 대한 입력으로 이전 레이어의 출력값인 $$ Z^{out}_{ds}$$ 를 사용한다.
 
 ![attention2](../assets/img/post/20200419-NADST/attention2.png)
 
-attention mechanism 을 이 모델에 적용하기 위해 연구자들은 모델이 명백하게 (1) 첫 번째 attention layer 에서 (domain, slot) 쌍들 간에 잠재적 의존성과
+attention mechanism 을 이 모델에 적용하기 위해 연구자들은 모델이 명백하게 (1) 첫 번째 attention layer 에서부터 (domain, slot) 쌍들 간에 잠재적 의존성과
 (2) 뒤이은 attention layer 들에서 맥락 의존성의 신호를 얻도록 하였다.  
 입력값으로 delexicalized dialogue history 를 추가한 것은 중요한 맥락 신호를 줄 수 있다. 
 모델이 real-value tokens 와 generalized domain-slot tokens 사이의 매핑을 학습할 수 있기 때문이다.
 이러한 의존성들을 더 잘 잡아내기 위해, $$ Z_{ds}^{T_{fert}}$$ 만큼 attention sequence 를 반복한다.
-attention 의 현재 단계를 t 라 할 때, 이전 attention layer(t-1) 에서 오는 결과는 $$Z_{ds}^{t}$$를 계산하기 위해 현재 레이어의 입력값으로 쓰인다.  
+
+>comment : 이미 attention 에서 가중치값을 계산할 때 중요한 값에는 가중치를 크게 하는데 여기서는 직접적으로 fertility 값을 계산하여
+>fertility 만큼 반복해서 의미적, 관계적 강화를 꾀한다고 볼 수 있다.
+
+attention 의 현재 단계를 t 라 할 때, 이전 attention layer(t-1) 에서 오는 출력값인 $$Z_{ds}^{t-1}$$은 $$Z_{ds}^{t}$$를 계산하기 위해 
+현재 레이어의 입력값으로 쓰인다.  
+
 마지막 attention layer($$ Z_{ds}^{T_{fert}}$$)에서 출력값은 fertility 와 gate 값을 예측하기 위해 
 두 개의 독립적인 선형 변환을 거친다. 손실함수는 표준의 cross-entropy 를 사용했다.
    
