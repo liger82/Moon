@@ -95,9 +95,6 @@ templates 는 어시스턴트의 텍스트 형태의 반응만 기록하는 곳�
 
 ![templates](../assets/img/post/20200523-rasa-episode5/templates.png)
 
-domain.yml 파일에 entity 를 인텐트처럼 목록화하는 것이 가능하다. 다만 하지 않아도 작동하여 다른 기능이 있지
-않은 이상은 사용하지 않을 예정이다.
-
 
 # Custom Action in Rasa
 
@@ -148,17 +145,163 @@ class ActionHelloWorld(Action):
 
 # Slots in Rasa
 
+domain file 에서 또 다른 중요한 요소이자 특히 대화 관리에서 중요한 것이 *slots* 다.
+slots 은 어시스턴트의 메모리로 기능하고, 대화를 통해 나온 중요한 세부사항을 기억하고 대화를 움직이는 데 사용된다.
+slots 은 key-value 형태로 대화 간 중요한 정보를 저장한다. 정보는 다음 경로로 제공된다.
+1. 사용자로부터 나온 entity value
+2. 대화 밖(예를들어 DB)에서 가져온 정보
+    - 해당 지역의 날씨 api 를 통해 얻은 날씨 정보
+
+사용자가 병원 위치를 물어봤을 때("병원이 어디있어요?"), 어느 지역("location" entity)인지는 말해주지 않았을 때,
+어시스턴트는 병원 위치 검색 전에 지역에 대해 물어본다. Rasa 에서는 이 부분을 slots 으로 구현했다. 
+
+domain.yml 파일에 entity 를 인텐트처럼 목록화하는 것이 가능하다. 여기서 entities 를 작성하는 것은 slot 과 관련이 있다.
+slot 으로 활용될 entity 의 경우 도메인 파일에 목록화하는 것을 원칙으로 한다. 
+
+![slots](../assets/img/post/20200523-rasa-episode5/slot.png)
+
+slot 은 slot name 과 slot type 으로 구성된다. 
+entity 에서 가져온 slot 이 1번 유형에 해당한다.
+예시에서 "address"는 대화 밖에서 가져온 2번 유형에 해당한다. 
+
+entities는 작성하지 않아도 작동은 한다. 다음과 같은 warning 이 나오긴 한다.
+
+![user_warnings](../assets/img/post/20200523-rasa-episode5/userWarning.png)
+
+entity 의 경우 slot 으로 저장되면 bot response 로 바로 활용할 수 있다.
+
+```markdown
+  utter_ask_location:
+  - text: "Can you provide your location please?"
+  - text: "To find the nearest {facility_type} I need your address."
+```
+
+## Slot Types
+
+1. text
+2. bool : true or false
+3. categorical
+    - 범주형은 정보가 유한할 때 유용하다.
+    - low, medium, high 의 class 가 있을 때
+    ```markdown
+       slots:
+           risk_level:
+              type: categorical
+              values:
+              - low
+              - medium
+              - high
+    ```
+4. float
+5. list
+6. unfeaturized
+    - 슬롯을 사용하여 정보를 추출하여 저장하지만 대화를 주도하지 않을 때 유용하다.
+    - 슬롯의 value도, 채워졌는지 여부도 대화관리 모델의 예측에 영향을 미치지 않는다.
+
+## Action server
+
+시설 위치를 검색하는 action, "**action_facility_search**"를 살펴보자.
+
+```python
+from typing import Any, Text, Dict, List
+
+from rasa_sdk import Action, Tracker
+from rasa_sdk.executor import CollectingDispatcher
+from rasa_sdk.events import SlotSet
 
 
+class ActionFacilitySearch(Action):
+
+    def name(self) -> Text:
+        return "action_facility_search"
+
+    def run(self, dispatcher: CollectingDispatcher,
+            tracker: Tracker,
+            domain: Dict[Text, Any]) -> List[Dict[Text, Any]]:
+
+        facility = tracker.get_slot("facility_type")
+        location = tracker.get_slot("location")
+        address = "300 Hyde St, San Francisco"
+        dispatcher.utter_message("Here is the address of the {}:{}".format(facility, address))
+
+        return [SlotSet("address", address)]
+
+```
+
+실제 서비스 시에는 address 를 찾는 것을 따로 구현해야 하지만 여기선 그부분이 중요한 것은 아니라서 하드코딩했다.
+앞서 말했듯이 tracker 가 그 대화 시점의 slots 정보를 가지고 있다. tracker 의 get_slot() 을 이용하여 facility, location 정보를 변수에 할당한다.
+address 는 facility, location 정보에 근거하여 외부 DB에서 추출한다.  
+dispatcher.utter_message() 로 응답을 하고, address 값을 slot 에 저장하는 것으로 반환값을 지정한다.   
+
+# Resetting Slots
+
+slot values 는 reset 전까지 메모리에 유지된다. NLU model 에 의해 추출되는 slot 의 경우 매번 업데이트되고 custom action 의 경우도 그렇다.
+
+모든 slot 을 리셋하고 싶을 때는 두 줄만 바꾸면 된다. AllSlotsReset 을 import 하고, run()의 반환값으로 [AllSlotsReset()] 을 지정한다.
+
+```python
+from rasa_sdk.events import AllSlotsReset
+
+class ActionHelloWorld(Action):
+
+     def name(self) -> Text:
+            return "action_hello_world"
+
+     def run(self, dispatcher: CollectingDispatcher,
+             tracker: Tracker,
+             domain: Dict[Text, Any]) -> List[Dict[Text, Any]]:
+
+         dispatcher.utter_message("Hello World!")
+
+         return [AllSlotsReset()]
+```
+
+특정한 slot 만 리셋하고 싶을 때는 반환값을 아래처럼 지정한다.
+>return [SlotSet("slot_name", None)]
+
+# Session Configuration
+
+대화 세션은 3가지로 시작될 수 있다.
+1. 사용자가 어시스턴트와 대화를 시작
+2. 구성가능한 비활성화 기간 이후 사용자가 메시지를 보냄
+3. "/session_start" 라고 입력
+
+session configuration 은 도메인 파일에서 정의되며 다음과 같다.
+```markdown
+session_config:
+  session_expiration_time: 60  # value in minutes, 0 means infinitely long
+  carry_over_slots_to_new_session: true  # set to false to forget slots between sessions
+``` 
+
+session_expiration_time 은 세션 만료 시간을 의미하며 단위는 분이다.  
+carry_over_slots_to_new_session true 로 하면 세션이 바뀌어도 slot 정보를 가져간다.
 
 
+# Train & Test
 
+custom action 을 사용하려면 다시 학습이 필요하다. 또한 endpoints.yml 파일에서 action_endpoint 부분의 주석을 풀어준다.
 
+![endpoint](../assets/img/post/20200523-rasa-episode5/action_endpoints%20yml.png)
 
+1. 학습
+    >rasa train
+
+2. custom action server 켜기
+    >rasa run actions
+
+3. 별도의 terminal에서 load assistant
+    >rasa shell
+
+test 화면이다.
+
+![test](../assets/img/post/20200523-rasa-episode5/test.png)
+
+다음 포스트에서는 대화의 정책에 대해 알아보도록 하겠다.
 
 
 # References
 
 * [https://blog.rasa.com/the-rasa-masterclass-handbook-episode-5/](https://blog.rasa.com/the-rasa-masterclass-handbook-episode-5/){:target="_blank"}
 * [https://blog.rasa.com/the-rasa-masterclass-handbook-episode-6-2/](https://blog.rasa.com/the-rasa-masterclass-handbook-episode-6-2/){:target="_blank"}
+* [https://rasa.com/docs/rasa/core/domains/](https://rasa.com/docs/rasa/core/domains/){:target="_blank"}
 
