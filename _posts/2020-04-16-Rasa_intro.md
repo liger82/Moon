@@ -157,10 +157,11 @@ rasa에서는 두 종류의 training data format를 지원하고 있습니다.
     * 라사용 md, json 파일 간에도 변환 가능
     * command
 
-```shell script
+```
     $rasa data convert nlu --data path/to/inputdata --out path/to/outputdata -f json or md
     
     $rasa data convert nlu --data nlu.md --out nlu.json -f json   
+
 ```
    
 
