@@ -223,7 +223,9 @@ pipeline:
 
 인텐트가 분리된 예시이다. chitchat 단일의 인텐트를 입력하지 않았고, chitchat/ask_age 로 입력했었다. 
 
-```shell script
+
+```
+
 NLU model loaded. Type a message and press enter to parse it.
 Next message:
 몇 살이니?
