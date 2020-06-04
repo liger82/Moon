@@ -40,10 +40,10 @@ comments: true
 * HFTransformersNLP
     - 사전학습 모델 기반의 HuggingFace 의 transformers 초기화 컴포넌트입니다.
     - 맨 처음에 쓰여져야 함.
-    - 설치 command
+    - 설치 command  
     ```shell script
     $ pip install rasa[transformers]
-    ```
+    ```  
     - *LanguageModelTokenizer* 와 *LanguageModelFeaturizer*를 함께 사용함.
     - 사전학습 모델을 선택 가능
         - options
