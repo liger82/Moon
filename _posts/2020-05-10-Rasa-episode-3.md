@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "Rasa Masterclass Episode 3 : Pre-configured pipelines"
+title: "Rasa Masterclass Episode 3 : Pre-configured pipelines(Pipeline Templates - deprecated)"
 date: 2020-05-10
 excerpt: ""
 tags : [virtual assistant, chatbot, Rasa, 챗봇, tutorial, pipeline, training, test, pre-configured pipelines]
@@ -8,7 +8,8 @@ comments: true
 ---
 
 nlu 모델 학습을 위한 파이프라인 구성에 대해 알아보겠습니다.
-
+라사 공식문서에 따르면 사전 구성된 파이프라인을 pipeline templates 라고 하는데 이 기능은 1.8 버전에서 deprecated 되었다고 나옵니다.
+바로 챕터 4를 보시는 게 낫습니다.
 
 # 주요 개념들
 
@@ -17,13 +18,12 @@ nlu 모델 학습을 위한 파이프라인 구성에 대해 알아보겠습니�
 text input 으로부터 의미를 추출하기 위해 사용되는 모델.
 앞선 에피소드에서 인텐트와 엔티티가 포함된 labeled 데이터를 어떻게 만드는지 살펴보았다.
 그 데이터에서 nlu model 을 학습시켜서 새로운 메시지에 대해서 인텐트와 엔티티를 예측하도록 한다.
-심지어 그 메시지가 모델이 사전에 학습하지 않았더라도 가능하도록 한다.
+그 메시지가 모델이 사전에 학습하지 않은 입력값이라도 대응할 수 있도록 한다.
 
 
 ### Training pipeline
 
-nlu model 은 training pipeline 에 의해 만들어진다. training pipeline 은 학습 데이터에 내재된 패턴들을 학습하도록
-하는 일련의 과정이다. 
+nlu model 은 training pipeline 에 의해 만들어진다. training pipeline 에 따라 학습 데이터에 내재된 패턴들을 학습한다. 
 
 다음 에피소드에서 개별 파이프라인의 내부적인 작동 원리를 알아보고 
 이 시간에는 두 개의 사전 설계된 파이프라인에 집중한다(따로 설치할 필요없음)
