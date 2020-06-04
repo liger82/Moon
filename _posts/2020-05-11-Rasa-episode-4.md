@@ -54,7 +54,7 @@ comments: true
             - XLNet : xlnet
             - DistilBERT : distilbert
             - RoBERTa : roberta
-        - pipeline example
+        - pipeline example  
         ```markdown
         pipeline:
           - name: HFTransformersNLP
