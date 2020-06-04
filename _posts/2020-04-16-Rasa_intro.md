@@ -123,7 +123,7 @@ rasa에서는 두 종류의 training data format를 지원하고 있습니다.
     * synonym 의 경우 SynonymMapper 라는 컴포넌트에서 사용하는데 분류의 성능을 높여주진 않는다.
         * synonym 으로만 등록할 경우에는 본래 엔티티를 추출했을 때 이를 synonym으로 치환하는 효과만 있음.
         * 파이프라인 구성할 때도 엔티티 추출 컴포넌트 뒤에 놓는다.
-    * 정규식의 경우 CRFEntityExtractor 라는 컴포넌트를 도와주는 역할로만 사용됨.
+    * 정규식의 경우 CRFEntityExtractor 와 DIET classfier 의 엔티티 추출을 도와주는 역할로 사용.
         * 만약 exact match 방식으로 추출하고 싶으면 따로 컴포넌트를 만들어서 하라고 함.
     * lookup table 기능은 entity 를 외부 텍스트 파일에 저장하여 사용할 수 있는 기능 
         * entity 가 nlu 데이터에 포함되어 있어야 작동함
@@ -175,7 +175,6 @@ rasa에서는 두 종류의 training data format를 지원하고 있습니다.
 #### 한글일 때 유의사항
 * 엔티티 name 은 한글이 안 된다. 영어로 해야 한다.
     * 제가 테스트한 결과는 CRFEntityExtractor 가 sklearn 을 사용하는데 여기서 한글 entity name 이면 에러가 발생함.
-    * DIET 에도 CRF 가 있어서 엔티티 추출이 되지만, 정규식이 CRFEntityExtractor 에서만 사용 가능해서 tradeoff 상황임.
 * 인텐트는 name 에도 한글이 지정된다.
 
 

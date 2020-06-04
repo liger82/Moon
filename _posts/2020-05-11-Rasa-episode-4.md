@@ -27,12 +27,40 @@ comments: true
 
 ![twopipelines](../assets/img/post/20200511-rasa-episode4/twopreconfiguredpipelines.png)
 
-## SpacyNLP
+## Word Vector Sources 
 
-*pretrained_embeddings_spacy* pipeline 은 Spacy 언어 모델을 로드하기 위해 SpacyNLP component 를 사용한다.
-spaCy pretrained embeddings 를 사용하는 파이프라인에서만 SpacyNLP 를 사용할 수 있다. 그리고 파이프라인 맨 처음에 쓰여져야 한다.
+* SpacyNLP
+    - *pretrained_embeddings_spacy* pipeline 은 Spacy 언어 모델을 로드하기 위해 SpacyNLP component 를 사용한다. 
+    spaCy pretrained embeddings 를 사용하는 파이프라인에서만 SpacyNLP 를 사용할 수 있다. 그리고 파이프라인 맨 처음에 쓰여져야 한다.
+    - 지원하는 언어에서만 사용 가능하다.
+        - 영어, 독일어, 불어, 스페인어, 포르투갈어, 이태리어, 네덜란드어, 그리스어, 리투아니아어, 노르웨이어
+            - 향후 늘어날 수도 있으니 확인 바람.
+        - 한글 지원 안 됨.
 
-
+* HFTransformersNLP
+    - 사전학습 모델 기반의 HuggingFace 의 transformers 초기화 컴포넌트입니다.
+    - 맨 처음에 쓰여져야 함.
+    - 설치 command
+    ```shell script
+    $ pip install rasa[transformers]
+    ```
+    - *LanguageModelTokenizer* 와 *LanguageModelFeaturizer*를 함께 사용함.
+    - 사전학습 모델을 선택 가능
+        - options
+            - Language Model : parameter "model_name"
+            - BERT : bert (default)
+            - GPT : gpt
+            - GPT-2 : gpt2
+            - XLNet : xlnet
+            - DistilBERT : distilbert
+            - RoBERTa : roberta
+        - pipeline example
+        ```markdown
+        pipeline:
+          - name: HFTransformersNLP
+            model_name: 'bert'
+        ```
+    
 ## Tokenizer
 
 토크나이저는 텍스트 흐름을 입력으로 받아서 작은 청크나 토큰으로 쪼개는 일을 한다. 토크나이저는 주로 파이프라인의 첫 번째 단계에 나온다.
@@ -50,7 +78,22 @@ spaCy pretrained embeddings 를 사용하는 파이프라인에서만 SpacyNLP �
 * SpacyTokenizer
     - spaCy 를 사용하면 함께 사용하는 토크나이저로 각 언어에 맞는 룰을 적용한다.
     - pre-trained embeddings 를 사용할 때 유용하다.
+    
+* ConveRTTokenizer
+    - ConveRT model 사용을 위한 토크나이저
+    - ConveRT 가 라사에서는 영어만 지원하기 때문에 언어가 영어여야 함.
 
+### 특이점 : intent 분리 기능
+* 파이프라인에서 토크나이저 이름 아래에 다음 두 개를 추가하면 인텐트를 분리할 수 있다.
+
+```markdown
+pipeline:
+- name: "WhitespaceTokenizer"
+  # Flag to check whether to split intents
+  "intent_tokenization_flag": True
+  # Symbol on which intent should be split
+  "intent_split_symbol": "_"
+```
 
 ## Named Entity Recognition (NER)
 
@@ -97,6 +140,8 @@ featurizer 와 intent classifier 에 어떤 옵션들이 있는지 살펴본다.
 
 ### Featurizers
 
+Text Featurizer 는 크게 두 개로 나뉜다. spare featurizers, dense featurizers 이다. 
+일부 소개하면 다음과 같다.
 
 * CountVectorsFeaturizer
 ![bow](../assets/img/post/20200511-rasa-episode4/bow.png)
@@ -115,7 +160,10 @@ featurizer 와 intent classifier 에 어떤 옵션들이 있는지 살펴본다.
 * SpacyFeaturizer
     - pre-trained embeddings 를 쓸 때 사용
     - 각 토큰에 대해 spaCy word vectors 를 반환한다
-        - 그 이후에 인텐트 분류를 위한 SklearnIntent Classifier 를 통과시킨다.
+    - 지원하는 언어에서만 사용 가능하다.
+        - 영어, 독일어, 불어, 스페인어, 포르투갈어, 이태리어, 네덜란드어, 그리스어, 리투아니아어, 노르웨이어
+            - 향후 늘어날 수도 있으니 확인 바람.
+        - 한글 지원 안 됨.
         
         
 ### Intent Classifiers
@@ -159,7 +207,7 @@ featurizer 는 intent classifier 이전에 와야 한다.
 (클래스 불균형은 학습 데이터 일부 인텐트가 다른 것들보다 많은 예시를 가지고 있는 것을 말한다.)
 
 A. 그렇다! 클래스 불균형은 모델 성능에 영향을 미친다. 이 문제를 완화시키기 위해서 
-라사의 supervised_embeddings 파이프라인은 balanced batching strategy 를 사용한다.
+라사는 기본으로 balanced batching strategy 를 사용한다.
 이 알고리즘은 데이터셋을 균형적으로 만들기 위해 배치들에 클래스를 분배한다.
 희귀한 클래스의 oversampling 과 자주 등장하는 클래스의 undersampling 을 막기 위해, 
 전체 데이터 세트의 상대적인 예시 개수와 대략 비례하게 배치당 예시 수를 유지한다.
@@ -185,11 +233,11 @@ NLU 의 관점에서 보면, 이 메세지들은 엔티티가 다른 것을 제�
 
 하나의 단어 입력값으로부터 엔티티를 추출하는 것은 아직도 도전적인 문제이다. 
 가장 좋은 해결책은 특정한 인텐트를 만드는 것이다. 예를 들어, "알리다"는 사용자가 정보를 제공한다는 의미로 여러 도메인에서 "알리다"의 입력값은
-하나의 단어로  
+하나의 단어로 구성될 수도 있다.
 
 ### Q. 파이프라인에 인텐트 분류기를 2 개 이상 추가할 수 있는가?
 
-기술적으로 그렇지만 실질적인 이득이 없다. 마지막 인텐트 분류 모델의 예측이 항상 결과로 표현될 것이기 때문이다.
+기술적으로 가능하지만 실질적인 이득이 없다. 마지막 인텐트 분류 모델의 예측이 항상 결과로 표현될 것이기 때문이다.
 
 ### Q. 유저의 오타를 어떻게 처리해야 되는가
 
