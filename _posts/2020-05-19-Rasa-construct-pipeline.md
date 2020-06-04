@@ -221,8 +221,7 @@ pipeline:
  
 즉, 구분자를 / 으로 하면 되었다. 파이프라인에서 설정하지 않아도.
 
-인텐트가 분리된 예시이다. chitchat 단일의 인텐트를 입력하지 않았고, chitchat/ask_age 로 입력했었다. 
-
+인텐트가 분리된 예시이다. chitchat 단일의 인텐트를 입력하지 않았고, chitchat/ask_age 로 입력했었다.  
 
 ```
 
@@ -302,7 +301,7 @@ WhitespaceTokenizer 에서 안 되는 것은 에러가 있는 듯 하다.
 데이터 양에 편향이 있을 수 있다. 라사에서는 이를 교정하기 위해 balanced batch strategy 를 기본으로 실시하고 있다.
 즉, 파이프라인에서 특별히 설정하지 않아도 작동한다. balanced batch strategy 는 배치 단위로 학습을 하여 
 데이터가 적은 클래스도 배치에 고루 분포되게 한다. 다만 데이터의 비율 자체도 의미가 있을 수 있기 때문에 이는 유지한다.
-이 전략을 사용하고 싶지 않을 때는 다음과 같이 config.yml 에서 설정하면 된다.
+이 전략을 사용하고 싶지 않을 때는 다음과 같이 config.yml 에서 설정하면 된다.  
 
 ```yaml
 language: "en"
@@ -316,7 +315,7 @@ pipeline:
 # Comparing Pipelines
 
 앞선 여러 컴포넌트를 구성하는 과정에서도 테스트가 필요하지만 완성 후에도 성능 테스트가 필요하다.
-라사에서는 파이프라인 비교 툴을 제공한다. 
+라사에서는 파이프라인 비교 툴을 제공한다.  
 
 ```shell script
 $ rasa test nlu --config pretrained_embeddings_spacy.yml supervised_embeddings.yml
