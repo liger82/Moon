@@ -317,9 +317,8 @@ pipeline:
 앞선 여러 컴포넌트를 구성하는 과정에서도 테스트가 필요하지만 완성 후에도 성능 테스트가 필요하다.
 라사에서는 파이프라인 비교 툴을 제공한다.  
 
-```shell script
-$ rasa test nlu --config pretrained_embeddings_spacy.yml supervised_embeddings.yml
-  --nlu data/nlu.md --runs 3 --percentages 0 25 50 70 90
+```
+$rasa test nlu --config pretrained_embeddings_spacy.yml supervised_embeddings.yml --nlu data/nlu.md --runs 3 --percentages 0 25 50 70 90
 ```
 
 nlu.md(학습 데이터 파일)의 데이터를 학습/테스트 셋으로 나누어서 진행한다. percentages 뒤에 수치들이 테스트셋의 비율이다.
