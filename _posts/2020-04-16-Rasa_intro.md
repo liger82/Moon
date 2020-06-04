@@ -156,12 +156,13 @@ rasa에서는 두 종류의 training data format를 지원하고 있습니다.
     * LUIS(ms chatbot), WIT, Dialogflow 파일을 라사용 포맷으로 변경 가능
     * 라사용 md, json 파일 간에도 변환 가능
     * command
-    ```shell script
+    
+```shell script
     $rasa data convert nlu --data path/to/inputdata --out path/to/outputdata -f json or md
     
     # 예시
     $rasa data convert nlu --data nlu.md --out nlu.json -f json   
-    ```
+```
    
 
 ### Training data를 만들 때 유의사항
@@ -215,9 +216,9 @@ story는 기본적으로 다음과 같이 구성됩니다.
 
 ```
 
-어시스턴트의 action은 API를 콜하는 것을 포함해서 정의하는 바에 따라 모든 행동을 할 수 있습니다.
+어시스턴트의 action은 API를 콜하는 것을 포함해서 정의하는 바에 따라 모든 행동을 할 수 있습니다.  
 action 의 경우 naming 규칙이 있습니다. 단순 텍스트 응답이면 "utter_" 를 접두어로 붙여야 하고, 
-그게 아닐 경우에는 제한이 없으나 "action_" 을 붙이는 것을 권고합니다. 
+그게 아닐 경우에는 제한이 없으나 "action_" 을 붙이는 것을 권고합니다.  
 또한 domain.yml 에서 정의된 이름이랑 동일해야 합니다. 
 
 story 에 대해 더 자세히 알고 싶으면 [여기](https://rasa.com/docs/rasa/core/stories/#stories){:target="_blank"}를 눌러주세요
@@ -230,7 +231,7 @@ domain은 어시스턴트가 있는 세상이라고 표현합니다. 기본적�
 * action : 어시스턴트가 행동하거나 말할 수 있는 것
 * responses : 액션의 구체적인 내용, template 이라고 전에는 부른 듯함.
 
-템플릿에서 이미지도 url로 올릴 수 있고 custom action도 endpoints.yml에 url 등록해놓으면 api도 콜할 수 있습니다.
+responses 에서 이미지도 url로 올릴 수 있고 custom action도 endpoints.yml 에 url 등록해놓으면 api 도 콜할 수 있습니다.
 
 예시는 다음과 같습니다.
 
