@@ -10,7 +10,9 @@ comments: true
 Rasa는 텍스트와 음성에 기반한 챗봇을 만들고 deploy 할 수 있는 Open source ML tool 입니다.
 다른 오픈소스에 비해 참고할 만한 자료가 많고 개발자를 위한 준비도 많이 되어 있다는 느낌이 듭니다.
 
-라사에서 제공하는 마스터클래스 영상과 자료를 참고하여 라사에 대해 알아보겠습니다.
+라사에서 제공하는 마스터클래스 영상과 자료를 참고하였습니다.
+
+이 글에서는 개괄적으로 라사를 살펴보면서 제가 실제로 써보면서 느낀 점이나 특이사항에 대해 다뤄보도록 하겠습니다.
 
 라사에서는 AI assistant 를 그 능력에 따라 5단계로 구분합니다.
 
@@ -103,7 +105,7 @@ Y 를 누르면 대화를 할 수 있습니다.
 
 ![setup_files](../assets/img/post/20200416-rasa/setupfiles.png)
 
-여기서 인텐트와 엔티를 담고 있는 것이 *data/nlu.md* 파일입니다.
+여기서 인텐트와 엔티티를 담고 있는 것이 *data/nlu.md* 파일입니다.
 내용을 보면 아래 형식처럼 되어 있습니다.
 
 ![nlu.md](../assets/img/post/20200416-rasa/intent.png)
@@ -116,7 +118,16 @@ rasa에서는 두 종류의 training data format를 지원하고 있습니다.
     * 사람이 쓰고 읽기 편한 포맷
     * '*', '-', '+'를 사용한 unordered list로 예시를 작성
     * intent와 entity로 그룹지을 수 있음 
-    * 예시에서도 entity를 명명할 수 있음, e.g. \[entity\](entity_name)
+    * intent의 예시에서 entity를 명명할 수 있음, e.g. \[entity_value\](entity_name)
+        * entity_name 에 entity_value 를 2개 이상 작성하는게 분류에 도움이 된다고 나옴.
+    * synonym 의 경우 SynonymMapper 라는 컴포넌트에서 사용하는데 분류의 성능을 높여주진 않는다.
+        * synonym 으로만 등록할 경우에는 본래 엔티티를 추출했을 때 이를 synonym으로 치환하는 효과만 있음.
+        * 파이프라인 구성할 때도 엔티티 추출 컴포넌트 뒤에 놓는다.
+    * 정규식의 경우 CRFEntityExtractor 라는 컴포넌트를 도와주는 역할로만 사용됨.
+        * 만약 exact match 방식으로 추출하고 싶으면 따로 컴포넌트를 만들어서 하라고 함.
+    * lookup table 기능은 entity 를 외부 텍스트 파일에 저장하여 사용할 수 있는 기능 
+        * entity 가 nlu 데이터에 포함되어 있어야 작동함
+        * nlu 데이터에 2~3개 이상 있어야 됨.
     * 아래와 같이 다양하게 사용 가능
     ![markdown](../assets/img/post/20200416-rasa/dataformat_markdown.png)
     
@@ -133,14 +144,25 @@ rasa에서는 두 종류의 training data format를 지원하고 있습니다.
     }
     ```
    * common_examples가 주요 train data
-   * regex_features는 정규식으로 intent와 entity를 잡고 싶을 때 사용할 수 있습니다.
-   * lookup_tables 는 text file 에 엔티티 value 들을 넣어두고 불러다 쓰는 기능인데 이게 작동하지 않는 것 같다.
-   에러가 나지는 않는데 작동하지 않는다.
-   (20년 5월 22일 기준이다.)
+   * regex_features는 정규식
+   * lookup_tables 는 md에서와 동일한 기능
    * entity_synonyms 를 통해 유의어, 동의어를 지정해 줄 수 있다.
    * common_examples 는 필수값이지만 나머지는 없어도 학습 가능하다.
    * json format 에서 상세 키값들은 다음과 같다.
    ![json_format](../assets/img/post/20200416-rasa/jsonFormat.png)
+
+3. convert nlu format for Rasa
+    * rasa nlu 파일로 사용하기 위해 몇가지 포맷을 라사용 포맷으로 바꾸는 커맨드를 제공한다.
+    * LUIS(ms chatbot), WIT, Dialogflow 파일을 라사용 포맷으로 변경 가능
+    * 라사용 md, json 파일 간에도 변환 가능
+    * command
+    ```shell script
+    $rasa data convert nlu --data path/to/inputdata --out path/to/outputdata -f json or md
+    
+    # 예시
+    $rasa data convert nlu --data nlu.md --out nlu.json -f json   
+    ```
+   
 
 ### Training data를 만들 때 유의사항
 * 인텐트당 10~15개의 예시를 목표로 만든다.
@@ -151,11 +173,14 @@ rasa에서는 두 종류의 training data format를 지원하고 있습니다.
 
 #### 한글일 때 유의사항
 * 엔티티 name 은 한글이 안 된다. 영어로 해야 한다.
+    * 제가 테스트한 결과는 CRFEntityExtractor 가 sklearn 을 사용하는데 여기서 한글 entity name 이면 에러가 발생함.
+    * DIET 에도 CRF 가 있어서 엔티티 추출이 되지만, 정규식이 CRFEntityExtractor 에서만 사용 가능해서 tradeoff 상황임.
 * 인텐트는 name 에도 한글이 지정된다.
 
 
 config.yml 파일을 보면 현재 파이프라인이 어떻게 구성되어 있는지 볼 수 있습니다.
-rasa init 직후에 보면 다음과 같습니다.
+rasa init 직후에 보면 다음과 같습니다. 이 챕터에는 일단 이렇게 생겼다는 것만 확인하고 이후 챕터에서
+파이프라인 구성에 대해 자세히 알아보겠습니다.
 
 ![config](../assets/img/post/20200416-rasa/config.png)
 
@@ -200,14 +225,13 @@ story 에 대해 더 자세히 알고 싶으면 [여기](https://rasa.com/docs/r
 
 ## domain
 
-domain은 어시스턴트가 있는 세상이라고 표현합니다. 도메인은 인텐트, 액션, 템플릿으로 분리됩니다.
+domain은 어시스턴트가 있는 세상이라고 표현합니다. 기본적으로 도메인에는 인텐트, 액션, 리스펀스가 있습니다. 
 * intent : 유저가 말하는 내용의 의도
 * action : 어시스턴트가 행동하거나 말할 수 있는 것
-* template : 액션의 구체적인 내용
+* responses : 액션의 구체적인 내용, template 이라고 전에는 부른 듯함.
 
 템플릿에서 이미지도 url로 올릴 수 있고 custom action도 endpoints.yml에 url 등록해놓으면 api도 콜할 수 있습니다.
 
-rasa project 를 최초 설치하면 domain.yml 파일이 생성됩니다. 
 예시는 다음과 같습니다.
 
 ```yaml
@@ -219,6 +243,14 @@ intents:
   - mood_great
   - mood_unhappy
   - bot_challenge
+
+action:
+  - utter_greet
+  - utter_cheer_up:
+  - utter_did_that_help:
+  - utter_happy:
+  - utter_goodbye:
+  - utter_iamabot
 
 responses:
   utter_greet:
