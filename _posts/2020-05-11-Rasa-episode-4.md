@@ -57,9 +57,9 @@ comments: true
         - pipeline example  
         ```
         pipeline:
-          - name: HFTransformersNLP
-            model_name: 'bert'  
-        ```
+          - name: HFTransformersNLP  
+            model_name: 'bert'
+        ```  
     
 ## Tokenizer
 
