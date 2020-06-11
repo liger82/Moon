@@ -159,9 +159,8 @@ rasa에서는 두 종류의 training data format를 지원하고 있습니다.
 
 ```
     $rasa data convert nlu --data path/to/inputdata --out path/to/outputdata -f json or md
-    
+    # 예시
     $rasa data convert nlu --data nlu.md --out nlu.json -f json   
-
 ```
    
 
@@ -212,7 +211,6 @@ story는 기본적으로 다음과 같이 구성됩니다.
    - action_ack_dosearch
 * affirm OR thankyou
    - action_handle_affirmation
-
 ```
 
 어시스턴트의 action은 API를 콜하는 것을 포함해서 정의하는 바에 따라 모든 행동을 할 수 있습니다.  

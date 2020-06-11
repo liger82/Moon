@@ -55,10 +55,10 @@ comments: true
             - DistilBERT : distilbert
             - RoBERTa : roberta
         - pipeline example  
-        ```markdown
+        ```
         pipeline:
           - name: HFTransformersNLP
-            model_name: 'bert'
+            model_name: 'bert'  
         ```
     
 ## Tokenizer
