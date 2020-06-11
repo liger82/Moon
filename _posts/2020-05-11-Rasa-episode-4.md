@@ -54,12 +54,12 @@ comments: true
             - XLNet : xlnet
             - DistilBERT : distilbert
             - RoBERTa : roberta
-        - pipeline example
-        ```markdown
-        pipeline:
-          - name: HFTransformersNLP  
-            model_name: 'bert'
-        ```
+        - pipeline example  
+```markdown
+pipeline:
+  - name: HFTransformersNLP  
+    model_name: 'bert'
+```
     
 ## Tokenizer
 
