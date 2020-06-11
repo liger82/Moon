@@ -89,7 +89,110 @@ policies:
 
 # Dialogue Policies
 
+라사에서 사용 가능한 정책은 다음과 같다.
+* Memoization Policy
+* Mapping Policy
+* Keras Policy
+* Embedding Policy(TEDPolicy)
+* FormPolicy
+* FallbackPolicy
 
+## Memoization Policy
+
+비교적 간단한 대화 정책이다. max_history 로 대화를 부분으로 잘라서 일치하는 스토리 부분을 찾는다.
+일치하는 것을 찾으면 학습 데이터에서 본 그 다음 행동을 산출한다.
+일치하는 것을 찾고 이를 그대로 산출하기 때문에 100% 확신을 지니고 예측한다. 
+그래서 단독으로 사용하는 것보다는 다른 정책과 함께 쓰는 것을 추천한다.
+
+* Configuration
+    * max_history : default - 5
+    * priority
+
+## Mapping Policy
+
+Mapping Policy 는 인텐트를 특정 행동으로 매핑해준다. 대화가 이전에 어떤 상황이었든 간에
+그 인텐트에 대한 특정 대답을 하기를 바랄 때 유용하다.   
+중요한 특징은 대화 중간에도 특정 인텐트에 대해 정해진 답변을 하면서 대화 흐름을 깨지 않을 수 있다.
+
+![mapping_policy](../assets/img/post/20200611-rasa-episode78/mappingpolicy.png)
+
+외부에서 바로 매핑을 하기 때문에 다른 정책과 꼭 함께 쓰여야 한다.
+
+* Configuration
+    * config.yml 파일에 MappingPolicy 를 등록하고 domain.yml 파일에서 인텐트에 대한 행동도
+    매핑해줘야 한다. *triggers* 라는 속성을 사용한다. 이 경우에는 하나의 행동으로만 매핑 가능하다.
+    * 예시
+    ```markdown
+    intents:
+    - ask_is_bot:
+          triggers: action_is_bot
+    ```
+    * 앞선 예시처럼 매핑한 내용이 대화의 흐름에서 제외되길 원하면 action server 부분에서 
+    run() 의 반환값으로 *UserUtteranceReverted()*를 지정해야 한다.  
+    ```python
+    class ActionIsBot(Action):
+        """Revertible mapped action for utter_is_bot"""
+        
+        def name(self):
+            return "action_is_bot"
+        
+        def run(self, dispatcher, tracker, domain):
+            dispatcher.utter_template(template="utter_is_bot")
+            return [UserUtteranceReverted()]
+    ```
+    * 만약 triggers: utter_{} 이런 식으로 쓰면 stories.md 와 domain.yml 을 기준으로 바로 응답한다.
+    이 경우는 대화 기록에 남는다. 특정 인텐트에 지정할 대답이 있지만 대화 흐름에 남기고 싶으면서 간단한 텍스트 응답일 때
+    utter_{} 를 사용하면 된다.
+
+
+## Keras Policy
+
+Keras Policy 는 머신러닝을 대화 관리에 적용시킨 것이다. 
+keras 로 구현한 신경망을 학습에 사용한다. 기본 아키텍쳐는 LSTM 기반이지만 
+*KerasPolicy.model_architecture* method 를 override 하여 수정할 수 있다.
+
+Keras Policy 는 예측을 위해 여러 요소를 고려한다.
+* 마지막 행동
+* NLU model 에 의해 추출된 인텐트와 엔티티
+* slots
+* 이전 대화 턴들 (max_history 에서 개수 정해줌)
+
+Keras Policy 의 프로세스
+1. 사용자가 질문을 한다
+2. NLU components 가 인텐트와 엔티티를 추출한다. 
+대화 모델 입력값으로 쓰이기 위해 인텐트와 엔티티는 벡터화된다.
+3. 대화 모델은 이전 대화 상태, feature vector 를 입력으로 받아 처리한다.
+4. 대화 모델은 다음 최적 행동을 예측한다
+5. 다음 행동이 custom action 일 경우 그것을 실행한다.
+6. 사용자에게 예측된 응답을 전달한다.
+
+![keras_policy](../assets/img/post/20200611-rasa-episode78/kerasPolicy.png)
+
+* Configuration
+    * max_history : 고려해야 할 이전 대화 상태 개수
+    * epochs : 학습 데이터를 돌릴 횟수
+    * validation_split : 학습 데이터셋을 검증 데이터와 분리할 비율, 검증 데이터 셋의 비율.
+    * random_seed : integer value, 가중치의 최초값을 지정할 때 랜덤값을 주는데 이 때 
+    그 seed 값을 지정하는 것이다. 
+
+```markdown
+policies:
+    - name : MemoizationPolicy
+    - name : KerasPolicy
+      max_history : 3
+      epochs: 200
+      validation_split: 0.1
+      random_seed: 1
+```
+
+## Embedding Policy
+
+TEDPolicy 로 이름이 변경되었다. 
+
+## TEDPolicy
+
+Transformer Embedding Dialogue Policy 
+      
 
 # References
 
