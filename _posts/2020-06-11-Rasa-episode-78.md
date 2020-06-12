@@ -122,10 +122,10 @@ Mapping Policy 는 인텐트를 특정 행동으로 매핑해준다. 대화가 �
     * config.yml 파일에 MappingPolicy 를 등록하고 domain.yml 파일에서 인텐트에 대한 행동도
     매핑해줘야 한다. *triggers* 라는 속성을 사용한다. 이 경우에는 하나의 행동으로만 매핑 가능하다.
     * 예시
-    ```markdown
+    ```
     intents:
     - ask_is_bot:
-          triggers: action_is_bot
+        triggers: action_is_bot
     ```
     * 앞선 예시처럼 매핑한 내용이 대화의 흐름에서 제외되길 원하면 action server 부분에서 
     run() 의 반환값으로 *UserUtteranceReverted()*를 지정해야 한다.  
@@ -140,7 +140,7 @@ Mapping Policy 는 인텐트를 특정 행동으로 매핑해준다. 대화가 �
             dispatcher.utter_template(template="utter_is_bot")
             return [UserUtteranceReverted()]
     ```
-    * 만약 triggers: utter_{} 이런 식으로 쓰면 stories.md 와 domain.yml 을 기준으로 바로 응답한다.
+    * 만약 triggers: utter_{} 이런 식으로 쓰면 stories.md 와 domain.yml 을 기준으로 바로 응답한다.  
     이 경우는 대화 기록에 남는다. 특정 인텐트에 지정할 대답이 있지만 대화 흐름에 남기고 싶으면서 간단한 텍스트 응답일 때
     utter_{} 를 사용하면 된다.
 
@@ -191,8 +191,47 @@ TEDPolicy 로 이름이 변경되었다.
 
 ## TEDPolicy
 
-Transformer Embedding Dialogue Policy 
-      
+Transformer Embedding Dialogue Policy(TED Policy)는 라사의 기본 ML 기반 정책이다.
+Keras 와 같은 다른 머신러닝 정책과 비교했을 때 TED Policy 가 멀티 턴 대화 상황에서 성능이 더 좋다.
+(연구가 있는 듯 하다.)
+
+RNN(Keras Policy) 대신에 Transformer 를 사용한다. Transformer 는 여러 코퍼라 혹은 데이터셋에 걸쳐서
+보다 정확한 결과를 만들어내고, 예상치 못한 사용자의 입력에도 대처할 수 있다.
+
+TED Policy 의 작동 원리
+1. 매 스텝마다 다음 세 가지를 이어서 벡터화하여 transformer model 로 들어간다.
+    1. 사용자 메시지에서 뽑힌 인텐트와 엔티티
+    2. 이전 시스템 액션
+    3. slot data
+2. dialogue embedding 추출
+3. 각 범주형의 시스템 액션에 대한 임베딩 추출
+4. dialogue embedding 과 시스템 액션 embedding 간 유사도 계산 (StarSpace 에 근거)
+
+![TEDP](../assets/img/post/20200611-rasa-episode78/TEDP.png) 
+
+* Configuration
+    - epochs, default 는 1
+    - hidden_layers_sizes : feed-forward layer 개수, 대화와 인텐트의 출력 차원을 정해준다.
+        - default : dialogue: [], label: []
+        - dialogue : [256, 128] 로 지정하면 2개의 feed-forward layer 가 생기고 첫 번째 레이어의 
+        출력 차원은 256이고 두 번째는 128 이다.  빈 리스트이면 feed-forward layer 는 없다.  
+        0이상의 정수만 써야 한다.  
+    - number_of_transformer_layers : default 는 1
+    - transformer_size : default 는 128, transformer unit 개수
+    - weight_sparsity : 
+        - default 는 0.8
+        - 범위 : 0 과 1 사이
+        - 0으로 설정하면 커널 가중치가 0으로 설정되지 않고 표준 feed-forward layer 역할을 한다. 
+        - 1로 설정하면 모든 커널 가중치가 0이 되므로, 모델이 학습할 수 없다.
+    - max_history : TED Policy 에서 기본으로 FullDialogueTrackerFeaturizer 를 사용하고 있어서 모든 과거 대화기록을
+    살펴본다. 빠르게 학습하기 위해서는 MaxHistoryTrackerFeaturizer 를 사용하여 유한한 수를 지정해주는 것도 좋다.
+    - evaluate_on_number_of_examples : default 는 0, 검증 데이터 개수, 랜덤하게 고르고 검증 셋으로 분리되면 학습 데이터셋에 넣지 않기 때문에
+    너무 큰 수를 쓰면 학습 성능이 오르지 않는다.
+    - [hyperparameters 더보기](https://rasa.com/docs/rasa/core/policies/#ted-policy){:target="_blank"}
+    
+## Form Policy
+
+
 
 # References
 
