@@ -9,6 +9,8 @@ comments: true
 
 에피소드 7에서는 대화 정책에 대해 다루고 8에서는 7에서 배운 이론을 실습을 통해 익혀본다.
 
+# Episode 7 : Dialogue Policies
+
 라사에서 Policy 는 대화 모델을 학습시키는 컴포넌트이고 사용자의 입력에 대한 응답을 결정하는 데 중요한 역할을 한다.
 에피소드 7에서는 라사에서 사용할 수 있는 정책들에 어떤 것이 있고 개발자들이 정책을 어떻게 구성하는지,
 어떤 정책을 사용할 지에 대해 다룬다. 
@@ -234,6 +236,50 @@ TED Policy 의 작동 원리
 사용자로부터 특정 데이터 조각들을 받아야 할 때가 사용한다. 예를 들어, 식당 예약을 하고 싶을 때 '사람 이름', '인원 수', '시간' 등 필수적인 정보들이 있다.  
 slots 을 사용하면 가능하지만 충분한 학습 데이터가 필요하다.  
 다른 좋은 대안이 Form Policy 이다.
+
+![form_policy](https://blog.rasa.com/content/images/2020/01/forms-1.png)
+
+Form Policy 를 활성화하면 필요한 데이터가 충족될 때까지 사용자에게 계속 질문(*FormAction*)한다. 자세한 내용은 에피소드 8에서 다룰 예정이다.
+
+## Fallback Policy
+
+사용자의 쿼리가 어시스턴트의 주제에서 벗어낫거나 이해하지 못한 요청일 경우 지정된 응답을 하게 되어 있다. 구체적으로 예측값의 confidence 가 임계치보다 작으면 
+사전에 지정한 fallback utter(ex - '이해하지 못했습니다. 다시 말씀해주세요')를 사용자에게 전달한다. nlu component 와 core component 의 임계치가
+따로 있다.
+
+* Configuration
+    * nlu_threshold : nlu 예측값의 최소 confidence
+    * ambiguity_threshold : 최상위 인텐트와 차상위 인텐트의 confidence 차이
+    * core_threshold : core 예측값의 최소 confidence
+    * fallback_action_name : fallback action 이름
+
+## Two-stage Fallback Policy
+
+Fallback policy 의 변형이다. 임계치보다 낮을 때 바로 fallback action 을 수행하지 않고, 사용자에게 예측값을 확인하는 작업을 거친다.
+임계치보다는 낮지만 그 예측값이 맞을 경우 사용자가 맞다고 하면 그대로 이어서 대화를 진행한다. 아니면 fallback action 을 수행한다.  
+Fallback Policy 와 Two-stage Fallback Policy 는 둘 중에 하나만 있어야 한다.
+
+* Configuration
+    * nlu_threshold : nlu 예측값의 최소 confidence
+    * ambiguity_threshold : 최상위 인텐트와 차상위 인텐트의 confidence 차이
+    * core_threshold : core 예측값의 최소 confidence
+    * fallback_core_action_name : 다음 행동 예측값이 임계치 이하일 대 fallback action name
+    * fallback_nlu_action_name : 인텐트 예측값이 임계치 이하일 대 fallback action name
+    * deny_suggestion_intent_name : 인텐트 제안하였으나 사용자로부터 거절당한 인텐트
+
+# 중간 정리
+
+policy configuration 을 커스텀하고 패러미터를 조정하는 것은 라사 어시스턴트를 다음 레벨로 올리는데 중요한 역할을 한다. 기본 설정이
+나쁜 것은 아니나 시간이 지날수록 자신의 어시스턴트에 맞는 정책을 만드는 것이 좋다.
+
+이어지는 다음 에피소드(8)에서는 백엔드에서 integrations, forms, fallback 같은 custom action 을 구현하는 것에 대해 알아본다. 
+
+
+# Episode 8 : Integrations, Forms, and Fallbacks
+
+
+
+
 
 # References
 
