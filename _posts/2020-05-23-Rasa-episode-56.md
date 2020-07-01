@@ -67,6 +67,7 @@ intent{entity_name: entity_value} 형태이다. 엔티티는 생략 가능하다
 
 5 번째 에피소드가 너무 짧아서 6번째 에피소드를 이어서 진행하겠다.
 6 번째 에피소드에서는 domain, custom actions, slot 등을 포함해서 라사의 대화 관리의 핵심 component 를 다룬다.
+아래 예시로 사용하는 코드는 [여기](https://github.com/RasaHQ/rasa-masterclass/tree/master/episode6){:target="_blank"}에서 확인가능하다.
 
 # Domain File in Rasa
 
@@ -301,4 +302,4 @@ test 화면이다.
 * [https://blog.rasa.com/the-rasa-masterclass-handbook-episode-5/](https://blog.rasa.com/the-rasa-masterclass-handbook-episode-5/){:target="_blank"}
 * [https://blog.rasa.com/the-rasa-masterclass-handbook-episode-6-2/](https://blog.rasa.com/the-rasa-masterclass-handbook-episode-6-2/){:target="_blank"}
 * [https://rasa.com/docs/rasa/core/domains/](https://rasa.com/docs/rasa/core/domains/){:target="_blank"}
-
+* [https://github.com/RasaHQ/rasa-masterclass/tree/master/episode6](https://github.com/RasaHQ/rasa-masterclass/tree/master/episode6){:target="_blank"}

@@ -255,6 +255,8 @@ Form Policy 를 활성화하면 필요한 데이터가 충족될 때까지 사�
 
 ## Two-stage Fallback Policy
 
+![twostage fallback](../assets/img/post/20200611-rasa-episode78/TwoStageFallbackPolicy.png)
+
 Fallback policy 의 변형이다. 임계치보다 낮을 때 바로 fallback action 을 수행하지 않고, 사용자에게 예측값을 확인하는 작업을 거친다.
 임계치보다는 낮지만 그 예측값이 맞을 경우 사용자가 맞다고 하면 그대로 이어서 대화를 진행한다. 아니면 fallback action 을 수행한다.  
 Fallback Policy 와 Two-stage Fallback Policy 는 둘 중에 하나만 있어야 한다.
@@ -267,7 +269,7 @@ Fallback Policy 와 Two-stage Fallback Policy 는 둘 중에 하나만 있어야
     * fallback_nlu_action_name : 인텐트 예측값이 임계치 이하일 대 fallback action name
     * deny_suggestion_intent_name : 인텐트 제안하였으나 사용자로부터 거절당한 인텐트
 
-# 중간 정리
+## 중간 정리
 
 policy configuration 을 커스텀하고 패러미터를 조정하는 것은 라사 어시스턴트를 다음 레벨로 올리는데 중요한 역할을 한다. 기본 설정이
 나쁜 것은 아니나 시간이 지날수록 자신의 어시스턴트에 맞는 정책을 만드는 것이 좋다.
@@ -276,6 +278,274 @@ policy configuration 을 커스텀하고 패러미터를 조정하는 것은 라
 
 
 # Episode 8 : Integrations, Forms, and Fallbacks
+
+에피소드 7에서 배운 것을 적용하는 시간을 갖는다. 
+
+## Improving the NLU
+
+이전 에피소드들에서 인텐트를 구별하고 엔티티를 추출하는 간단한 NLU model를 만들어보았다.
+모델은 작동하지만 데이터가 충분하지 않아서 잘못 대답하는 경우도 있었다. 
+데이터를 충분히 해야 한다. 인텐트와 엔티티를 충분히 준비하면 성능이 올라갈 것이다. 
+
+## Using Regex in Entites
+
+고정된 형태의 value를 지니고 있는 엔티티의 경우 정규식을 사용하면 다수의 데이터를 준비하지 않아도 쉽게 엔티티를 추출할 수 있다.
+예를 들어, 미국의 zip code는 5개의 숫자로 이루어져 있어서 다음과 같이 표현할 수 있다.
+
+```markdown
+## regex:zipcode
+- [0-9]{5}
+```
+
+## Using Synonyms
+
+유사어 기능은 동일한 의미의 value 를 하나의 value 로 통합하는데 의미가 있다. 
+그래서 유사어가 있을 경우 매핑은 유사어로 된다. 여기서 유사어라는 용어보다는 '유사 대표어'가 나을 듯하다.  
+본 교재에서 예시는 기관의 종류가 있을 때 코드명을 유사 대표어로 지정한다. 이렇게 하는 데는 custom action 을 사용하려는
+목적이 크다. api call 할 때 기관의 종류를 코드명으로 받고 있어서 이렇게 한 것이다.  
+또한 유사어를 사용하려면 파이프라인에 *EntitySynonymMapper*를 포함시켜야 한다. 순서는 extractor 뒤가 좋다.
+
+다음과 같이 2개 형태로 표현할 수 있다.  
+'어메니티'가 대표 유사어이다.
+
+```markdown
+# intent:호텔+편의용품구비여부문의
+- [편의용품](amenity)으로 뭐 있죠?
+- 기본적으로 [비품](amenity)은 뭐 어떤 게 준비되어 있어요?
+- [객실 비품](amenity)는 어떤게 있어요?
+- [어매니티](amenity:어메니티) 제공되나요?
+- [어메니티](amenity)는 제공되죠?
+- [욕실용품](amenity)은 다 구비되어 있나요?
+- [칫솔](amenity)도 있나요?
+- 룸에 [세면도구](amenity) 제공되나요?
+
+## synonym: 어메니티
+- 객실 비품
+- 비품
+- 편의용품
+```
+
+## Retraining the NLU Model
+
+데이터의 변화가 있을 때 재학습 시작한다.  
+NLU model만 학습하고 싶을 때는 *rasa train nlu* 를 터미널에 입력한다.
+
+## Implementing a Form Action in Rasa
+
+### Defining a Form Action
+
+form action 은 actions.py 에서 정의한다. custom action 의 경우 form action 을 비롯하여 매핑과 코딩이 필요하다.
+form action 을 사용하려면 rasa sdk 내부의 FormAction 을 import 해야 한다.
+
+```python
+from rasa_sdk.forms import FormAction
+```
+
+form 은 일반적으로 4개의 주요 function 을 갖는다 : name, required_slots, slot_mappings, submit  
+
+#### 아래 예시는 의료기관 위치를 알려주는 assistant 의 FormAction 이다.
+```python
+class FacilityForm(FormAction):
+    """Custom form action to fill all slots required to find specific type
+    of healthcare facilities in a certain city or zip code."""
+
+    def name(self) -> Text:
+        """Unique identifier of the form"""
+
+        return "facility_form"
+
+    @staticmethod
+    def required_slots(tracker: Tracker) -> List[Text]:
+        """A list of required slots that the form has to fill"""
+
+        return ["facility_type", "location"]
+
+    def slot_mappings(self) -> Dict[Text, Any]:
+        return {"facility_type": self.from_entity(entity="facility_type",
+                                                  intent=["inform",
+                                                          "search_provider"]),
+                "location": self.from_entity(entity="location",
+                                             intent=["inform",
+                                                     "search_provider"])}
+
+    def submit(self,
+               dispatcher: CollectingDispatcher,
+               tracker: Tracker,
+               domain: Dict[Text, Any]
+               ) -> List[Dict]:
+        """Once required slots are filled, print buttons for found facilities"""
+        ...
+```
+
+* name : form action 이름 반환 
+* required_slots : 
+    - 모든 form action 이 가져야 할 필수 메서드로, 어시스턴트가 대화를 이어나가기 전에 채워져 있어야 할 슬랏을 정의한다.
+    - required_slots 에서 지정한 슬랏이 충족되지 않을 경우 슬랏 정보를 채울 때까지 assistant 는 사용자에게 해당 정보를 얻기 위해 질문을 계속한다.
+    - 위 예에서 의료기관 상세 위치 정보를 얻기 위해서는 기관 유형 정보(facility_type)와 위치(도시, location) 정보가 있어야 하기 때문에 
+    facility_type 과 location 을 required_slots 에 등록한다. 
+* slot_mappgins :
+    - Form Action 에서 선택적인 메서드이지만 유용하다.
+    - required slots 은 매우 다른 사용자 입력으로부터 오고 이는 자연스럽게 다른 인텐트와 엔티티를 가질 수 있다.
+    - 기본적으로 Form Action 은 슬롯과 정확히 동일한 이름을 가진 엔터티 또는 엔티티에서 추출한 값만 사용하여 필요한 슬롯을 채운다. 
+    - 슬롯 매핑을 하면 다른 엔터티와 엔티티의 값을 required slots 에 매핑할 수 있는 방법을 정의할 수 있다. 
+    - 다만 해주는게 아니라 직접 정의해야 한다.
+    - 예시를 보면
+        - "inform"과 "search_provider"라는 인텐트의 'location' entity 나오면 그 엔티티를 "location" slot에 매핑한다는 의미이다.
+        - 이 예에서는 다행히 엔티티 이름과 slot 이름이 동일하다.
+        - 다를 경우도 있다.
+            - 예를 들어, 기차 예약과 관련된 인텐트를 가지고 있는 텍스트에서 추출된 entity가 'time' 일 때(보통 정규식으로 추출),
+            출발 시간과 도착 시간 slot의 이름은 추출된 엔티티 명과 다르고 인텐트도 다를 수 있다.   
+* submit
+    - 필요한 슬랏이 충족되면 일어나는 이벤트를 정의한다.
+        - 위 예시에서는 facility_type 과 location 을 기반으로 정부가 제공하는 api 를 통해 기관의 구체적인 주소를 전달 받아 이를 사용자에게 전달한다.
+    - 예시를 통해 구체적으로 어떻게 구현해야 할지 살펴보자.
+    - tracker.get_slot method 를 통해 원하는 slot 정보를 얻을 수 있다.
+        - 이 슬랏이 필수 정보이면 required_slots 에 등록이 되어 있어야 한다.
+    - 이 슬랏 데이터를 _find_facilities method 에 입력값으로 준다.  
+    ![get_slot](https://lh6.googleusercontent.com/guJEwvtwZBwZ0NAyMqaM-XiGGNqKXceWM73LYcnH_Wk6FTAGNtWhWfwSDUxg2-u7ECulDANPjiqHOSDYGbb6SurEVluoOPti0tcL7isVyN77eezXZYZU7TfMQq_5mihGTwl5_won) 
+    - results(결과값) 비었으면 user 에게 찾지 못했다고 응답한다.
+    - 결과값이 있으면 상위 3개의 결과값에 대해 버튼으로 반환하고 dispatcher 내부의 메서드를 이용해서 메시지를 전달한다.
+    ![results](https://lh3.googleusercontent.com/mxIufwwOlQH4dkfRajIZm6icYizuU8vcFg5MmwLMT0SE_ZHarI8dalPNSS4ei7yB5mdzXF9utJ7obuRcJDXUronnZnwwLS1uCES1RZx-AH0Im5y6YkrVhwPup08IH03SXS15zf4B)    
+    
+
+## Updating the Domain File and Model Configuration for Forms
+
+* form 을 사용하려면 domain.yml 파일에도 form 이름을 등록해야 한다.
+
+![form in domain file](https://lh4.googleusercontent.com/TIt-eifZreiJGQ3eF1y2Vr1s9xOnBC604EuoAjxtX6KKNwb7D1pptZyGU4mMLk_zr-b45_dR7GAQ3t6KHBIdg2KqhoAAOOTRM5mr-2RHwG16P7iVHPfO6ezSCFqMTyF_vfBOmo2O)
+
+* core model 의 파이프라인(config.yml)에 FormPolicy 를 추가해야 한다.
+
+![form in config file](https://lh3.googleusercontent.com/VEan5tPLLVnFcKn-lBcTjTjvvBa87TlxTrF4qswEGqYV8kp92jLIAVatuIauX9JWKXI21UlNgt4C8LqZq0CDXq6rmsWTBTufyspqOgsgDjCAeMnsz1P87Nu7LM-0_QWMtrOMoyF3)
+
+## Updating Training Stories with Forms
+
+마지막으로 stories.md 파일에서 form action 내용을 추가해야 한다.
+
+![form in stories.md](https://lh3.googleusercontent.com/o2oXtB6BF9L5uzP847An4q_RAX9-MQ9gRzMhaUmXXbhAIBum7SfN-ERzyKfR8uRHbC9FcaSTNm_qqW1o9kV_GSFmk0Mps94SY4E0ByqQDDs0Ycb8san1cQWoY7MLwvZlsYEdukRx)
+
+facility_form 작동을 위해 3줄이 추가된다.
+* facility_form :  facility_form 을 활성화할 것이라는 알려주고 form 을 완성하기 위해 정보를 모으기 시작함
+* form{"name": "facility_form"} : required slots 이 모두 채워질 때까지 FormPolicy 가 form action 을 수행할 것이라는 표시
+* form{"name": "null"} : 이 작은 스토리를 끝냈고, form 이 채워져서 대화로 돌아갈 수 있음을 가리킨다.
+
+facility_id 는 facitlity_form 에서 세팅한 데이터이다. 
+
+사용자가 한 개의 필수 slot 정보를 제공하지만 다른 정보들은 제공하지 않거나, 한 번에 모든 정보들로 응답하거나, 
+필요한 정보를 어떤 것도 제공하지 않는 등 다양한 상황들이 발생할 수 있는 여러 경로가 있다. 
+이러한 상황에서 form action 은 유용한 툴이 될 수 있다.
+
+사용자가 처음 요청에서 모든 필수 slot 정보를 제공하였을 때 assistant 가 어떻게 응답할 것인지 추가로 스토리를 만들어보자.
+
+![another story](https://lh5.googleusercontent.com/Mi6lmYxRWYSQhETmSvryX-QlfWpjWwET_F6s7YC1Gldle7MlpEUvXPliwCv7mKtB9cMYpZTA1I3cQXcMsHgzzpRR5CKmUL8icp1kh11kr6yDqlEozxCJOC2ZA8wSuo2_nju4soKY)
+
+## 의문 : 예시에서 인텐트 옆에 엔티티를 적을 필요가 있었을까 의문임. 두번째 해피패쓰는 지역을 Austin 이라고 말했을 때만 사용할 수 있다.
+
+api call 을 할 때 아래 예시처럼 꼭 할 필요는 없지만 예를 들면 이렇다.
+사전에 엔티티 학습시 유사대표어로 코드명을 등록해두어서 entity value 는 모두 코드명으로 올 것이다. 
+코드명이 아니더라도 동의어에 대해서는 유사 대표어를 지정하는 것이 더 낫다.
+
+create_path method 는 사전에 정의된 내용을 기반으로 call 할 주소를 endpoint 까지 맞춰서 반환하고 
+이를 가지고 api call 하여 결과를 반환하는 것이 _find_facilities 이다.
+
+```python
+# We use the medicare.gov database to find information about 3 different
+# healthcare facility types, given a city name, zip code or facility ID
+# the identifiers for each facility type is given by the medicare database
+# xubh-q36u is for hospitals
+# b27b-2uc7 is for nursing homes
+# 9wzi-peqs is for home health agencies
+
+ENDPOINTS = {
+    "base": "https://data.medicare.gov/resource/{}.json",
+    "xubh-q36u": {
+        "city_query": "?city={}",
+        "zip_code_query": "?zip_code={}",
+        "id_query": "?provider_id={}"
+    },
+    "b27b-2uc7": {
+        "city_query": "?provider_city={}",
+        "zip_code_query": "?provider_zip_code={}",
+        "id_query": "?federal_provider_number={}"
+    },
+    "9wzi-peqs": {
+        "city_query": "?city={}",
+        "zip_code_query": "?zip={}",
+        "id_query": "?provider_number={}"
+    }
+}
+
+FACILITY_TYPES = {
+    "hospital":
+        {
+            "name": "hospital",
+            "resource": "xubh-q36u"
+        },
+    "nursing_home":
+        {
+            "name": "nursing home",
+            "resource": "b27b-2uc7"
+        },
+    "home_health":
+        {
+            "name": "home health agency",
+            "resource": "9wzi-peqs"
+        }
+}
+
+
+def _create_path(base: Text, resource: Text,
+                 query: Text, values: Text) -> Text:
+    """Creates a path to find provider using the endpoints."""
+
+    if isinstance(values, list):
+        return (base + query).format(
+            resource, ', '.join('"{0}"'.format(w) for w in values))
+    else:
+        return (base + query).format(resource, values)
+
+
+def _find_facilities(location: Text, resource: Text) -> List[Dict]:
+    """Returns json of facilities matching the search criteria."""
+
+    if str.isdigit(location):
+        full_path = _create_path(ENDPOINTS["base"], resource,
+                                 ENDPOINTS[resource]["zip_code_query"],
+                                 location)
+    else:
+        full_path = _create_path(ENDPOINTS["base"], resource,
+                                 ENDPOINTS[resource]["city_query"],
+                                 location.upper())
+    #print("Full path:")
+    #print(full_path)
+    results = requests.get(full_path).json()
+    return results
+
+```
+
+## Conclusion
+
+다음 에피소드부터는 rasa X 활용 방법 및 메신저 앱 연동 방법에 대해 다룬다. 따라서 대화 관련 내용은 여기까지이다.
+
+새로 챗봇을 만들기 전에 블로그에는 공개하지 않았지만 라사의 다양한 기능을 사용하고 실제로 구현해보면서 
+느끼는 바가 많았다. 
+
+논문으로만 챗봇의 단위 기능들만 볼 때는 무언가 엄청나게 대단한게 될 줄 알았는데 실제 서비스를 위해서는 
+하나부터 열까지 신경쓸게 많고 자동화라는게 엄청 힘든 일인 것을 깨달았다.
+
+또한 라사의 장단점을 보면서 내가 만들 때는 달리 해야겠다라는 지점도 있었다.
+
+### 배울 점
+1. 커뮤니티 활성화
+2. rasa X
+
+
+### 고쳐야할 점  
+1. 학습 데이터를 만들 때 너무 여러 파일을 건드려야 하고 같은 내용을 여러 군데에 입력해야 한다.
+2. intent{entity_name: entity_value} 이렇게도 좋지만 intent[entity_name] 도 있었으면 한다.
+    - 이는 엔티티 이름만 있으면 그 value 값으로 처리할 수 있는 영역은 많은데 그걸 다 value 까지 한정 짓도록 하거나
+    아예 한정 짓지 못하게 하여 불편하다.
+3. 
 
 
 
@@ -286,4 +556,5 @@ policy configuration 을 커스텀하고 패러미터를 조정하는 것은 라
 * [https://blog.rasa.com/the-rasa-masterclass-handbook-episode-7/](https://blog.rasa.com/the-rasa-masterclass-handbook-episode-7/){:target="_blank"}
 * [https://blog.rasa.com/the-rasa-masterclass-handbook-episode-8/](https://blog.rasa.com/the-rasa-masterclass-handbook-episode-8/){:target="_blank"}
 * [https://rasa.com/docs/rasa/core/policies/#id1](https://rasa.com/docs/rasa/core/policies/#id1){:target="_blank"}
-
+* [https://rasa.com/docs/rasa/core/forms/%23form-basics/](https://rasa.com/docs/rasa/core/forms/%23form-basics/){:target="_blank"}
+* [https://rasa.com/docs/rasa/core/actions/%23id2/](https://rasa.com/docs/rasa/core/actions/%23id2/){:target="_blank"}
