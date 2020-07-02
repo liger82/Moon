@@ -439,7 +439,15 @@ facility_id 는 facitlity_form 에서 세팅한 데이터이다.
 
 ![another story](https://lh5.googleusercontent.com/Mi6lmYxRWYSQhETmSvryX-QlfWpjWwET_F6s7YC1Gldle7MlpEUvXPliwCv7mKtB9cMYpZTA1I3cQXcMsHgzzpRR5CKmUL8icp1kh11kr6yDqlEozxCJOC2ZA8wSuo2_nju4soKY)
 
-## 의문 : 예시에서 인텐트 옆에 엔티티를 적을 필요가 있었을까 의문임. 두번째 해피패쓰는 지역을 Austin 이라고 말했을 때만 사용할 수 있다.
+---
+### 팩트 체크
+Q. 예시에서 인텐트 옆에 엔티티를 적으면 지역을 Austin 이라고 말했을 때만 답할까?  
+
+A. 아니다. 오해할만한 여지가 있어 보이는데 테스트해본 결과, 위 예시로 Virginia 의 nursing home 을 찾으려고 할 때도 적절한 응답이 왔다.
+즉, entity_name 만 동일하면 된다. 이 내용이 명시적으로 공식 docs 에 없어서 지금까지 오해하고 있었다. 위 예시에서 인텐트 옆에 엔티티를 빼도 적절한 응답이 온다.
+다만, 저렇게 하는게 entity_name 으로 필수조건을 만들 수 있어서 사용하는 것이다.
+
+--- 
 
 api call 을 할 때 아래 예시처럼 꼭 할 필요는 없지만 예를 들면 이렇다.
 사전에 엔티티 학습시 유사대표어로 코드명을 등록해두어서 entity value 는 모두 코드명으로 올 것이다. 
@@ -538,17 +546,15 @@ def _find_facilities(location: Text, resource: Text) -> List[Dict]:
 ### 배울 점
 1. 커뮤니티 활성화
 2. rasa X
+3. 파이프라인으로 각 component 를 쉽게 놓을 수 있어서 편리하다.
+4. nlu 학습 데이터의 경우 다른 형식의 챗봇 데이터를 라사용으로 변환 가능하다.
+5. 영어의 경우 ConveRT+DIET 속도 빠르고 성능도 우수
 
 
 ### 고쳐야할 점  
 1. 학습 데이터를 만들 때 너무 여러 파일을 건드려야 하고 같은 내용을 여러 군데에 입력해야 한다.
-2. intent{entity_name: entity_value} 이렇게도 좋지만 intent[entity_name] 도 있었으면 한다.
-    - 이는 엔티티 이름만 있으면 그 value 값으로 처리할 수 있는 영역은 많은데 그걸 다 value 까지 한정 짓도록 하거나
-    아예 한정 짓지 못하게 하여 불편하다.
-3. 
-
-
-
+2. 프로젝트 단위라서 여러 개의 agent 를 만들 수 없다. 
+    * 이 경우 프로젝트를 여러 개 만들어서 이를 연동할 수는 있다고 한다.
 
 
 # References
