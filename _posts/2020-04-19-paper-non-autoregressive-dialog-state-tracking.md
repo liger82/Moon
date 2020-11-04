@@ -519,8 +519,6 @@ Non-Autoregressive neural architecture for DST 제안
 본받을만 하다고 생각합니다. 또한 지연시간을 줄이면서도 다양한 수준의 의존성을 잡아내고 다양한 도메인, 멀티턴 대화에서
 학습하여 joint accuracy 를 높인 것 또한 서비스 적용에 도움이 될 것입니다.
 
-end-to-end dialogue system 을 만드는데 있어서 이 논문의 코드도 참고하여 개발할 예정입니다.  
-감사합니다.
 
 ---
 # References
