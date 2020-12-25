@@ -18,7 +18,7 @@ comments: true
 
 다음과 같은 에러메시지가 나온다. 
  
-```shell script
+```
 $pyenv install 3.9.0
 
 python-build: use readline from homebrew
@@ -52,12 +52,12 @@ make: *** No targets specified and no makefile found.  Stop.
 위 문제를 해결하려고 여러 시도를 해보았다. 누군가에게는 통했는지 모르겠지만 일단 나한테는 적용이 안된다.
 
 * software 업데이트  
-```shell script
+```
 $softwareupdate --all --install --force
 ```
 
 * xcode 재설치  
-```shell script
+```
 $sudo rm -rf /Library/Developer/CommandLineTools
 $sudo xcode-select --install
 ```
@@ -66,7 +66,7 @@ $sudo xcode-select --install
 
 아래 명령어로 pyenv 내에 설치가 되었다.    
 
-```shell script  
+```  
 # python 3.6.9 설치
 $CFLAGS="-I$(brew --prefix openssl)/include -I$(brew --prefix bzip2)/include -I$(brew --prefix readline)/include -I$(xcrun --show-sdk-path)/usr/include" LDFLAGS="-L$(brew --prefix openssl)/lib -L$(brew --prefix readline)/lib -L$(brew --prefix zlib)/lib -L$(brew --prefix bzip2)/lib" pyenv install --patch 3.6.9 < <(curl -sSL https://github.com/python/cpython/commit/8ea6353.patch\?full_index\=1)
 ```
@@ -84,7 +84,7 @@ tkinter는 python 표준 GUI 툴킷이다.
 
 1. install tcl-tk
 
-```shell script
+```
 # 설치
 $brew install tcl-tk
 # 확인
@@ -93,7 +93,7 @@ $brew info tcl-tk
 
 2-1. reinstall python (mac os version <= 10)
 
-```shell script
+```
 # 기존에 3.6.9가 있으면 없애기
 $pyenv uninstall 3.6.9
 $env \
@@ -111,7 +111,7 @@ $env \
 이 경우는 pyenv install 이 방식이 작동 안 하므로 위에서 pyenv로 파이썬 설치하는 명령어와 병합하여 사용한다.
 사실 이렇게 사용하는게 맞는지 모르겠지만 실행이 되니 세부적인 명령어를 알아보지 않았다.
 
-```shell script
+```
 # 기존에 3.6.9가 있으면 없애기
 $pyenv uninstall 3.6.9
 $env \
@@ -126,7 +126,7 @@ $env \
 
 3. test tkinter
 
-```shell script
+```
 $ import tkinter
 $ tkinter.TclVersion, tkinter.TkVersion
 (8.6, 8.6)
