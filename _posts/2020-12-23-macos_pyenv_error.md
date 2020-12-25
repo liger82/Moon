@@ -16,7 +16,8 @@ comments: true
 일단 본 시기에는 이 문제뿐만 아니라 다른 어플리케이션에서도 mac os update로 인한 문제가 있어서 업데이트를 유예하는 것을 권장한다.  
 다만 이미 해서 롤백하기가 싫거나 할 수 없는 상황에서 다음과 같은 조금 귀찮은 방법이 있음을 알린다.
 
-다음과 같은 에러메시지가 나온다.
+다음과 같은 에러메시지가 나온다. 
+ 
 ```shell script
 $pyenv install 3.9.0
 
@@ -39,22 +40,23 @@ checking for --with-universal-archs... no
 checking MACHDEP... "darwin"
 checking for gcc... clang
 checking whether the C compiler works... no
-configure: error: in `/var/folders/n6/q2b78971589bltfczw539flh0000gn/T/python-build.20201114175722.7103/Python-3.9.0':
+configure: error: in '/var/folders/n6/q2b78971589bltfczw539flh0000gn/T/python-build.20201114175722.7103/Python-3.9.0':
 configure: error: C compiler cannot create executables
-See `config.log' for more details
+See 'config.log' for more details
 make: *** No targets specified and no makefile found.  Stop.
 ```
+
 
 ## Trials (failure examples)
 
 위 문제를 해결하려고 여러 시도를 해보았다. 누군가에게는 통했는지 모르겠지만 일단 나한테는 적용이 안된다.
 
-* software 업데이트
+* software 업데이트  
 ```shell script
 $softwareupdate --all --install --force
 ```
 
-* xcode 재설치
+* xcode 재설치  
 ```shell script
 $sudo rm -rf /Library/Developer/CommandLineTools
 $sudo xcode-select --install
@@ -62,8 +64,9 @@ $sudo xcode-select --install
 
 ## My Solution
 
-아래 명령어로 pyenv 내에 설치가 되었다.  
-```shell script
+아래 명령어로 pyenv 내에 설치가 되었다.    
+
+```shell script  
 # python 3.6.9 설치
 $CFLAGS="-I$(brew --prefix openssl)/include -I$(brew --prefix bzip2)/include -I$(brew --prefix readline)/include -I$(xcrun --show-sdk-path)/usr/include" LDFLAGS="-L$(brew --prefix openssl)/lib -L$(brew --prefix readline)/lib -L$(brew --prefix zlib)/lib -L$(brew --prefix bzip2)/lib" pyenv install --patch 3.6.9 < <(curl -sSL https://github.com/python/cpython/commit/8ea6353.patch\?full_index\=1)
 ```
@@ -80,6 +83,7 @@ tkinter는 python 표준 GUI 툴킷이다.
 암튼 우리는 해결책이 필요하고 찾았으니 공유한다.
 
 1. install tcl-tk
+
 ```shell script
 # 설치
 $brew install tcl-tk
@@ -88,6 +92,7 @@ $brew info tcl-tk
 ```
 
 2-1. reinstall python (mac os version <= 10)
+
 ```shell script
 # 기존에 3.6.9가 있으면 없애기
 $pyenv uninstall 3.6.9
@@ -105,6 +110,7 @@ $env \
 
 이 경우는 pyenv install 이 방식이 작동 안 하므로 위에서 pyenv로 파이썬 설치하는 명령어와 병합하여 사용한다.
 사실 이렇게 사용하는게 맞는지 모르겠지만 실행이 되니 세부적인 명령어를 알아보지 않았다.
+
 ```shell script
 # 기존에 3.6.9가 있으면 없애기
 $pyenv uninstall 3.6.9
@@ -119,6 +125,7 @@ $env \
 ```
 
 3. test tkinter
+
 ```shell script
 $ import tkinter
 $ tkinter.TclVersion, tkinter.TkVersion
