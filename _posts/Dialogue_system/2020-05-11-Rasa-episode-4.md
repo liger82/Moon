@@ -25,7 +25,7 @@ comments: true
 
 에피소드 3에서 알아본 2개의 파이프라인이 어떻게 구성되어 있는지 알아본다.
 
-![twopipelines](../assets/img/post/20200511-rasa-episode4/twopreconfiguredpipelines.png)
+![twopipelines](../../assets/img/post/20200511-rasa-episode4/twopreconfiguredpipelines.png)
 
 ## Word Vector Sources 
 
@@ -133,7 +133,7 @@ NER 은 사용자의 메시지에서 entity 를 추출하는 것이다.
     - featurizer 의 출력값(벡터)을 입력으로 받아서 어떤 인텐트가 사용자의 메시지와 합치하는지 예측을 한다.
     - intent classification model 의 출력값은 인텐트 예측값을 내림차순으로 표현된다.
 
-![intentResults](../assets/img/post/20200511-rasa-episode4/intentClassificationResults.png)
+![intentResults](../../assets/img/post/20200511-rasa-episode4/intentClassificationResults.png)
 
 
 featurizer 와 intent classifier 에 어떤 옵션들이 있는지 살펴본다.
@@ -144,7 +144,7 @@ Text Featurizer 는 크게 두 개로 나뉜다. spare featurizers, dense featur
 일부 소개하면 다음과 같다.
 
 * CountVectorsFeaturizer
-![bow](../assets/img/post/20200511-rasa-episode4/bow.png)
+![bow](../../assets/img/post/20200511-rasa-episode4/bow.png)
     - sklearn 의 CountVectorizer 를 사용해서 사용자의 메시지를 BOW(bag-of-words)로 만든다.
     - BOW 는 텍스트의 순서는 무시하는 대신 문장에서 해당 단어가 몇 번 등장했는지에 집중한다.
     - BOW 를 intent classifier 의 입력으로 제공한다.
@@ -155,7 +155,7 @@ Text Featurizer 는 크게 두 개로 나뉜다. spare featurizers, dense featur
         - n-gram 의 개수를 늘릴 수 있는데 그러면 인텐트 분류의 탄력성은 높아지지만 그만큼 학습 시간도 늘어난다.
         - 다음과 같이 문자 n-gram 으로 지정할 수 있다.
         
-![character ngrams](../assets/img/post/20200511-rasa-episode4/char_ngrams.png)
+![character ngrams](../../assets/img/post/20200511-rasa-episode4/char_ngrams.png)
     
 * SpacyFeaturizer
     - pre-trained embeddings 를 쓸 때 사용
@@ -176,7 +176,7 @@ Text Featurizer 는 크게 두 개로 나뉜다. spare featurizers, dense featur
     - 타겟 레이블과의 유사도를 최대화하고 틀린 레이블과의 유사도를 최소화하는 방식으로 supervised embeddings 를 학습한다.
     - 인텐트 예측 결과는 NLU model 의 마지막 출력값으로 표현된다. 
 
-![EmbeddingIntentClassifier](../assets/img/post/20200511-rasa-episode4/embeddingIntentClassifier.png)
+![EmbeddingIntentClassifier](../../assets/img/post/20200511-rasa-episode4/embeddingIntentClassifier.png)
     
     
 * SklearnIntentClassifier
@@ -187,7 +187,7 @@ Text Featurizer 는 크게 두 개로 나뉜다. spare featurizers, dense featur
 
 두 개의 사전 구성 파이프라인에 맞는 옵션들은 다음과 같다.  
 
-![summary](../assets/img/post/20200511-rasa-episode4/table_summary.png)
+![summary](../../assets/img/post/20200511-rasa-episode4/table_summary.png)
 
 위에 정리한 내용들은 라사가 지니고 있는 일부 component 이다. 아래 사이트에서 더 많은 component 를 찾아볼 수 있다.
 

@@ -44,9 +44,9 @@ intent{entity_name: entity_value} 형태이다. 엔티티는 생략 가능하다
 동일한 intent 여도 엔티티를 어떻게 지정하느냐에 따라 분기처리를 따로 할 수도 있다.
 아래 두 예시를 보면 그 차이를 알 수 있다.
 
-![happy_path1](../assets/img/post/20200523-rasa-episode5/happy_path_1.png)
+![happy_path1](../../assets/img/post/20200523-rasa-episode5/happy_path_1.png)
 
-![happy_path2](../assets/img/post/20200523-rasa-episode5/happy_path_2.png)
+![happy_path2](../../assets/img/post/20200523-rasa-episode5/happy_path_2.png)
 
 첫 번째는 가고 싶은 장소의 유형과 위치를 모두 한 번에 말해서 바로 그 위치를 찾아 안내한다.
 두 번째는 위치를 말하지 않아서 위치를 물어보고 이를 확인하고 나서 샌프란시스코에 있는 병원을 안내한다.
@@ -83,32 +83,32 @@ domain 은 라사의 대화 관리 모델에서 핵심 component 이다. 도메�
     - 어시스턴트가 대화를 통해 기억하고 사용해야 하는 정보가 무엇인지
     
 
-![domain1](../assets/img/post/20200523-rasa-episode5/domain_1.png)
+![domain1](../../assets/img/post/20200523-rasa-episode5/domain_1.png)
 
 예시를 살펴보자.
 
-![domain2](../assets/img/post/20200523-rasa-episode5/domain_2.png)
+![domain2](../../assets/img/post/20200523-rasa-episode5/domain_2.png)
 
 domain.yml 파일 내용이다. 기본적으로 intents, actions, templates 로 되어있다. 
 순서대로 intents 는 인텐트 리스트이고 actions 는 어시스턴트의 response 를 의미하는 action 리스트이다.
 인텐트와 actions 이름은 stories.md, nlu.md(or .json) 파일들과 동일해야 한다.
 templates 는 어시스턴트의 텍스트 형태의 반응만 기록하는 곳이다. 추가로 이미지, 버튼, custom payloads 등을 달 수 있다.
 
-![templates](../assets/img/post/20200523-rasa-episode5/templates.png)
+![templates](../../assets/img/post/20200523-rasa-episode5/templates.png)
 
 
 # Custom Action in Rasa
 
-![custom_actions](../assets/img/post/20200523-rasa-episode5/custom_actions.png)
+![custom_actions](../../assets/img/post/20200523-rasa-episode5/custom_actions.png)
 
 custom action 으로 api 를 요청하거나 데이터베이스와 연결하는 등 다양한 action 을 정의할 수 있다.  
 custom action 은 action.py 파일에서 정의할 수 있다.
 
-![custom_actions2](../assets/img/post/20200523-rasa-episode5/import_custom_actions_file.png)
+![custom_actions2](../../assets/img/post/20200523-rasa-episode5/import_custom_actions_file.png)
 
 custom action class 를 만들기 위해서는 위의 빨간색 네모 안에 있는 모듈들을 import 해야 한다.
 
-![custom_actions3](../assets/img/post/20200523-rasa-episode5/import%20custom%20actions%20hello%20world%20name%20and%20run.png)
+![custom_actions3](../../assets/img/post/20200523-rasa-episode5/import%20custom%20actions%20hello%20world%20name%20and%20run.png)
 
 custom action class 는 두 가지 function 으로 구성된다. name 과 run 이다.
 name 은 custom action 의 이름을 반환하고 stories.md 파일에서 있는 이름과 동일해야 한다.  
@@ -156,7 +156,7 @@ slots 은 key-value 형태로 대화 간 중요한 정보를 저장한다. 정�
 domain.yml 파일에 entity 를 인텐트처럼 목록화하는 것이 가능하다. 여기서 entities 를 작성하는 것은 slot 과 관련이 있다.
 slot 으로 활용될 entity 의 경우 도메인 파일에 목록화하는 것을 원칙으로 한다. 
 
-![slots](../assets/img/post/20200523-rasa-episode5/slot.png)
+![slots](../../assets/img/post/20200523-rasa-episode5/slot.png)
 
 slot 은 slot name 과 slot type 으로 구성된다. 
 entity 에서 가져온 slot 이 1번 유형에 해당한다.
@@ -164,7 +164,7 @@ entity 에서 가져온 slot 이 1번 유형에 해당한다.
 
 entities는 작성하지 않아도 작동은 한다. 다음과 같은 warning 이 나오긴 한다.
 
-![user_warnings](../assets/img/post/20200523-rasa-episode5/userWarning.png)
+![user_warnings](../../assets/img/post/20200523-rasa-episode5/userWarning.png)
 
 entity 의 경우 slot 으로 저장되면 bot response 로 바로 활용할 수 있다.
 
@@ -279,7 +279,7 @@ carry_over_slots_to_new_session true 로 하면 세션이 바뀌어도 slot 정�
 
 custom action 을 사용하려면 다시 학습이 필요하다. 또한 endpoints.yml 파일에서 action_endpoint 부분의 주석을 풀어준다.
 
-![endpoint](../assets/img/post/20200523-rasa-episode5/action_endpoints%20yml.png)
+![endpoint](../../assets/img/post/20200523-rasa-episode5/action_endpoints%20yml.png)
 
 1. 학습
     >rasa train
@@ -292,7 +292,7 @@ custom action 을 사용하려면 다시 학습이 필요하다. 또한 endpoint
 
 test 화면이다.
 
-![test](../assets/img/post/20200523-rasa-episode5/test.png)
+![test](../../assets/img/post/20200523-rasa-episode5/test.png)
 
 다음 포스트에서는 대화의 정책에 대해 알아보도록 하겠다.
 

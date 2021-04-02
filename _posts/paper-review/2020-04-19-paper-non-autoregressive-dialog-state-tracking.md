@@ -164,7 +164,7 @@ dialogue history 에서 토큰을 복사하여 dialogue state 를 생성한다.
     - The dialogue history is delexicalized till the last system utterance by removing real-value tokens that match the previously decoded slot values to tokens expressed as domain-slot.   
 * token $$x_n$$이 주어지고, 현재 dialogue turn 을 t 라고 할 때, 토큰은 다음과 같이 delexicalize 된다.  
     
-![formula1](../assets/img/post/20200419-NADST/nadst_1.png)
+![formula1](../../assets/img/post/20200419-NADST/nadst_1.png)
 
 예를 들어, "저렴한 호텔을 찾고 있어"라는 발화가 있다.
 이전 turn 에서 "저렴한" 이라는 단어가 "호텔_가격범위" 라는 slot 으로 예측되었다면 
@@ -175,7 +175,7 @@ dialogue history 에서 토큰을 복사하여 dialogue state 를 생성한다.
 
 ### Figure 1. NADST 전체 구조
 
-![figure1](../assets/img/post/20200419-NADST/figure1_v2.png)
+![figure1](../../assets/img/post/20200419-NADST/figure1_v2.png)
 
 * <span style="color:red">빨간색 : encoder</span>
     * 인코더는 (1) dialogue history 의 sequence, (2) partially delexicalized dialogue history, (3) domain 과 slot 토큰 이 세 가지를 연속적인 representations 로 인코딩한다.
@@ -231,7 +231,7 @@ $$X$$ 와 $$X_{del}$$의 마지막 임베딩은 다음과 같이 정의된다.
 하지만 state decoder 의 input 의 경우, 순차적 정보를 입력값인 $$X_{ds \times fert}$$ 에 주입한다.
 target state sequence 를 디코딩하기 위해 위치별 정보를 요소로 사용한다.
 
-![domain_slot_encoder](../assets/img/post/20200419-NADST/domain_slot_encoder.png)
+![domain_slot_encoder](../../assets/img/post/20200419-NADST/domain_slot_encoder.png)
 
 여기서 $$ \oplus $$는 concatenation 동작을 의미한다.
 전형적인 transformer decoder 의 입력값과 다른 점은 non-autoregressive 디코딩 프로세스에서 fertility decoder 및 state decoder 의 입력 시퀀스를 이동(shift)하지 않았다는 것이다.
@@ -244,14 +244,14 @@ $$Z$$ (인코딩된 dialogue history), $$Z_{del}$$ (인코딩된 partially delex
 representations 를 multiple sub-spaces 에 투영하고자 multi-head attention mechanism 을 도입하였다. 
 attention mechanism 은 query(Q), key(K), value(V) 사이에서 scaled dot-product attention 으로 정의된다.
 
-![attention1](../assets/img/post/20200419-NADST/attention1.png)
+![attention1](../../assets/img/post/20200419-NADST/attention1.png)
 
 각 multi-head attention 은 position-wise feed-forward network 를 따른다. feed-forward 는 각 위치에 동일하게 적용되었다. 
 두 개의 선형 레이어를 그 사이에 ReLU 활성화 함수와 함께 사용했다. fertility decoder 는 3개의 attention layer 로 구성되며, 
 각 레이어는 관련 맥락 신호를 학습하고 맥락 신호들을 $$z_{ds}$$ 벡터에 통합한다. 
 다음 attention 레이어에 대한 입력으로 이전 레이어의 출력값인 $$ Z^{out}_{ds}$$ 를 사용한다.
 
-![attention2](../assets/img/post/20200419-NADST/attention2.png)
+![attention2](../../assets/img/post/20200419-NADST/attention2.png)
 
 attention mechanism 을 이 모델에 적용하기 위해 연구자들은 모델이 명백하게 (1) 첫 번째 attention layer 에서부터 (domain, slot) 쌍들 간에 잠재적 의존성과
 (2) 뒤이은 attention layer 들에서 맥락 의존성의 신호를 얻도록 하였다.  
@@ -268,20 +268,20 @@ attention 의 현재 단계를 t 라 할 때, 이전 attention layer(t-1) 에서
 마지막 attention layer($$ Z_{ds}^{T_{fert}}$$)에서 출력값은 fertility 와 gate 값을 예측하기 위해 
 두 개의 독립적인 선형 변환을 거친다. 손실함수는 표준의 cross-entropy 를 사용했다.
    
-![attention3](../assets/img/post/20200419-NADST/attention3.png)
+![attention3](../../assets/img/post/20200419-NADST/attention3.png)
 
 
 ## 3.3 State Decoder
 
 gate 는 (gen, none, dontcare) 세 가지 중 하나의 레이블로 예측된다. gate 가 gen 이고 fertility 가 0 이상인 (domain, slot) 만 state decoder 의 입력값으로 사용된다.
 
-![gate and fertility](../assets/img/post/20200419-NADST/generate_fert_gate.png)
+![gate and fertility](../../assets/img/post/20200419-NADST/generate_fert_gate.png)
 
 state decoder 의 입력값으로 $$ Z_{ds \times fert}$$를 사용하고, fertility decoder 에서 사용하는 attention sequence 를 적용하여
 맥락 신호들을 각 $$ Z_{ds \times fert}$$ 벡터에 통합시켰다. domain/slot 수준보다는 토큰 수준의 의존성이 더 잘 잡힌다. 
 $$ T_{state}$$ 만큼 attention sequence 를 반복한 후에, 마지막 출력값인 $$ Z^{T_{state}}_{ds \times fert}$$ 는 state 를 예측하기 위해 사용된다. 다음과 같다.  
 
-![state decoder 1](../assets/img/post/20200419-NADST/state_decoder1.png)
+![state decoder 1](../../assets/img/post/20200419-NADST/state_decoder1.png)
 
 $$W_{state} \in \mathbb{R}^{d \times \|V\|} $$ *V* : the set of output vocabulary  
 open-vocabulary DST 모델이라서 알려진 slot ontology 를 가정하지는 않지만 dialogue history 로부터 후보군을 만들 수 있어서 어휘 셋을 상정할 수 있다.  
@@ -290,22 +290,22 @@ open-vocabulary DST 모델이라서 알려진 slot ontology 를 가정하지는 
 Attention weight 을 그대로 예측의 softmax 값으로 사용하는 것이다. Input 의 일부를 point 한다는 의미에서 pointer network 라고 한다.</span>)  
 이는 저장해놓은 encoded dialogue history(Z) 에서 oov 한 state 를 찾겠다는 의미이다. 이를 수식으로 표현하면, state decoder 의 출력값과 Z 사이의 내적(dot-product) attention 을 수행한다.
  
-![state decoder 2](../assets/img/post/20200419-NADST/state_decoder2.png)
+![state decoder 2](../../assets/img/post/20200419-NADST/state_decoder2.png)
 
 예측된 state 의 마지막 확률값($$P_{state}$$)은 두 확률값의 가중치 합으로 정의된다.
 
-![state decoder 3](../assets/img/post/20200419-NADST/state_decoder3.png)
+![state decoder 3](../../assets/img/post/20200419-NADST/state_decoder3.png)
 
 여기서 $$ W_{gen} \in \mathbb{R}^{3d \times 1} $$ 이고 $$Z_{exp}$$는 $$Z_{ds \times fert}$$의 차원(dimension)을 맞추기 위한 Z의 확장된 벡터이다.
 마지막 확률값도 cross-entropy loss function 을 사용해서 state generation 을 학습한다.  
 
-![state decoder 4](../assets/img/post/20200419-NADST/state_decoder4.png)
+![state decoder 4](../../assets/img/post/20200419-NADST/state_decoder4.png)
 
 ## 3.4 Optimization
 
 3 개의 loss(state, gate, fertility) 값의 가중치 합이 최소화되도록, 함께 학습하는 방식으로 모든 패러미터를 최적화하였다.
 
-![opt](../assets/img/post/20200419-NADST/optimization.png)
+![opt](../../assets/img/post/20200419-NADST/optimization.png)
 
 
 ---
@@ -314,7 +314,7 @@ Attention weight 을 그대로 예측의 softmax 값으로 사용하는 것이�
 
 ## 4.1 Dataset
 
-![dataset](../assets/img/post/20200419-NADST/dataset.png)
+![dataset](../../assets/img/post/20200419-NADST/dataset.png)
 
 MultiWOZ 는 multi domain, task-oriented dialogue dataset 이다. 이 논문에서는 2017년 초판이 아닌 2019년에 나온 버전을 사용한다.
 각 대화는 하나의 도메인 이상을 가지고 있다.  
@@ -412,16 +412,16 @@ DST baseline 은 두 가지가 있다. (1) open-vocabulary (2) fixed-vocabulary 
 * table 2를 보면 NADST 가 non-autoregressive 한 접근법을 사용했지만 성능도 가장 좋았다.
     - NADST 가 cross-domain, cross-slot signal 을 학습함으로써 개별 slot 의 정확도가 아니라 joint accuracy 를 최적화하는데 목표했기 때문이다.
 
-![table2](../assets/img/post/20200419-NADST/table2.png)
+![table2](../../assets/img/post/20200419-NADST/table2.png)
 
 * table 3를 보면 MultiWOZ 2.0의 restaurant 도메인에서는 joint accuracy 와 slot accuracy 모두 NADST 가 베이스라인 모델들보다 성능이 좋았다.
     - slot accuracy 는 개별 slot 에 대한 정확도
 
-![table3](../assets/img/post/20200419-NADST/table3.png)
+![table3](../../assets/img/post/20200419-NADST/table3.png)
 
 * table 8은 모든 도메인에서 NADST 의 성능을 보여준다.
 
-![table8](../assets/img/post/20200419-NADST/table8.png)
+![table8](../../assets/img/post/20200419-NADST/table8.png)
 
 
 ### Latency Analysis
@@ -438,11 +438,11 @@ DST baseline 은 두 가지가 있다. (1) open-vocabulary (2) fixed-vocabulary 
     - NADST 모델들은 길이에 따라 latency 에 거의 변동이 없는데, TSCP 는 길수록 latency 도 늘어난다.
 * figure 3 는 figure 2에서 latency 가 너무 작아서 비교가 안 보이는 것을 감안하여 log 를 취하여 비교해본 것이다.
 
-![table4](../assets/img/post/20200419-NADST/table4.png)
+![table4](../../assets/img/post/20200419-NADST/table4.png)
 
-![figure2](../assets/img/post/20200419-NADST/figure2.png)
+![figure2](../../assets/img/post/20200419-NADST/figure2.png)
 
-![figure3](../assets/img/post/20200419-NADST/figure3.png)
+![figure3](../../assets/img/post/20200419-NADST/figure3.png)
 
 
 ### Ablation Analysis
@@ -468,7 +468,7 @@ DST baseline 은 두 가지가 있다. (1) open-vocabulary (2) fixed-vocabulary 
     - 학습 시 보지 못한 slot value 를 추론할 수 없기 때문이다.
     - 특히 "restaurant-name", "train-arriveby" 같은 slot 이 해당된다
      
-![table5](../assets/img/post/20200419-NADST/table5.png)
+![table5](../../assets/img/post/20200419-NADST/table5.png)
 
 
 ### Auto-regressive DST
@@ -487,7 +487,7 @@ table 6 는 두 개의 데이터셋에서 auto-regressive 버전의 성능을 �
 3. 이 실험을 위해 만든 auto-regressive 모델이 기존의 접근법들보다 뛰어나다
     - slot gate 를 예측하기 위한 모델의 첫 번째 부분에서 학습된 (domain, slot) 쌍 사이의 높은 의존성 때문일 수 있다. 
  
-![table6](../assets/img/post/20200419-NADST/table6.png)
+![table6](../../assets/img/post/20200419-NADST/table6.png)
 
 
 ### Visualization and Qualitative Evaluation
@@ -498,7 +498,7 @@ heatmap 에 하이라이트로 친 박스는 비대칭인 domain-slot 쌍 사이
 * 첫 번째 행(줄)을 보면, 모델이 두 개의 쌍 (train-leaveat, train-arriveby) 와 (train-departure, train-destination)의 의존성을 잡았다는 것을 발견할 수 있다.
 * 두 번째 행(줄)을 보면, (taxi-departure, taxi-destination) 같은 slot 수준의 의존성도 보이고, attraction-type 과 attraction-name 간에 토큰 수준의 의존성도 보인다.
 
-![figure4](../assets/img/post/20200419-NADST/figure4.png)
+![figure4](../../assets/img/post/20200419-NADST/figure4.png)
 
 
 ---

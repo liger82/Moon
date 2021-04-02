@@ -7,6 +7,7 @@ tags : [paper review, Compositional_Language_Understanding,reasoning, NLP]
 comments: true
 ---
 
+비활성화
 
 # <center>Compositional Language Understanding with Text-based Relational Reasoning</center>
 
