@@ -3,6 +3,7 @@ layout: post
 title: "Rasa Masterclass Episode 7, 8 : Dialogue Policy & Practice"
 date: 2020-06-11
 excerpt: ""
+categories: [RASA]
 tags : [Rasa Masterclass, virtual assistant, chatbot, Rasa, 챗봇, tutorial, dialogue management]
 comments: true
 ---

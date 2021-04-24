@@ -3,6 +3,7 @@ layout: post
 title: "Rasa Masterclass Episode 5,6 : Intro to dialogue management & Domain, Custom Actions and Slots"
 date: 2020-05-23
 excerpt: ""
+categories: [RASA]
 tags : [Rasa Masterclass, virtual assistant, chatbot, Rasa, 챗봇, tutorial, dialogue management]
 comments: true
 ---

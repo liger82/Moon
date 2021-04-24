@@ -3,6 +3,7 @@ layout: post
 title: "Introduction to Rasa episode 1 & 2"
 date: 2020-04-16
 excerpt: ""
+categories: [RASA]
 tags : [virtual assistant, chatbot, Rasa, 챗봇, tutorial, 설치]
 comments: true
 ---

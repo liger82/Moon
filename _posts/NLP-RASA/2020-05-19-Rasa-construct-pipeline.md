@@ -3,6 +3,7 @@ layout: post
 title: "Rasa Masterclass : Choosing a Pipeline"
 date: 2020-05-19
 excerpt: ""
+categories: [RASA]
 tags : [virtual assistant, chatbot, Rasa, 챗봇, tutorial, pipeline, 파이프라인 구성]
 comments: true
 ---

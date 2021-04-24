@@ -3,6 +3,7 @@ layout: post
 title: "Rasa Masterclass Episode 4 : Pipeline components"
 date: 2020-05-11
 excerpt: ""
+categories: [RASA]
 tags : [virtual assistant, chatbot, Rasa, 챗봇, tutorial, pipeline, training, test, component]
 comments: true
 ---
