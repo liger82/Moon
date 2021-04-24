@@ -1,7 +1,7 @@
 ---
 
 layout: category
-
-title: RASA
+title: NLP/RASA
+permalink: '/NLP/RASA'
 
 ---

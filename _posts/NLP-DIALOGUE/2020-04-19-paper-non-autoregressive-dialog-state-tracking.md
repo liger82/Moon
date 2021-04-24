@@ -3,6 +3,7 @@ layout: post
 title: "[paper review] Non-autoregressive dialog state tracking"
 date: 2020-04-19
 excerpt: ""
+categories: [NLP/Dialogue]
 tags : [virtual assistant, chatbot, DST, dialogue state tracking, latency problem, salesforce, ICLR 2020, paper review]
 comments: true
 ---

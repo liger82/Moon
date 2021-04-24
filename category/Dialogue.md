@@ -1,7 +1,7 @@
 ---
 
 layout: category
-
-title: Dialogue
+title: NLP/Dialogue
+permalink: '/NLP/Dialogue'
 
 ---

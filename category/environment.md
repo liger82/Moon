@@ -1,7 +1,7 @@
 ---
 
 layout: category
-
-title: Environment
+title: Engineering/Environment
+permalink: '/Engineering/Environment'
 
 ---

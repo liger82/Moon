@@ -3,6 +3,7 @@ layout: post
 title: "[paper review] Transformer-XL : Attentive  Language Models Beyond A Fixed-Length Context"
 date: 2019-11-23
 excerpt: "paper review : Transformer-XL"
+categories: [NLP/Architecture]
 tags : [paper review, TransformerXL, long-term dependency, NLP]
 comments: true
 ---

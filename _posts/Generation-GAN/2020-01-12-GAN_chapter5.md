@@ -3,6 +3,7 @@ layout: post
 title: "Generative Deep Learning Chapter 5 : Paint"
 date: 2020-01-12
 excerpt: "style transfer 영역에서 두가지 모델(CycleGAN, Neural Style Transfer)의 개념과 빌드하는 방법을 다룬다. "
+categories: [Generation/GAN]
 tags : [GAN, Generative Deep Learning, Paint, David Foster, CycleGAN, Style transfer]
 comments: true
 ---

@@ -3,6 +3,7 @@ layout: post
 title: "(Error solution) Pyenv won't install python 3 on Mac os 11 & Unable to install tkinter with pyenv Pythons on MacOS"
 date: 2020-12-23
 excerpt: ""
+categories: [Engineering/Environment]
 tags : [pyenv, mac os, Big Sur, mac os 11, tkinter]
 comments: true
 ---

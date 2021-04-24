@@ -3,6 +3,7 @@ layout: post
 title: "RL: Introduction"
 date: 2020-10-12
 excerpt: ""
+categories: [RL/RL]
 tags : [Reinforcement Learning, RL, Sutton]
 comments: true
 ---

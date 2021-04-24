@@ -3,7 +3,7 @@ layout: post
 title: "Rasa Masterclass Episode 3 : Pre-configured pipelines(Pipeline Templates - deprecated)"
 date: 2020-05-10
 excerpt: ""
-categories: [RASA]
+categories: [NLP/RASA]
 tags : [virtual assistant, chatbot, Rasa, 챗봇, tutorial, pipeline, training, test, pre-configured pipelines]
 comments: true
 ---
