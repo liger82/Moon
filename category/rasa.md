@@ -2,6 +2,6 @@
 
 layout: category
 title: NLP/RASA
-permalink: '/NLP/RASA'
+permalink: '/NLP/RASA/'
 
 ---

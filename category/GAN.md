@@ -2,6 +2,6 @@
 
 layout: category
 title: Generation/GAN
-permalink: '/Generation/GAN'
+permalink: '/Generation/GAN/'
 
 ---
