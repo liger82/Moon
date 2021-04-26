@@ -209,7 +209,7 @@ $$z_{ds}$$ 는 디코딩 프로세스에서 slot 과 fertility 예측을 위한 
 
 ### Context Encoder
 
-<img src="../assets/img/post/20200419-NADST/context_encoder.png" alt="context_encoder" style="width:50%;"/>
+<img src="../../assets/img/post/20200419-NADST/context_encoder.png" alt="context_encoder" style="width:50%;"/>
 
 context encoder 는 토큰 수준의 학습가능한 임베딩 레이어와 layer normalization을 포함하고 있다. 또한 사인, 코사인 함수를 따르는 위치 인코딩 레이어도 가지고 있다.
 토큰 수준의 벡터들과 위치 인코딩 벡터들을 결합시킬 때 요소별 합산(element-wise summation)을 사용한다.  

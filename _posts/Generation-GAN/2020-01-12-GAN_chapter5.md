@@ -17,7 +17,7 @@ comments: true
 Generative model의 또 다른 응용분야에는 style transfer 분야가 있다.
 여기서 우리의 목적은 입력 기반 이미지를 변형시킬 수 있는 모델을 만들어서 주어진 스타일 이미지 셋 같이 동일한 컬렌션으로부터 온 인상을 주는 것이다.
 
-![figure 5-1](../../assets/img/post/20200112-GAN_chapter5/GAN-figure5-1.png)
+![figure 5-1](../../../assets/img/post/20200112-GAN_chapter5/GAN-figure5-1.png)
 
 style transfer의 목적은 스타일 이미지의 내재된 분포를 모델링하려는 것이 아니라 **이 이미지들로부터 stylistic component를 추출하고 이 컴포넌트를 베이스 
 이미지에 내장**하는 것이다.
