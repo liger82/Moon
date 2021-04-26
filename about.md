@@ -55,12 +55,12 @@ feature-img: "assets/img/sample_feature_img_2.png"
     <p>성균관대학교 입학(심리학)</p>
 </div>
 
-<br><!-- <br><br><br><br> -->
+<br><br><br><br><br>
 
 <h3>3. Project</h3>
 <div id="jb-sidebar">
     <p>2019.05 ~ current</p>
-    <br>
+    <br><br><br><br><br>
     <p>2018.06 ~ 2018.08</p>
     <br>
     <p>2018.01 ~ 2018.03</p>
