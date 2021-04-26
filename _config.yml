@@ -1,19 +1,19 @@
 # SITE CONFIGURATION
 baseurl:
-url: "https://devYurim.github.io"
+url: "https://liger82.github.io"
 
 # THEME-SPECIFIC CONFIGURATION
 theme_settings:
   # Meta
-  title: devYurim
-  avatar: assets/img/blogmark.png
+  title: Stuarting...
+  avatar: assets/img/stuart_little.jpg
   favicon: assets/favicon.ico
   gravatar: # Email MD5 hash
   description: "developer blog" # used by search engines
 
   # Header and footer text
   header_text: >
-     <p>Intelligent System Lab Researcher</p>
+     <p>NLP/Dialogue Developer</p>
 
   header_text_feature_image:
   footer_text: >
@@ -21,14 +21,14 @@ theme_settings:
 
   # Icons
   rss: true
-  email_address: "soaka94@naver.com" # Full email address, e.g. "sam@example.com"
+  email_address: "liger8268@gmail.com" # Full email address, e.g. "sam@example.com"
   behance:
   bitbucket:
   dribbble:
   facebook:
   flickr:
   gitlab:
-  github: "devYurim"
+  github: "liger82"
   google_plus:
   instagram:
   linkedin:  # Full URL
@@ -44,7 +44,7 @@ theme_settings:
 
   # Scripts
   google_analytics: UA-111748939-1 # Tracking ID, e.g. "UA-000000-01"
-  disqus_shortname: devYurim
+  disqus_shortname: liger82
   katex: true # Enable if using math markup
   search: true # Enable the search feature
 
