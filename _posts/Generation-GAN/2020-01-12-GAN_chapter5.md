@@ -17,7 +17,7 @@ comments: true
 Generative model의 또 다른 응용분야에는 style transfer 분야가 있다.
 여기서 우리의 목적은 입력 기반 이미지를 변형시킬 수 있는 모델을 만들어서 주어진 스타일 이미지 셋 같이 동일한 컬렌션으로부터 온 인상을 주는 것이다.
 
-![figure 5-1](../../../assets/img/post/20200112-GAN_chapter5/GAN-figure5-1.png)
+![figure 5-1](https://liger82.github.io/assets/img/post/20200112-GAN_chapter5/GAN-figure5-1.png)
 
 style transfer의 목적은 스타일 이미지의 내재된 분포를 모델링하려는 것이 아니라 **이 이미지들로부터 stylistic component를 추출하고 이 컴포넌트를 베이스 
 이미지에 내장**하는 것이다.
@@ -47,7 +47,7 @@ Florida도 동일한 게획을 하고 있고 할머니의 사과들을 오렌지
 
 이 전체적인 프로세스는 Figure 5-2와 같다.
 
-![figure 5-2](../../assets/img/post/20200112-GAN_chapter5/GAN-figure5-2.png)
+![figure 5-2](https://liger82.github.io/assets/img/post/20200112-GAN_chapter5/GAN-figure5-2.png)
 
 처음엔 손님들이 속겠지만 갈수록 손님들도 그 속이는 기술에 적응하여 속인 것이 어떤 것인지 점점 구별 능력을 기를 것이다.
 이는 할머니와 Florida의 위장 기술을 더 고도화하게 하는 촉매제가 된다.
@@ -68,7 +68,7 @@ CycleGAN의 원논문에서는 style transfer의 성장에 큰 기여를 했는�
 CycleGAN 논문은 pix2pix 논문이 나오고 몇달 안되서 발표가 되었고 source와 target domain에 pair image가 없는 문제를 해결하는 모델을 어떻게 훈련시키는지 보여주었다.
 Figure 5-4가 두 모델의 차이점을 보여준다.
 
-![figure 5-4](../../assets/img/post/20200112-GAN_chapter5/GAN-figure5-4.png)
+![figure 5-4](https://liger82.github.io/assets/img/post/20200112-GAN_chapter5/GAN-figure5-4.png)
 
 pix2pix model은 source에서 target으로 한 방향으로만 작동하지만, CycleGAN은 동시에 양방향으로 모델을 훈련시킨다. 그래서 CycleGAN의 모델은 source에서 target으로 하는 것만큼 target에서 source로도 이미지를 바꾸는 것을 배운다.
 
