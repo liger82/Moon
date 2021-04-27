@@ -21,7 +21,7 @@ comments: true
 NLU training pipeline 처럼 대화 정책도 *config.yml* 파일에서 구성할 수 있다.
 
 다음은 config.yml 파일의 정책 부분이다.
-![policy_part](../../assets/img/post/20200611-rasa-episode78/policyInConfig.png) 
+![policy_part](https://liger82.github.io/assets/img/post/20200611-rasa-episode78/policyInConfig.png) 
 
 정책 배치는 정책의 이름을 목록화하는 것으로 정의한다. NLU training pipeline 은 순서대로 작동한다면
 대화 정책은 동시에 작동한다. 
@@ -117,7 +117,7 @@ Mapping Policy 는 인텐트를 특정 행동으로 매핑해준다. 대화가 �
 그 인텐트에 대한 특정 대답을 하기를 바랄 때 유용하다.   
 중요한 특징은 대화 중간에도 특정 인텐트에 대해 정해진 답변을 하면서 대화 흐름을 깨지 않을 수 있다.
 
-![mapping_policy](../../assets/img/post/20200611-rasa-episode78/mappingpolicy.png)
+![mapping_policy](https://liger82.github.io/assets/img/post/20200611-rasa-episode78/mappingpolicy.png)
 
 외부에서 바로 매핑을 하기 때문에 다른 정책과 꼭 함께 쓰여야 한다.
 
@@ -169,7 +169,7 @@ Keras Policy 의 프로세스
 5. 다음 행동이 custom action 일 경우 그것을 실행한다.
 6. 사용자에게 예측된 응답을 전달한다.
 
-![keras_policy](../../assets/img/post/20200611-rasa-episode78/kerasPolicy.png)
+![keras_policy](https://liger82.github.io/assets/img/post/20200611-rasa-episode78/kerasPolicy.png)
 
 * Configuration
     * max_history : 고려해야 할 이전 대화 상태 개수
@@ -210,7 +210,7 @@ TED Policy 의 작동 원리
 3. 각 범주형의 시스템 액션에 대한 임베딩 추출
 4. dialogue embedding 과 시스템 액션 embedding 간 유사도 계산 (StarSpace 에 근거)
 
-![TEDP](../../assets/img/post/20200611-rasa-episode78/TEDP.png) 
+![TEDP](https://liger82.github.io/assets/img/post/20200611-rasa-episode78/TEDP.png) 
 
 * Configuration
     - epochs, default 는 1
@@ -256,7 +256,7 @@ Form Policy 를 활성화하면 필요한 데이터가 충족될 때까지 사�
 
 ## Two-stage Fallback Policy
 
-![twostage fallback](../../assets/img/post/20200611-rasa-episode78/TwoStageFallbackPolicy.png)
+![twostage fallback](https://liger82.github.io/assets/img/post/20200611-rasa-episode78/TwoStageFallbackPolicy.png)
 
 Fallback policy 의 변형이다. 임계치보다 낮을 때 바로 fallback action 을 수행하지 않고, 사용자에게 예측값을 확인하는 작업을 거친다.
 임계치보다는 낮지만 그 예측값이 맞을 경우 사용자가 맞다고 하면 그대로 이어서 대화를 진행한다. 아니면 fallback action 을 수행한다.  

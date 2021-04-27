@@ -59,7 +59,7 @@ custom training pipeline 은 에피소드 4에서 다룰 예정이다.
 
 아래 결정트리를 보고 선택을 하면 좋다.
 
-![decision-tree](../../assets/img/post/20200510-rasa-episode3/decision_tree_choosing_pipeline.png)
+![decision-tree](https://liger82.github.io/assets/img/post/20200510-rasa-episode3/decision_tree_choosing_pipeline.png)
 
 
 # Training the Model
@@ -92,7 +92,7 @@ nlu 모델 뿐만 아니라 전체를 학습할 때는 다음과 같이 명령�
 새로 학습한 모델을 CLI 환경에서 테스트하려면 *rasa shell nlu* 라고 치면 **가장 최근에 학습된 모델**을 불러온다.
 다음은 "hello" 라고 입력했을 때의 반응이다.
 
-![testingthemodel](../../assets/img/post/20200510-rasa-episode3/testing_model.png)
+![testingthemodel](https://liger82.github.io/assets/img/post/20200510-rasa-episode3/testing_model.png)
 
 상세 분석이 되지 않고 응답만 나오게 하고 싶을 경우는 
 >rasa shell

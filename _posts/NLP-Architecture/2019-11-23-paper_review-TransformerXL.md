@@ -110,4 +110,4 @@ context fragmentation을 피할 수 있다.
 * L개의 길이를 가진 두개의 이어진 세그먼트 $$s_T = [x_{T,1} , … , x_{T,L} ], s_{T+1} = [x_{T,1} , … , x_{T,L} ]$$가 있다고 해보자 
 * $$h_T^n \in R^{L \times d}$$에 의해 T 번째 세그먼트 $$s_T$$에 대해 생성된 n번째 레이어의 hidden state 시퀀스를 나타낸다. 여기서 d는 숨겨진 차원이다.
 * 세그먼트 $$s_{T+1}$$을 위한 n번째 레이어의 hidden state는 (도식적으로) 다음과 같이 만들어진다
-![hidden_state](../../assets/img/post/20191123-transformerXL/xl_1.png)
+![hidden_state](https://liger82.github.io/assets/img/post/20191123-transformerXL/xl_1.png)

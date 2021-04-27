@@ -105,7 +105,7 @@ generator를 훈련시킬 paired images가 없기 때문에 이미지가 generat
 * 두 번째 discriminator(D_B) : domain B의 실제 이미지인지 G_AB가 만들어낸 가짜 이미지의 차이를 식별하도록 학습
 
 위의 관계는 Figure 5-5에서 볼 수 있다.
-![figure 5-5](../../assets/img/post/20200112-GAN_chapter5/GAN-figure5-5.png)
+![figure 5-5](https://liger82.github.io/assets/img/post/20200112-GAN_chapter5/GAN-figure5-5.png)
 
 * code file
     * 05_01_cycle-gan_train.ipynb(main)
@@ -134,7 +134,7 @@ pix2pix 논문에서는 U-Net 아키텍쳐를 사용했지만 CycleGAN에서는 
 
 Figure 5-6은 U-Net의 아키텍쳐를 보여준다. 왜 U-Net이라고 명명되었는지 바로 알 수 있다.
 
-![figure 5-6](../../assets/img/post/20200112-GAN_chapter5/GAN-figure5-6.png)
+![figure 5-6](https://liger82.github.io/assets/img/post/20200112-GAN_chapter5/GAN-figure5-6.png)
 
 VAE와 동일한 방식으로 U-Net은 반 쪽짜리 두 개로 이루어져 있다
 * downsampling 반 : input images를 공간적으로 압축하지만 채널은 넓게 늘린다.
@@ -178,7 +178,7 @@ InstanceNormalization layer는 배치 단위가 아니라 개별 샘플을 각�
 
 다음 figure 5-7은 4개의 다른 정규화를 보여준다.
 
-![figure 5-7](../../assets/img/post/20200112-GAN_chapter5/GAN-figure5-7.png)
+![figure 5-7](https://liger82.github.io/assets/img/post/20200112-GAN_chapter5/GAN-figure5-7.png)
 
 * 여기에서 N은 배치 축이고, C는 채널 축이다. (H,W)는 공간 축을 나타낸다.
 * 이 정육면체는 정규화 레이어의 입력 tensor를 나타낸다.
@@ -416,12 +416,12 @@ figure 5-8은 figure 5-3에서 보여준 CycleGAN의 결과를 위의 3가지 �
 생성자가 교대로 적용될 때 입력 이미지와 재구성 이미지의 차이가 작아보인다. 
 마지막으로 각 생성자는 자신의 타겟 도메인의 이미지를 적용했을 때 이 이미지를 크게 바꾸지 않는다. 
 
-![figure 5-8](../../assets/img/post/20200112-GAN_chapter5/GAN-figure5-8.png)
+![figure 5-8](https://liger82.github.io/assets/img/post/20200112-GAN_chapter5/GAN-figure5-8.png)
 
 신기한 것은 이 CycleGAN의 원논문에는 3번째 조건(동일성)은 옵션이고, 1,2번째 조건은 필수라고 했는데
 아래 figure 5-9를 보면 3번째 조건도 하는게 좋다는 생각이 든다.
 
-![figure 5-9](../../assets/img/post/20200112-GAN_chapter5/GAN-figure5-9.png)
+![figure 5-9](https://liger82.github.io/assets/img/post/20200112-GAN_chapter5/GAN-figure5-9.png)
 
 오렌지를 사과로 바꿀 수 있지만 선반의 색이 바뀌었다. 배경색의 변환을 막아주는 동일성 손실 항이 없어서이다.
 동일성 항은 이미지에서 변환에 필요한 부분 이외에는 바꾸지 않도록 생성자에게 제한을 가한다.
@@ -467,7 +467,7 @@ ResNet은 이전 레이어의 정보를 네트워크 앞쪽에 있는 한 개 �
 ResNet은 잔차 블록(residual block)을 차례대로 쌓아 구성한다. 각 블록은 다음 층으로 출력을 전달하기 전에 
 입력과 출력을 합하는 skip connection을 가지고 있다. figure 5-10에 하나의 잔차 블록이 있다.
 
-![figure 5-10](../../assets/img/post/20200112-GAN_chapter5/GAN-figure5-10.png)
+![figure 5-10](https://liger82.github.io/assets/img/post/20200112-GAN_chapter5/GAN-figure5-10.png)
 
 * weight layer는 CycleGAN의 샘플 정규화를 사용한 합성곱 층이다.
 
@@ -492,7 +492,7 @@ def residual(layer_input, filters):
 
 ResNet 생성자는 잔차 블록의 양쪽에 다운샘플링과 업샘플링 층이 있다. 전체 ResNet 구조는 figure 5-11과 같다.
 
-![figure 5-11](../../assets/img/post/20200112-GAN_chapter5/GAN-figure5-11.png)
+![figure 5-11](https://liger82.github.io/assets/img/post/20200112-GAN_chapter5/GAN-figure5-11.png)
 
 ResNet 구조는 수백 또는 수천 개의 층도 훈련할 수 있다고 알려져 있다. 앞쪽으로 갈수록 gradient가 줄어드는 
 vanishing gradient 문제가 없기 때문이다. error gradient가 잔차 블록의 skip connection을 통해
@@ -511,7 +511,7 @@ CycleGAN 원논문에서는 그림-사진 style transfer를 최고의 상태로 
 figure 5-12는 학습 과정 초기 단계에서 생성자의 출력이다. 모델이 모네 그림을 사진으로 변환하는 것과 그 반대로 변환하는 것을
 배우는 과정이다.
 
-![figure 5-12](../../assets/img/post/20200112-GAN_chapter5/GAN-figure5-12.png)
+![figure 5-12](https://liger82.github.io/assets/img/post/20200112-GAN_chapter5/GAN-figure5-12.png)
 
 첫 번째 줄에서는 사진에 모네가 사용한 특유의 색깔과 붓질이 점차 드러나는 모습이 보인다. 색은 자연스럽고 경계선은 
 부드럽게 변하고 있다.
@@ -519,7 +519,7 @@ figure 5-12는 학습 과정 초기 단계에서 생성자의 출력이다. 모�
 
 figure 5-13은 200번 epoch을 돌린 모델이 만든 결과이다.
 
-![figure 5-13](../../assets/img/post/20200112-GAN_chapter5/GAN-figure5-13.png)
+![figure 5-13](https://liger82.github.io/assets/img/post/20200112-GAN_chapter5/GAN-figure5-13.png)
 
 
 # Neural Style Transfer
@@ -527,7 +527,7 @@ figure 5-13은 200번 epoch을 돌린 모델이 만든 결과이다.
 Neural Style Transfer는 다른 종류의 style transfer이다. 훈련 셋을 사용하지 않고 이미지의 스타일을 다른 이미지로 전달한다.
 figure 5-14가 그 예이다.
 
-![figure 5-14](../../assets/img/post/20200112-GAN_chapter5/GAN-figure5-14.png)
+![figure 5-14](https://liger82.github.io/assets/img/post/20200112-GAN_chapter5/GAN-figure5-14.png)
 
 Neural Style Transfer는 3가지 손실 함수의 가중치 합을 기반으로 작동한다. 
 
@@ -566,7 +566,7 @@ content loss는 콘텐츠의 내용과 전반적인 사물의 배치 측면에�
 여기서 사용한 사전학습된 네트워크는 VGG19이다. ImageNet dataset에 있는 백만 개 이상의 이미지를 천 개 이상의 범주로 분류하도록 훈련된 
 19개 층을 가진 CNN이다. figure 5-15가 VGG19 네트워크 구조이다.
 
-![figure 5-15](../../assets/img/post/20200112-GAN_chapter5/GAN-figure5-15.png)
+![figure 5-15](https://liger82.github.io/assets/img/post/20200112-GAN_chapter5/GAN-figure5-15.png)
 
 예제 5-9는 두 이미지 사이의 content loss를 계산하는 코드이다. 
 이는 공식 케라스 저장소(https://github.com/keras-team/keras/blob/master/examples/neural_style_transfer.py)의 
@@ -632,7 +632,7 @@ Neural style transfer 원논문에서 제시한 해결책은 다음과 같은 �
 
 figure 5-16이 3개의 입력에 대한 채널의 출력(feature map)을 나타낸다
 
-![figure 5-16](../../assets/img/post/20200112-GAN_chapter5/GAN-figure5-16.png)
+![figure 5-16](https://liger82.github.io/assets/img/post/20200112-GAN_chapter5/GAN-figure5-16.png)
 
 이미지 A와 B의 스타일이 비슷하게 보인다. 둘 다 풀이 전경을 채운다. 또한 feature map에서 녹색 채널과 뾰족함 채널이 유사한 위치에서 강하게 활성화되고 있다.
 반면, C는 그렇지 않다. C는 갈색과 뾰족함 채널이 동일한 영역에서 활성화되고 있다. 
@@ -642,7 +642,7 @@ figure 5-16이 3개의 입력에 대한 채널의 출력(feature map)을 나타�
 레이어에 있는 모든 feature 사이의 내적을 담은 행렬을 정의할 수 있다. 이를 **gram matrix**라고 한다.
 figure 5-17은 각 이미지에 대한 3개의 feature 사이의 내적을 gram matrix로 보여준다.
 
-![figure 5-17](../../assets/img/post/20200112-GAN_chapter5/GAN-figure5-17.png)
+![figure 5-17](https://liger82.github.io/assets/img/post/20200112-GAN_chapter5/GAN-figure5-17.png)
 
 스타일이 비슷한 이미지 A와 B가 비슷한 gram matrix를 가진다. 콘텐츠는 다르더라도 gram matrix는 비슷할 수 있다. 
 따라서 style loss를 계산하려면 베이스 이미지와 합성된 이미지에 대한 네트워크의 여러 층에서 gram matrix를 계산해야 한다.
@@ -757,7 +757,7 @@ Figure 5-18은 다음과 같은 패러미터로 neural style transfer를 학습�
 * style_weight : 100
 * total_variance_weight : 20
 
-![figure 5-18](../../assets/img/post/20200112-GAN_chapter5/GAN-figure5-18.png)
+![figure 5-18](https://liger82.github.io/assets/img/post/20200112-GAN_chapter5/GAN-figure5-18.png)
 
 반복 스텝이 많아질수록 베이스 이미지를 점점 스타일 이미지의 스타일을 따라 만들고 있다. 그러면서도 베이스 이미지의
 전체적인 컨텐츠 구조는 유지하고 세세한 것들을 바꾸고 있다.

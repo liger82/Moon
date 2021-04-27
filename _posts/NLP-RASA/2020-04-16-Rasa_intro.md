@@ -83,7 +83,7 @@ rasa init
 그다음에는 만드냐는 질문에 Y,
 최초 모델을 학습시키냐는 질문에 Y
 
-![rasa_init](../../assets/img/post/20200416-rasa/rasa_init.png)
+![rasa_init](https://liger82.github.io/assets/img/post/20200416-rasa/rasa_init.png)
 
 학습이 마무리되면 아래와 같은 질문이 나옵니다.
 > Do you want to speak to the trained assistant on the command line?
@@ -104,12 +104,12 @@ Y 를 누르면 대화를 할 수 있습니다.
 
 여기까지 했으면 아래와 같은 파일이 해당 디렉토리에 있을 겁니다.
 
-![setup_files](../../assets/img/post/20200416-rasa/setupfiles.png)
+![setup_files](https://liger82.github.io/assets/img/post/20200416-rasa/setupfiles.png)
 
 여기서 인텐트와 엔티티를 담고 있는 것이 *data/nlu.md* 파일입니다.
 내용을 보면 아래 형식처럼 되어 있습니다.
 
-![nlu.md](../../assets/img/post/20200416-rasa/intent.png)
+![nlu.md](https://liger82.github.io/assets/img/post/20200416-rasa/intent.png)
 
 ## training data format
 
@@ -130,7 +130,7 @@ rasa에서는 두 종류의 training data format를 지원하고 있습니다.
         * entity 가 nlu 데이터에 포함되어 있어야 작동함
         * nlu 데이터에 2~3개 이상 있어야 됨.
     * 아래와 같이 다양하게 사용 가능
-    ![markdown](../../assets/img/post/20200416-rasa/dataformat_markdown.png)
+    ![markdown](https://liger82.github.io/assets/img/post/20200416-rasa/dataformat_markdown.png)
     
 2. json
     * 최상위에 'rasa_nlu_data'가 있고 그 아래가 다음과 같습니다.
@@ -150,7 +150,7 @@ rasa에서는 두 종류의 training data format를 지원하고 있습니다.
    * entity_synonyms 를 통해 유의어, 동의어를 지정해 줄 수 있다.
    * common_examples 는 필수값이지만 나머지는 없어도 학습 가능하다.
    * json format 에서 상세 키값들은 다음과 같다.
-   ![json_format](../../assets/img/post/20200416-rasa/jsonFormat.png)
+   ![json_format](https://liger82.github.io/assets/img/post/20200416-rasa/jsonFormat.png)
 
 3. convert nlu format for Rasa
     * rasa nlu 파일로 사용하기 위해 몇가지 포맷을 라사용 포맷으로 바꾸는 커맨드를 제공한다.
@@ -182,7 +182,7 @@ config.yml 파일을 보면 현재 파이프라인이 어떻게 구성되어 있
 rasa init 직후에 보면 다음과 같습니다. 이 챕터에는 일단 이렇게 생겼다는 것만 확인하고 이후 챕터에서
 파이프라인 구성에 대해 자세히 알아보겠습니다.
 
-![config](../../assets/img/post/20200416-rasa/config.png)
+![config](https://liger82.github.io/assets/img/post/20200416-rasa/config.png)
 
 
 ## story
