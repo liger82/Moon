@@ -53,8 +53,10 @@ Florida도 동일한 게획을 하고 있고 할머니의 사과들을 오렌지
 이는 할머니와 Florida의 위장 기술을 더 고도화하게 하는 촉매제가 된다.
 
 이 우스꽝스러운 게임을 몇 주간 해보니, 엄청난 일이 일어났다. 고객들은 진짜와 가짜를 구분할 수 있다고 못했으며 엄청 헷갈려했다.
-  
-## CycleGAN
+
+<b><b><b>
+
+# CycleGAN
 
 앞선 이야기는 생성 모델과 특히 style transfer(the cycle-consistent adversarial network, or **CycleGAN**) 개발에 대한 우화이다.
 CycleGAN의 원논문에서는 style transfer의 성장에 큰 기여를 했는데 이는 짝을 이룬 예제가 있는 training set 없이, reference 이미지 셋에서 
@@ -72,9 +74,10 @@ Figure 5-4가 두 모델의 차이점을 보여준다.
 
 pix2pix model은 source에서 target으로 한 방향으로만 작동하지만, CycleGAN은 동시에 양방향으로 모델을 훈련시킨다. 그래서 CycleGAN의 모델은 source에서 target으로 하는 것만큼 target에서 source로도 이미지를 바꾸는 것을 배운다.
 
-이제 Keras를 이용해 CycleGAN 모델을 빌드해보겠다.
+이제 Keras를 이용해 CycleGAN 모델을 빌드해보겠다.  
 
-  
+<b><b><b>
+
 # Your First CycleGAN
 
 ### data
@@ -129,7 +132,8 @@ generator의 아키텍쳐부터 살펴보면, 보통 CycleGAN generator는 두 �
 pix2pix 논문에서는 U-Net 아키텍쳐를 사용했지만 CycleGAN에서는 ResNet을 사용한다.
 이 챕터에서는 두 가지 모두를 사용해볼 것이다. 먼저, U-Net부터.
 
-  
+<b><b><b>
+
 ## The Generator (U-Net)
 
 Figure 5-6은 U-Net의 아키텍쳐를 보여준다. 왜 U-Net이라고 명명되었는지 바로 알 수 있다.
@@ -233,6 +237,8 @@ def build_generator_unet(self):
     return Model(img, output)
 ```
 
+<b><b><b>
+
 ## The Discriminators
 
 기존의 discriminator는 입력 이미지가 진짜인지 아닌지를 판별하는 하나의 숫자를 출력했었다. 
@@ -279,6 +285,8 @@ def build_discriminator(self):
 
     return Model(img, output)
 ```
+
+<b><b><b>
 
 ## Compiling the CycleGAN
 
@@ -364,6 +372,7 @@ self.combined.compile(loss=['mse', 'mse',
 전체 손실은 각 조건에 대한 손실의 가중치 합이다. mse(평균 제곱 오차)는 유효성 조건에 사용된다. 진짜와 가짜 타겟에 대해
 판별자의 출력을 확인한다. mae(평균 절댓값 오차)는 이미지 대 이미지 조건에 사용된다(재구성과 동일성 조)
 
+<b><b><b>
 
 ## Training the CycleGAN
 
@@ -406,6 +415,8 @@ for epoch in range(self.epoch, epochs):
 
 ```
 
+<b><b><b>
+
 ## Analysis of the CycleGAN
 
 loss function의 가중치 패러미터를 조정하면서 CycleGAN의 결과가 어떻게 바뀌는지 살펴보는 것도 좋다.
@@ -430,6 +441,8 @@ figure 5-8은 figure 5-3에서 보여준 CycleGAN의 결과를 위의 3가지 �
 색깔이 바뀌는 문제가 생긴다. 반대로 동일성 손실이 너무 크면 CycleGAN이 입력을 다른 도메인의 이미지처럼
 보이도록 바꾸지 못할 것이다.
 
+
+<b><b><b>
 
 # Creating a CycleGAN to Paint Like Monet
 
@@ -458,6 +471,7 @@ gan = CycleGAN(
 )
 ```
 
+<b><b><b>
 
 ## The Generator (ResNet)
 
@@ -504,6 +518,7 @@ vanishing gradient 문제가 없기 때문이다. error gradient가 잔차 블�
     skip connection 을 합친 후에 적용하는 활성화 함수가 없어서 이전 층의 feature map이 그대로 다음 층으로 전달된다.
     이를 identity mapping 이라고 한다.
     
+<b><b><b>
 
 ## Analysis of the CycleGAN
 
@@ -520,6 +535,9 @@ figure 5-12는 학습 과정 초기 단계에서 생성자의 출력이다. 모�
 figure 5-13은 200번 epoch을 돌린 모델이 만든 결과이다.
 
 ![figure 5-13](https://liger82.github.io/assets/img/post/20200112-GAN_chapter5/GAN-figure5-13.png)
+
+
+<b><b><b>
 
 
 # Neural Style Transfer
@@ -549,6 +567,9 @@ gradient descent 로 출력을 최적화하는 것은 지금까지 다루었던 
 여기에서는 베이스 이미지와 스타일 이미지 두 개만 가지고 있기에 이 방식을 사용할 수 없다. 앞으로 다루겠지만 사전 학습된 뉴럴넷을 사용해
 손실 함수에 필요한 이미지에 관한 중요한 정보를 얻을 것이다.  
 먼저 각각의 손실 함수에 대해 알아보도록 하겠다. 이 함수들이 neural style transfer 엔진의 핵심이다. 
+
+<b><b><b>
+
 
 ## Content Loss
 
@@ -619,6 +640,9 @@ def content_loss(content, gen):
 content_loss = content_weight * content_loss(base_image_features, 
                                              combination_features)
 ```
+
+<b><b><b>
+
 
 ## Style Loss
 
@@ -691,6 +715,7 @@ for layer_name in feature_layers:
     style_loss += (style_weight / len(feature_layers)) * sl
 ```
 
+<b><b><b>
 
 ## Total Variance Loss
 
@@ -721,6 +746,7 @@ loss = content_loss + style_loss + tv_loss
 
 ```
 
+<b><b><b>
 
 ## Running the Neural Style Transfer
 
@@ -749,6 +775,7 @@ for i in range(iterations):
     )
 ```
 
+<b><b><b>
 
 ## Analysis of the Neural Style Transfer Model
 
@@ -766,6 +793,7 @@ Figure 5-18은 다음과 같은 패러미터로 neural style transfer를 학습�
 이런 변화가 합성 이미지와 훈련 속도에 어떻게 영향을 미치는지 확인해볼 수 있다. 스타일 손실 함수에 있는 각 층에 부여된 가중치를
 줄여서 더 미세한 스타일이나 좀 더 큰 스타일 특성을 따르도록 조정할 수도 있다.
 
+<b><b><b>
 
 ## Summary
 
