@@ -12,7 +12,11 @@ comments: true
 이렇게 했더니 pyenv로 새로운 버전의 python을 설치할 때 에러가 났다.  
 이게 관련이 있는지 별개인지(별개일 확률이 높다) 모르겠지만 tkinter를 사용하려는데 설치가 쉽지 않다.
 
-# 1. How to install python 3 using pyenv on Mac os 11
+<br><br>
+
+> <subtitle> 1. How to install python 3 using pyenv on Mac os 11 </subtitle>
+
+<br>
 
 일단 본 시기에는 이 문제뿐만 아니라 다른 어플리케이션에서도 mac os update로 인한 문제가 있어서 업데이트를 유예하는 것을 권장한다.  
 다만 이미 해서 롤백하기가 싫거나 할 수 없는 상황에서 다음과 같은 조금 귀찮은 방법이 있음을 알린다.
@@ -74,7 +78,7 @@ $CFLAGS="-I$(brew --prefix openssl)/include -I$(brew --prefix bzip2)/include -I$
 
 
 
-# 2. How to install tkinter with pyenv on Mac os
+> <subtitle>  2. How to install tkinter with pyenv on Mac os </subtitle>
 
 pyenv로 python 설치에 문제가 없는 분은 위 내용은 생략해도 무방하다.
 tkinter는 python 표준 GUI 툴킷이다.
@@ -139,7 +143,7 @@ $ tkinter._test()
 
 아래 레퍼런스 블로그를 작성하신 분들에게 감사의 말씀 드리며 끝!!
 
-# References
+> <subtitle> References </subtitle>
 
 * [https://stackoverflow.com/questions/60469202/unable-to-install-tkinter-with-pyenv-pythons-on-macos/60469203#60469203](https://stackoverflow.com/questions/60469202/unable-to-install-tkinter-with-pyenv-pythons-on-macos/60469203#60469203){:target="_blank"}
 * [https://medium.com/@xogk39/install-tkinter-on-mac-pyenv-f112bd3f4663](https://medium.com/@xogk39/install-tkinter-on-mac-pyenv-f112bd3f4663){:target="_blank"}

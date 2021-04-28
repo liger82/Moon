@@ -7,9 +7,10 @@ categories: [NLP/RASA]
 tags : [virtual assistant, chatbot, Rasa, 챗봇, tutorial, pipeline, training, test, component]
 comments: true
 ---
-<br><br>
 
 > <subtitle>  Training Pipeline Overview </subtitle>
+
+<br><br>
 
 파이프라인에서는 어떤 구성요소가 있어야 하는지를 정의하는 것뿐만 아니라, 
 어떻게 구성요소가 배치되어야 하는지 순서까지 규정한다.
@@ -27,7 +28,7 @@ comments: true
 
 에피소드 3에서 알아본 2개의 파이프라인이 어떻게 구성되어 있는지 알아본다.
 
-<center><img src="https://liger82.github.io/assets/img/post/20200511-rasa-episode4/twopreconfiguredpipelines.png" width="60%"></center><br><br>
+<center><img src="https://liger82.github.io/assets/img/post/20200511-rasa-episode4/twopreconfiguredpipelines.png" width="70%"></center><br><br>
 
 ## Word Vector Sources 
 
