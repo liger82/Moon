@@ -18,7 +18,9 @@ Sutton 교수의 "introduction to reinforcement learning" 교재를 기반으로
 <br>
 
 > <subtitle> 강화학습이란? </subtitle>
+
 <br>
+
 * 상호작용으로부터 배우는 목표지향적 학습
 * 학습 과정에서 컴퓨터를 활용하는 방법
 * 이상적인 학습 환경을 가정하고 그 안에서 다양한 학습 방법이 갖는 효과를 분석
