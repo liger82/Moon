@@ -8,9 +8,11 @@ tags : [pyenv, mac os, Big Sur, mac os 11, tkinter]
 comments: true
 ---
 
+<p>
 본 글은 두 종류의 연결된 문제를 다루는 글이다. 일단 글쓴이는 Mac OS 업데이트를 나오자마자 해버렸다.(Catalina -> Big Sur)  
 이렇게 했더니 pyenv로 새로운 버전의 python을 설치할 때 에러가 났다.  
 이게 관련이 있는지 별개인지(별개일 확률이 높다) 모르겠지만 tkinter를 사용하려는데 설치가 쉽지 않다.
+</p>
 
 <br><br>
 
@@ -76,7 +78,7 @@ $sudo xcode-select --install
 $CFLAGS="-I$(brew --prefix openssl)/include -I$(brew --prefix bzip2)/include -I$(brew --prefix readline)/include -I$(xcrun --show-sdk-path)/usr/include" LDFLAGS="-L$(brew --prefix openssl)/lib -L$(brew --prefix readline)/lib -L$(brew --prefix zlib)/lib -L$(brew --prefix bzip2)/lib" pyenv install --patch 3.6.9 < <(curl -sSL https://github.com/python/cpython/commit/8ea6353.patch\?full_index\=1)
 ```
 
-
+<br><br>
 
 > <subtitle>  2. How to install tkinter with pyenv on Mac os </subtitle>
 
@@ -142,6 +144,8 @@ $ tkinter._test()
 ```
 
 아래 레퍼런스 블로그를 작성하신 분들에게 감사의 말씀 드리며 끝!!
+
+<br><br>
 
 > <subtitle> References </subtitle>
 
