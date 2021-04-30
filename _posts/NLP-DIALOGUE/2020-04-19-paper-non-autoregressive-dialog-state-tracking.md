@@ -285,6 +285,8 @@ $$ T_{state}$$ 만큼 attention sequence 를 반복한 후에, 마지막 출력�
 ![state decoder 1](https://liger82.github.io/assets/img/post/20200419-NADST/state_decoder1.png)
 
 $$W_{state} \in \mathbb{R}^{d \times \|V\|} $$ *V* : the set of output vocabulary  
+
+
 open-vocabulary DST 모델이라서 알려진 slot ontology 를 가정하지는 않지만 dialogue history 로부터 후보군을 만들 수 있어서 어휘 셋을 상정할 수 있다.  
 추론시 oov 문제를 해결하기 위해 pointer network 를 Transformer decoder 에 통합시켰다.  
 (<span style="color:grey">Pointer network <sup>*1</sup>는 attention mechanism 을 간략화해서 output dimension 이 input sequence 의 길이에 따라 변할 수 있게 하였다. 
