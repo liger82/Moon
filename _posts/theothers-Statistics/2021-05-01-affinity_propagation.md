@@ -12,7 +12,7 @@ comments: true
 
 <br>
 
-<center><img src="https://uploads.toptal.io/blog/image/92524/toptal-blog-image-1463639242851-65077729f48e9e7f8e0d0ca68cb4a19f.jpg" width="70%"></center><br>
+<center><img src="https://uploads.toptal.io/blog/image/92524/toptal-blog-image-1463639242851-65077729f48e9e7f8e0d0ca68cb4a19f.jpg" width="50%"></center><br>
 
 <br>
 
@@ -52,16 +52,17 @@ AP는 수렴이 될 때까지 다음 이터레이션을 돈다. 각 이터레이
 
 책임도와 가용도는 처음 0으로 세팅한다.  
 책임도는 다음과 같이 계산된다.  
-<center> $$ r(i, k) \gets s(i, k) - max(a(i, k') + s(i, k')) \text{where} k' \neq k $$ </center>  
+<center> $$ r(i, k) \gets s(i, k) - max(a(i, k') + s(i, k')) \text{ where } k' \neq k $$ </center>  
 
 점 i와 점 k 사이의 유사도 값에서 점 i와 다른 후보 대표점 사이의 유사도 및 가용도 합에서 가장 큰 것을 뺀 것이다. 대표점에 얼마나 적합한 지 계산하는 논리 이면에는 초기 우선 선호도가 더 높으면 점수도 더 높지만, 스스로 좋은 후보라고 여기는 유사한 점이 있으면 책임도 점수는 떨어지기 때문에 이터레이션에서 하나가 결정될 때까지 둘 사이에서 경쟁이 벌어지는 것이다.
 
 가용도를 계산할 때 각 후보가 좋은 대표점인지 여부를 입증하는 자료로 책임도를 사용한다. 
-<center> $$ a(i, k) \gets min(0, r(k, k) + \sum{r(i', k)}) \text{where} i' \neq i, k$$ </center>  
+<center> $$ a(i, k) \gets min(0, r(k, k) + \sum{r(i', k)}) \text{ where } i' \neq i, k$$ </center>  
 
 a(i, k)는 자기에 대한 책임도 r(k, k)와 후보 대표점이 다른 점들로부터 받는 양수의 책임도의 합이다. 
 <br>
 
+마지막으로 값이 변화하는 정도가 임계치 아래로 떨어지거나 최대 반복 횟수에 도달할 때 절차를 종료하기 위한 정지 기준을 가질 수 있다. AP 절차를 통해 어느 지점에서든, 책임도(r)와 가용도(a) 행렬을 합하면 필요한 클러스터링 정보를 얻을 수 있다. 점 i의 경우 최대 r(i, k) + a(i, k)가 있는 k는 점 i의 대표점을 나타낸다. 또는, 단지 대표점들 집합을 필요로 한다면, 주요 대각선들을 스캔하면 된다. $$ r(i, i) + a(i, i) > 0$$ 이면 점 i가 대표점이다.
 
 
 <br><br>
