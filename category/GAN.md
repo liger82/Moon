@@ -1,5 +1,5 @@
 ---
 layout: category
-title: Generation/GAN
-permalink: '/Generation/GAN/'
+title: The Others/GAN
+permalink: '/theothers/GAN/'
 ---
