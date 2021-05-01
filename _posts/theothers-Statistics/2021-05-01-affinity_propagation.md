@@ -8,9 +8,11 @@ tags : [AP, Affinity Propagation, Statistics]
 comments: true
 ---
 
-<br><center><img src="https://uploads.toptal.io/blog/image/92524/toptal-blog-image-1463639242851-65077729f48e9e7f8e0d0ca68cb4a19f.jpg" width=70%></center><br>
-
 > <subtitle> 개괄 </subtitle>
+
+<br>
+
+<center><img src="https://uploads.toptal.io/blog/image/92524/toptal-blog-image-1463639242851-65077729f48e9e7f8e0d0ca68cb4a19f.jpg" width="70%"></center><br>
 
 <br>
 
@@ -38,7 +40,26 @@ AP는 입력 값으로 두 개의 데이터 셋을 요구한다.
 
 유사도와 선호도 모두 단일 대각 행렬(value가 대각선에 있고 나머지는 0)로 표현할 수 있다. 행렬 표현은 dense dataset에 사용하기 좋다. 점 간 연결이 드물 경우, 전체 n x n 행렬을 메모리에 저장하지 않고 연결된 점 간의 유사도 리스트를 유지하는 것이 더 실용적이다. '점 간 메시지 교환'은 행렬을 다루는 것과 동일하다. 이는 관점과 구현의 문제일 뿐이다.
 
+<br>
 
+AP는 수렴이 될 때까지 다음 이터레이션을 돈다. 각 이터레이션은 두 개의 message-passing step을 지닌다.  
+1. 책임도(Responsibilities) 계산
+    * 책임도(Responsibility) *r(i, k)* 는 점 i의 다른 잠재적인 대표 점들을 고려하여 점 i의 대표점으로서 점 k 가 적합한지를 위한 누적된 증거를 반영한다. 책임도는 점 i 에서 후보 대표점 k로 전송된다.
+2. 가용도(Availabilities) 계산
+    * 가용도(Availability) *a(i, k)* 는 점 k가 대표점이 되어야 하는 다른 점들의 지원을 고려하여 대표점으로 k를 선택하는 것이 얼마나 적절한지에 대한 누적 증거를 반영한다. 가용도는 후보 대표점 k에서 점 i로 전송된다.
+
+<br>
+
+책임도와 가용도는 처음 0으로 세팅한다.  
+책임도는 다음과 같이 계산된다.  
+<center> $$ r(i, k) \gets s(i, k) - max(a(i, k') + s(i, k')) \text{where} k' \neq k $$ </center>  
+
+점 i와 점 k 사이의 유사도 값에서 점 i와 다른 후보 대표점 사이의 유사도 및 가용도 합에서 가장 큰 것을 뺀 것이다. 대표점에 얼마나 적합한 지 계산하는 논리 이면에는 초기 우선 선호도가 더 높으면 점수도 더 높지만, 스스로 좋은 후보라고 여기는 유사한 점이 있으면 책임도 점수는 떨어지기 때문에 이터레이션에서 하나가 결정될 때까지 둘 사이에서 경쟁이 벌어지는 것이다.
+
+가용도를 계산할 때 각 후보가 좋은 대표점인지 여부를 입증하는 자료로 책임도를 사용한다. 
+<center> $$ a(i, k) \gets min(0, r(k, k) + \sum{r(i', k)}) \text{where} i' \neq i, k$$ </center>  
+
+a(i, k)는 자기에 대한 책임도 r(k, k)와 후보 대표점이 다른 점들로부터 받는 양수의 책임도의 합이다. 
 <br>
 
 
