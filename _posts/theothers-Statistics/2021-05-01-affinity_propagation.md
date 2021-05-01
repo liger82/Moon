@@ -3,7 +3,7 @@ layout: post
 title: "[Clustering] Affinity Propagation"
 date: 2021-05-01
 excerpt: " "
-categories: [theothers/statistics]
+categories: [The Others/Statistics]
 tags : [AP, Affinity Propagation, Statistics]
 comments: true
 ---
@@ -36,7 +36,7 @@ AP는 입력 값으로 두 개의 데이터 셋을 요구한다.
 
 <br>
 
-유사도와 선호도 모두 단일 대각 행렬(value가 대각선에 있고 나머지는 0)로 표현할 수 있다. 행렬 표현은 dense dataset에 사용하기 좋다.
+유사도와 선호도 모두 단일 대각 행렬(value가 대각선에 있고 나머지는 0)로 표현할 수 있다. 행렬 표현은 dense dataset에 사용하기 좋다. 점 간 연결이 드물 경우, 전체 n x n 행렬을 메모리에 저장하지 않고 연결된 점 간의 유사도 리스트를 유지하는 것이 더 실용적이다. '점 간 메시지 교환'은 행렬을 다루는 것과 동일하다. 이는 관점과 구현의 문제일 뿐이다.
 
 
 <br>
