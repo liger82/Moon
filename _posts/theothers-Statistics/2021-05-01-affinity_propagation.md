@@ -12,13 +12,15 @@ comments: true
 
 <br>
 
-<center><img src="https://uploads.toptal.io/blog/image/92524/toptal-blog-image-1463639242851-65077729f48e9e7f8e0d0ca68cb4a19f.jpg" width="50%"></center><br>
+Affinity Propagtion(AP) 은 데이터 포인트 간 "message passing" 개념을 기반으로 하는 클러스터링 알고리즘이다.  
+k-means와 k-medoids 같은 클러스터링 알고리즘과 달리, AP는 알고리즘 실행 전에 클러스터의 개수를 요구하지 않는다. 
+k-medoids 와 유사하게, AP는 입력 셋에서 클러스터를 대표하는 데이터(exemplars)를 찾는 방식으로 클러스터링을 한다.
 
 <br>
 
-Affinity Propagtion(AP) 은 데이터 포인트 간 "message passing" 개념을 기반으로 하는 클러스터링 알고리즘이다.  
-k-means와 k-medoids 같은 클러스터링 알고리즘과 달리, AP는 알고리즘 실행 전에 클러스터의 개수를 요구하지 않는다. 
-k-medoids 와 유사하게, AP는 입력 셋에서 클러스터를 대표하는 데이터(exemplars)를 찾는다.
+<center><img src="https://uploads.toptal.io/blog/image/92524/toptal-blog-image-1463639242851-65077729f48e9e7f8e0d0ca68cb4a19f.jpg" width="50%"></center><br>
+
+> <subtitle> Affinity Propagation </subtitle>
 
 <br>
 
@@ -47,8 +49,6 @@ AP는 수렴이 될 때까지 다음 이터레이션을 돈다. 각 이터레이
     * 책임도(Responsibility) *r(i, k)* 는 점 i의 다른 잠재적인 대표 점들을 고려하여 점 i의 대표점으로서 점 k 가 적합한지를 위한 누적된 증거를 반영한다. 책임도는 점 i 에서 후보 대표점 k로 전송된다.
 2. 가용도(Availabilities) 계산
     * 가용도(Availability) *a(i, k)* 는 점 k가 대표점이 되어야 하는 다른 점들의 지원을 고려하여 대표점으로 k를 선택하는 것이 얼마나 적절한지에 대한 누적 증거를 반영한다. 가용도는 후보 대표점 k에서 점 i로 전송된다.
-
-<br>
 
 책임도와 가용도는 처음 0으로 세팅한다.  
 책임도는 다음과 같이 계산된다.  
