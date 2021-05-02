@@ -10,8 +10,6 @@ comments: true
 
 > <subtitle> 개괄 </subtitle>
 
-<br>
-
 Affinity Propagtion(AP) 은 데이터 포인트 간 "message passing" 개념을 기반으로 하는 클러스터링 알고리즘이다.  
 k-means와 k-medoids 같은 클러스터링 알고리즘과 달리, AP는 알고리즘 실행 전에 클러스터의 개수를 요구하지 않는다. 
 k-medoids 와 유사하게, AP는 입력 셋에서 클러스터를 대표하는 데이터(exemplars)를 찾는 방식으로 클러스터링을 한다.
@@ -21,8 +19,6 @@ k-medoids 와 유사하게, AP는 입력 셋에서 클러스터를 대표하는 
 <center><img src="https://uploads.toptal.io/blog/image/92524/toptal-blog-image-1463639242851-65077729f48e9e7f8e0d0ca68cb4a19f.jpg" width="50%"></center><br>
 
 > <subtitle> Affinity Propagation </subtitle>
-
-<br>
 
 K-means와 그 유사한 알고리즘의 주요 단점은 클러스터의 개수를 정하고 최초 대표 점들을 선정해야 한다는 점이다.  
 AP는 데이터 포인트 쌍 간의 유사도를 측정하여 입력값으로 사용하고, 동시에 모든 데이터 포인트를 잠재적인 대표 데이터로 여긴다.
@@ -72,7 +68,6 @@ K-Means와 그 유사한 알고리즘에서 사전에 클러스터 수를 결정
 <br>
 
 > <subtitle> Code </subtitle>
-<br>
 
 scikit-learn(==0.24.2)을 사용해서 간단히 코드로 알아보도록 하겠다.  
 
@@ -100,12 +95,13 @@ print("Silhouette Coefficient: %0.3f" % silhouette_score(X, labels, metric='sqeu
 ```
 <p>
 
-    Estimated number of clusters: 3
-    Adjusted Rand Index: 0.912
-    Adjusted Mutual Information: 0.871
-    Silhouette Coefficient: 0.753
+    Estimated number of clusters: 3  
+    Adjusted Rand Index: 0.912  
+    Adjusted Mutual Information: 0.871  
+    Silhouette Coefficient: 0.753  
 </p>
 
+<br>
 입력 값이 어느 클러스터인지 예측할 땐 다음과 같이 사용한다.  
 
 ```python
@@ -118,7 +114,7 @@ model.cluster_centers_[model_index]
 
     array([[1.03325861, 1.15123595]])
 </p>
-
+<br>
 
 시각화해보면 다음과 같다.
 
