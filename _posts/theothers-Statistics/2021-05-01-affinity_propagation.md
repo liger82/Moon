@@ -94,11 +94,11 @@ print("Adjusted Mutual Information: %0.3f" % adjusted_mutual_info_score(labels_t
 print("Silhouette Coefficient: %0.3f" % silhouette_score(X, labels, metric='sqeuclidean'))
 ```
 
-<div style="color:b8b7f7; padding-left:30px">
-Estimated number of clusters: 3  
-Adjusted Rand Index: 0.912  
-Adjusted Mutual Information: 0.871  
-Silhouette Coefficient: 0.753  
+<div style="color:blue; padding-left:30px">
+Estimated number of clusters: 3 <br>
+Adjusted Rand Index: 0.912 <br>
+Adjusted Mutual Information: 0.871  <br>
+Silhouette Coefficient: 0.753 <br>
 </div>
 
 <br>
@@ -111,7 +111,7 @@ model_index = model.predict([[0.5, 1]])
 model.cluster_centers_[model_index]
 ```
 
-<div style="color:b8b7f7; padding-left:30px">
+<div style="color:blue; padding-left:30px">
 array([[1.03325861, 1.15123595]])
 </div>
 
