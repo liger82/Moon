@@ -93,13 +93,13 @@ print("Adjusted Rand Index: %0.3f" % adjusted_rand_score(labels_true, labels))
 print("Adjusted Mutual Information: %0.3f" % adjusted_mutual_info_score(labels_true, labels))
 print("Silhouette Coefficient: %0.3f" % silhouette_score(X, labels, metric='sqeuclidean'))
 ```
-<p>
 
-    Estimated number of clusters: 3  
-    Adjusted Rand Index: 0.912  
-    Adjusted Mutual Information: 0.871  
-    Silhouette Coefficient: 0.753  
-</p>
+<div style="color:b8b7f7; padding-left:30px">
+Estimated number of clusters: 3  
+Adjusted Rand Index: 0.912  
+Adjusted Mutual Information: 0.871  
+Silhouette Coefficient: 0.753  
+</div>
 
 <br>
 입력 값이 어느 클러스터인지 예측할 땐 다음과 같이 사용한다.  
@@ -110,10 +110,11 @@ model_index = model.predict([[0.5, 1]])
 # 클러스터 중심 점
 model.cluster_centers_[model_index]
 ```
-<p>
 
-    array([[1.03325861, 1.15123595]])
-</p>
+<div style="color:b8b7f7; padding-left:30px">
+array([[1.03325861, 1.15123595]])
+</div>
+
 <br>
 
 시각화해보면 다음과 같다.
