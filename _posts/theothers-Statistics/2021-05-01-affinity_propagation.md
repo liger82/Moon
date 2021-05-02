@@ -69,9 +69,78 @@ K-Means와 그 유사한 알고리즘에서 사전에 클러스터 수를 결정
 선호도를 더 높은 값으로 설정하면 클러스터 수가 늘어날 것이다. 각 점이 대표점이 되는 적합성에 대해 더 확실해지기 때문이다. 
 반대로, 선호도를 낮게 설정하면 클러스터 수가 줄어들게 된다. 그러나 현 상황에 정확히 맞는 결과를 얻기 위해서는 선호도를 조정하는 몇 번의 실행이 필요할 수 있다.
 
+<br>
+
+> <subtitle> Code </subtitle>
+<br>
+
+scikit-learn(==0.24.2)을 사용해서 간단히 코드로 알아보도록 하겠다.  
+
+```python
+from sklearn.datasets import make_blobs
+from sklearn.cluster import AffinityPropagation
+from sklearn.metrics import *
+
+# 데이터를 만든다.
+# 2차원의 점 3개를 임의로 정한다.
+centers = [[1, 1], [-1, -1], [1, -1]]
+# 위에서 정한 점을 중심으로 300개의 샘플을 만든다.
+X, labels_true = make_blobs(n_samples=300, centers=centers, cluster_std=0.5, random_state=0)
+
+model = AffinityPropagation(preference=-50).fit(X)
+
+cluster_centers_indices = model.cluster_centers_indices_
+labels = model.labels_
+n_clusters_ = len(cluster_centers_indices)
+
+print('Estimated number of clusters: %d' % n_clusters_)
+print("Adjusted Rand Index: %0.3f" % adjusted_rand_score(labels_true, labels))
+print("Adjusted Mutual Information: %0.3f" % adjusted_mutual_info_score(labels_true, labels))
+print("Silhouette Coefficient: %0.3f" % silhouette_score(X, labels, metric='sqeuclidean'))
+```
+<p>
+
+    Estimated number of clusters: 3
+    Adjusted Rand Index: 0.912
+    Adjusted Mutual Information: 0.871
+    Silhouette Coefficient: 0.753
+</p>
+
+입력 값이 어느 클러스터인지 예측할 땐 다음과 같이 사용한다.  
+
+```python
+# 입력 값의 클러스터 인덱스를 반환
+model_index = model.predict([[0.5, 1]])
+# 클러스터 중심 점
+model.cluster_centers_[model_index]
+```
+<p>
+
+    array([[1.03325861, 1.15123595]])
+</p>
 
 
-<br><br>
+시각화해보면 다음과 같다.
+
+```python
+from itertools import cycle
+import matplotlib.pyplot as plt
+
+colors = cycle('rgb')
+for k, col in zip(range(n_clusters_), colors):
+    class_members = labels == k
+    cluster_center = X[cluster_centers_indices[k]]
+    plt.plot(X[class_members, 0], X[class_members, 1], col + '.')
+    for x in X[class_members]:
+        plt.plot([cluster_center[0], x[0]], [cluster_center[1], x[1]], col, alpha=0.25)
+    plt.plot(cluster_center[0], cluster_center[1], 'o', mec='k', mew=3, markersize=7)
+
+plt.show()
+```
+
+<br><center><img src="https://datascienceschool.net/_images/16.05%20Affinity%20Propagation_3_0.png"  width="70%"></center><br>
+
+<br>
 
 > <subtitle> References </subtitle>
 
