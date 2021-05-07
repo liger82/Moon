@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "RL: Introduction"
+title: "[RL] ch01 Introduction"
 date: 2020-10-12
 excerpt: ""
 categories: [RL/RL]
