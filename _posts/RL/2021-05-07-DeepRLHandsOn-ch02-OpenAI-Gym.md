@@ -100,21 +100,75 @@ class Agent:
 
 환경의 구성요소에 대해 자세히 알아보도록 하겠습니다.
 
+<br>
+
 ## The action space
 
 에이전트의 행동은 이산적(discrete), 연속적, 혹은 둘 다 일 수 있습니다. 또한 행동을 하나로 제한할 필요도 없습니다. 이를 대비해서 Gym에서는 여러 행동을 단일한 행동으로 중첩할 수 있는 container class를 제공합니다.
 
+<br>
+
 ## The Observation space
 
 관찰값은 매 스텝마다 환경이 에이전트에게 부여하는 정보의 일부입니다. 관찰값은 단순한 숫자 뭉치일 수도 있고 복잡한 2차원이상의 텐서일 수도 있습니다.  
-다음은 Gym에서 이 공간을 다이어그램으로 표현한 것입니다.
 
-<br><center><img src= "https://liger82.github.io/assets/img/post/20210507-DeepRLHandsOn-ch02-OpenAI-Gym/fig_2_1.png" width="60%"></center><br>
+다음은 Gym에서 이 두 공간을 구현한 Space class를 다이어그램으로 표현한 것입니다.
+
+<br><center><img src= "https://liger82.github.io/assets/img/post/20210507-DeepRLHandsOn-ch02-OpenAI-Gym/fig_2_1.png" width="70%"></center><br>
 
 가장 기본인 abstract class인 *Space*는 두 가지 메서드를 포함하고 있습니다.  
 * sample() : 해당 공간으로부터 랜덤하게 뽑은 표본 반환
 * contains(x) : x가 해당 공간에 속하는지 확인함
 
+두 가지 메서드 모두 abstract method이고 *Space*의 subclass들로 재구성할 수 있습니다.
+
+* *Discrete* class는 상호 배제적인 아이템들의 조합을 표현하며, 아이템 개수를 의미하는 n 이라는 필드만 존재합니다. 예들 들어, *Discrete* class를 이용해서 행동 공간을 상하좌우로 표현할 수 있습니다. 
+* *Box* class는 특정 구간 내에서의 n 차원의 tensor를 표현할 수 있습니다. 예를 들어, 엑셀 페달을 0.0 ~ 1.0 사이의 값으로 정의하여 표현할 수 있습니다.
+* *Tuple* class는 여러 Space class를 함께 사용할 수 있도록 허용해줍니다. tuple에 여러 개를 담는다고 생각하면 쉽습니다.
+
+위 세 가지 말고도 다른 Space의 subclass들이 있지만 이 세 가지가 가장 많이 유용합니다.
+
+<br>
+
+## The environment
+
+Gym에서 환경은 *Env* class로 구현됩니다. Env class 는 다음과 같은 멤버들로 구성됩니다. 
+
+* action_space : Space class의 필드로, 해당 환경에서 가능한 행동들을 특정합니다.
+* observation_space : Space class의 필드지만, 환경에 의해 제공되는 관찰값들을 특정합니다.
+* reset() : 환경을 초기 상태로 바꾸며, 초기 관찰값 벡터를 반환합니다.
+* step(action) : action을 입력받아서 행동에 대한 관찰값, 보상, 에피소드가 끝났는지 여부 등을 반환합니다.
+    - observation : 관찰값, numpy vector or matrix
+    - reward : 보상값, float
+    - done : 에피소드 종료 여부, Boolean
+    - info : 환경에 대한 추가 정보
+* render() : 관찰값을 사람이 보기 편하게 보여주는 유틸리티 메서드로, 이 책에서는 다루지 않습니다.
+
+<br>
+
+## Creating an environment
+
+모든 환경은 고유의 환경이름을 가지고 있습니다. "EnvironmentName-vN" 형태로 되어 있으며, N은 버전 번호입니다. 환경을 만들 때는 **gym.make(env_name)** 로 선언합니다.
+
+gym의 버전마다 보유하고 있는 환경이 다르고 동일한 환경이라도 버전에 따라 세팅이 다르니 유의할 필요가 있습니다.
+
+환경은 몇 개의 그룹으로 구분됩니다.  
+* **Classic control problems** : optimal control thoery나 RL 논문에서 벤치마크로 쓰였던 과제로 보통 간단하고 저차원의 관찰값과 행동공간을 구성되어 있습니다. 구현한 알고리즘을 빠르게 체크해볼 때 유용하게 사용할 수 있습니다. 예를 들어, "MNIST for RL"가 있습니다.
+* **Atari 2600** : 63개의 고전 게임
+* **Algorithmic** : 관찰한 시퀀스를 카피하거나 숫자를 더하는 것과 같은 간단한 계산 과제를 수행하기 위한 문제들
+* **Board Games** : 바둑과 Hex 게임
+* **Box2D** : 걷기나 자동차 통제를 학습할 수 있는 물리적 시뮬레이터를 제공하는 환경
+* **MuJoCo** : 몇몇 연속적인 통제 문제에 쓰이는 물리 시뮬레이터
+* **Parameter tuning** : NN parameters를 최적화하는데 쓰이는 RL
+* **Toy test** : 간단한 grid world를 텍스트로 표현한 환경
+* **PyGame** : PyGame engine으로 만든 몇몇 환경들
+* **Doom** : ViZDoom으로 만든 9개의 미니게임
+
+환경의 전체 리스트는 [https://gym.openai.com/envs](https://gym.openai.com/envs){:target="_blank"} 에서 확인할 수 있습니다.
+
+<br>
+
+## The CartPole session
 
 
 
