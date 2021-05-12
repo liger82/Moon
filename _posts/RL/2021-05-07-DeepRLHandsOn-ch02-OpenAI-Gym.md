@@ -112,6 +112,8 @@ class Agent:
 
 관찰값은 매 스텝마다 환경이 에이전트에게 부여하는 정보의 일부입니다. 관찰값은 단순한 숫자 뭉치일 수도 있고 복잡한 2차원이상의 텐서일 수도 있습니다.  
 
+<br>
+
 다음은 Gym에서 이 두 공간을 구현한 Space class를 다이어그램으로 표현한 것입니다.
 
 <br><center><img src= "https://liger82.github.io/assets/img/post/20210507-DeepRLHandsOn-ch02-OpenAI-Gym/fig_2_1.png" width="70%"></center><br>
@@ -153,7 +155,7 @@ Gym에서 환경은 *Env* class로 구현됩니다. Env class 는 다음과 같�
 gym의 버전마다 보유하고 있는 환경이 다르고 동일한 환경이라도 버전에 따라 세팅이 다르니 유의할 필요가 있습니다.
 
 환경은 몇 개의 그룹으로 구분됩니다.  
-* **Classic control problems** : optimal control thoery나 RL 논문에서 벤치마크로 쓰였던 과제로 보통 간단하고 저차원의 관찰값과 행동공간을 구성되어 있습니다. 구현한 알고리즘을 빠르게 체크해볼 때 유용하게 사용할 수 있습니다. 예를 들어, "MNIST for RL"가 있습니다.
+* **Classic control problems** : optimal control theory나 RL 논문에서 벤치마크로 쓰였던 과제로 보통 간단하고 저차원의 관찰값과 행동공간을 구성되어 있습니다. 구현한 알고리즘을 빠르게 체크해볼 때 유용하게 사용할 수 있습니다. 예를 들어, "MNIST for RL"가 있습니다.
 * **Atari 2600** : 63개의 고전 게임
 * **Algorithmic** : 관찰한 시퀀스를 카피하거나 숫자를 더하는 것과 같은 간단한 계산 과제를 수행하기 위한 문제들
 * **Board Games** : 바둑과 Hex 게임
@@ -339,15 +341,12 @@ ActionWrapper를 상속받아 재정의하였을 경우에 general하게 적용�
 
 Monitor는 말그대로 에이전트의 성능을 파일에 저장할 수 있도록 하는 class입니다. 심지어 영상도 가능합니다. 
 
-2017년 8월까지는 Monitor class의 recording을 https://gym.openai.com website에서 볼 수 있었다고 하는데 이 기능은 중단되었다고 합니다.
-
-
+(2017년 8월까지는 Monitor class의 recording을 https://gym.openai.com website에서 볼 수 있었다고 하는데 이 기능은 중단되었다고 합니다.)
 
 Monitor 설정은 환경 설정에 이어서 합니다.
 
 ```python
 import gym
-
 
 if __name__ == "__main__":
     env = gym.make("CartPole-v0")
