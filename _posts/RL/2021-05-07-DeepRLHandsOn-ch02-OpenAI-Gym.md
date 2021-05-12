@@ -178,6 +178,167 @@ Gym에서 제공하는 가장 간단한 RL 환경인 CartPole에 대해 알아�
 
 이번 장에서는 시행착오와 RL 알고리즘을 통해 CartPole을 몇 분 안에 쉽게 해결하는 방법을 다룰 것입니다. 
 
+<br>
+
+> <subtitle> The random CartPole agent </subtitle>
+
+이번 세션에서는 액션을 랜덤하게 추출하여 CartPole에서 실험을 해보도록 하겠습니다.
+
+코드는 **Chapter02/02_cartpole_random.py** 입니다.
+
+```python
+import gym
+
+if __name__ == "__main__":
+    env = gym.make("CartPole-v0")
+
+    total_reward = 0.0
+    total_steps = 0
+    # 환경 리셋
+    obs = env.reset()
+    while True:
+        # 그래픽으로 볼 수 있음
+        env.render()
+        # 랜덤하게 액션을 뽑는다
+        # 액션은 0 혹은 1 값으로 좌우를 대변한다.
+        action = env.action_space.sample()
+        # 액션을 입력받아 다음 단계로 진행
+        # 관찰값, 보상, 에피소드 종료 여부, 부가정보를 반환한다.
+        obs, reward, done, _ = env.step(action)
+        total_reward += reward
+        total_steps += 1
+        # 너무 빨리 끝나서 통제하려고 넣었음. 아무 글자나 넣으면 됨.
+        # input()
+        if done:
+            break
+
+    print("Episode done in %d steps, total reward %.2f" % (
+        total_steps, total_reward))
+
+```
+
+랜덤하게 좌우로 움직이다가 막대가 쓰러지면 끝납니다. 현재 관찰값에 대한 행동의 변화가 없기 때문에 큰 보상을 받기는 어렵습니다.
+
+<br>
+
+> <subtitle> Extra Gym functionality - wrappers and monitors </subtitle>
+
+<br>
+
+## Wrappers
+
+환경에서 받는 관찰값이나 보상 등에 대해 처리를 하고 싶을 때가 있습니다. 예를 들어, 즉각적인 관찰값 뿐만 아니라 지난 N개의 관찰값도 같이 에이전트에게 제공하고자 할 수 있습니다. 동적인 컴퓨터 게임에서는 보통 이렇게 합니다. 또 다른 예시로는, 이미지 관찰값을 에이전트가 쉽게 이해하도록 자르거나 전처리를 할 수도 있습니다. Gym에서는 이런 요구사항을 반영할 수 있도록 **Wrapper** class를 제공합니다. 
+
+Wrapper class의 구조는 다음과 같습니다.
+
+<br><center><img src= "https://liger82.github.io/assets/img/post/20210507-DeepRLHandsOn-ch02-OpenAI-Gym/fig_2_4_wrapper.png" width="70%"></center><br>
+
+Wrapper class는 Env class를 상속하고 이를 활용할 때에는 gym.Wrapper 를 상속하면 됩니다. 추가 기능을 부여하고자 하면 step()이나 reset() 같은 method들을 재정의하면 됩니다. 
+
+```python
+class NewWrapper(gym.Wrapper):
+    def __init__(self, env):
+        gym.Wrapper.__init__(self, env)
+        ...
+    
+    def reset(self, **kwargs):
+        ...
+        return self.env.reset(**kwargs)
+    
+    def step(self, action):
+        ...
+        return obs, reward, end, info
+```
+
+<br>
+
+더 제한적으로 wrapper class를 사용할 수도 있습니다. 관찰값, 행동 각각에 대해서만 적용할 수 있습니다. 다음 subclass들을 사용하면 됩니다.
+
+* **ObservationWrapper** : 관찰값 수정
+
+    ```python
+    class NewObs(gym.ObservationWrapper):
+        def __init__(self, env):
+            gym.ObservationWrapper.__init__(self, env)
+            self.observation_space = spaces.Box(...)
+
+        def observation(self, obs):
+            ...
+            return obs
+    ```
+
+* **RewardWrapper** : 보상 수정
+
+    ```python
+    class NewRew(gym.RewardWrapper):
+        def __init__(self, env):
+            super(NewRew, self).__init__(env)
+            ...
+
+        def reward(self, reward):
+            ...
+            return reward
+    ```
+
+* **ActionWrapper** : 행동 수정
+
+    ```python
+    class NewAction(gym.ActionWrapper):
+        def __init__(self, env):
+            super(NewAction, self).__init__(env)
+            ...
+
+        def action(self, action: Action) -> Action:
+            ...
+            return action
+    ```
+
+각 wrapper마다 담당하는 메서드가 다르니 유의해야 합니다. **Chapter02/03_random_action_wrapper.py** 가 ActionWrapper 를 활용한 예제입니다.
+
+```python
+import gym
+from typing import TypeVar
+import random
+
+Action = TypeVar('Action')
+
+
+class RandomActionWrapper(gym.ActionWrapper):
+    def __init__(self, env, epsilon=0.1):
+        super(RandomActionWrapper, self).__init__(env)
+        self.epsilon = epsilon
+
+    def action(self, action: Action) -> Action:
+        # 랜덤값이 엡실론값보다 작으면 "Random" 프린트하기
+        if random.random() < self.epsilon:
+            print("Random!")
+            return self.env.action_space.sample()
+        return action
+
+
+if __name__ == "__main__":
+    env = RandomActionWrapper(gym.make("CartPole-v0"))
+
+    obs = env.reset()
+    total_reward = 0.0
+    total_steps=0
+    while True:
+        obs, reward, done, _ = env.step(0)
+        total_reward += reward
+        if done:
+            break
+        total_steps+=1
+
+    print("Total Reward got: %.2f" % total_reward)
+
+```
+
+ActionWrapper를 상속받아 재정의하였을 경우에 general하게 적용되기 때문에 gym이 제공하는 환경의 행동에는 모두 영향을 미친다. 심지어, 위 코드에서처럼 env.action_space.sample() 이 코드가 제외되고 step()의 패러미터가 0으로 주더라도
+wrapper는 적용되어 있습니다. 
+
+<br>
+
+## Monitors
 
 
 
@@ -186,5 +347,5 @@ Gym에서 제공하는 가장 간단한 RL 환경인 CartPole에 대해 알아�
 ---
 
 > <subtitle> References </subtitle>
-
+* Deep Reinforcement Learning Hands On 2/E Chapter 02 : OpenAI Gym
 <br>
