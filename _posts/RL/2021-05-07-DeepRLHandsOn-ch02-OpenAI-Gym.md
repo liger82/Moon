@@ -170,6 +170,14 @@ gym의 버전마다 보유하고 있는 환경이 다르고 동일한 환경이�
 
 ## The CartPole session
 
+Gym에서 제공하는 가장 간단한 RL 환경인 CartPole에 대해 알아보도록 하겠습니다. CartPole은 아래 그림처럼 검정색 바닥 부분을 움직여서 막대의 균형을 맞추는 게임입니다.
+
+<br><center><img src= "https://liger82.github.io/assets/img/post/20210507-DeepRLHandsOn-ch02-OpenAI-Gym/fig_2_3_cartpole.png" width="70%"></center><br>
+
+이 환경의 관찰값은 바닥 부분의 중심 좌표(x선에서), 바닥 부분의 속도, 각도, 각도의 속도에 관한 부동 소수점들(floating-points)입니다. 수학적, 물리적 지식을 사용한다면 이 소수점들을 행동으로 바꿔서 막대의 균형을 잡는 것이 어려운 일은 아니지만, 우리의 초점은 "**관찰값들에 대한 정확한 의미를 모르고, 보상만 받았을 때 에이전트가 균형 맞추는 것을 학습**"하는 데에 있습니다. 
+
+이번 장에서는 시행착오와 RL 알고리즘을 통해 CartPole을 몇 분 안에 쉽게 해결하는 방법을 다룰 것입니다. 
+
 
 
 
