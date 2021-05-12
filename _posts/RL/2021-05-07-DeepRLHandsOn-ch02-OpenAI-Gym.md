@@ -176,8 +176,6 @@ Gym에서 제공하는 가장 간단한 RL 환경인 CartPole에 대해 알아�
 
 이 환경의 관찰값은 바닥 부분의 중심 좌표(x선에서), 바닥 부분의 속도, 각도, 각도의 속도에 관한 부동 소수점들(floating-points)입니다. 수학적, 물리적 지식을 사용한다면 이 소수점들을 행동으로 바꿔서 막대의 균형을 잡는 것이 어려운 일은 아니지만, 우리의 초점은 "**관찰값들에 대한 정확한 의미를 모르고, 보상만 받았을 때 에이전트가 균형 맞추는 것을 학습**"하는 데에 있습니다. 
 
-이번 장에서는 시행착오와 RL 알고리즘을 통해 CartPole을 몇 분 안에 쉽게 해결하는 방법을 다룰 것입니다. 
-
 <br>
 
 > <subtitle> The random CartPole agent </subtitle>
@@ -333,14 +331,60 @@ if __name__ == "__main__":
 
 ```
 
-ActionWrapper를 상속받아 재정의하였을 경우에 general하게 적용되기 때문에 gym이 제공하는 환경의 행동에는 모두 영향을 미친다. 심지어, 위 코드에서처럼 env.action_space.sample() 이 코드가 제외되고 step()의 패러미터가 0으로 주더라도
-wrapper는 적용되어 있습니다. 
+ActionWrapper를 상속받아 재정의하였을 경우에 general하게 적용되기 때문에 gym이 제공하는 환경의 행동에는 모두 영향을 미친다. 심지어, 위 코드에서처럼 env.action_space.sample() 이 코드가 제외되고 step()의 argument를 0으로 주더라도 wrapper는 적용되어 있습니다. 
 
 <br>
 
 ## Monitors
 
+Monitor는 말그대로 에이전트의 성능을 파일에 저장할 수 있도록 하는 class입니다. 심지어 영상도 가능합니다. 
 
+2017년 8월까지는 Monitor class의 recording을 https://gym.openai.com website에서 볼 수 있었다고 하는데 이 기능은 중단되었다고 합니다.
+
+
+
+Monitor 설정은 환경 설정에 이어서 합니다.
+
+```python
+import gym
+
+
+if __name__ == "__main__":
+    env = gym.make("CartPole-v0")
+    env = gym.wrappers.Monitor(env, "recording")
+```
+
+Monitor의 두 번째 argument는 기록한 결과를 저장할 디렉토리 이름입니다. 그래서 만약에 동일한 디렉토리 이름이 있으면 에러가 납니다. 기존 것을 지우고 새 것으로 갈아치우려면 Monitor에 **force=True** argument를 추가해주면 됩니다.
+
+Monitor class는 **FFmpeg** utility가 시스템에 있어야 합니다. FFmpeg 는 캡쳐한 관찰값들을 결과 영상 파일로 변환하는 데 쓰입니다. 이게 없으면 에러가 나니 유의하시기 바랍니다. 설치 방법은 다음과 같습니다.  
+
+* OS X 일 경우(mac) : brew install ffmpeg
+* ubuntu 일 경우 : sudo apt-get install ffmpeg
+
+ffmpeg가 python 3.9 와 dependency가 있어서 파이썬 버전 중 3.9를 추가해주시면 됩니다. 예를 들어, 저는 pyenv 를 사용하고 있는데 *pyenv install 3.9.0* 으로 python 3.9.0 버전을 설치해두고 (에러가 났을 경우) 다시 설치했습니다.
+
+성공적으로 설치하면 다음과 같이 명령어를 입력합니다.
+
+```
+$ Xvfb :1337 & export DISPLAY=:1337 & python 04_cartpole_random_monitor.py
+```
+
+아래와 같은 에러가 나긴 하는데 동작합니다.
+```
+zsh: command not found: Xvfb
+```
+
+정상적으로 실행이 완료되면 결과 디렉토리 아래에 3개의 json 파일과 1개의 동영상 파일이 떨어집니다. 저 영상 파일이 실행할 때 뜨는 그래픽과 동일합니다.
+
+<br><center><img src= "https://liger82.github.io/assets/img/post/20210507-DeepRLHandsOn-ch02-OpenAI-Gym/fig_record.png" width="70%"></center><br>
+
+> <subtitle> Summary </subtitle>
+
+* OpenAI의 Gym을 설치해보고 기본적은 API를 다뤄보면서 랜덤하게 행동하는 에이전트를 만들어봄.
+* 기존 환경의 확장판을 어떻게 만드는지 Wrapper class를 통해 알아봄.
+* Monitor class로 에이전트의 행동 결과를 기록하는 방법에 대해 익힘.
+
+다음 챕터에서는 PyTorch를 사용하여 모델을 만들어서 적용해보는 시간을 가질 예정입니다. 감사합니다.
 
 <br>
 
