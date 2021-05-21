@@ -32,10 +32,14 @@ A. 설치 확인 -> 없으면 skip, 3 세션으로 넘어감
 $ lsmod | grep nouveau
 ```
 
+<br>
+
 B. 편집기로 아래 파일을 연다.  
 ```
 $ sudo vim /etc/modprobe.d/blacklist-nouveau.conf  
 ```
+
+<br>
 
 C. 아래 두 줄을 입력하고 저장한다.
 ```
@@ -43,11 +47,15 @@ blacklist nouveau
 options nouveau modset=0
 ```
 
+<br>
+
 D. kernel initramfs 업데이트
 ```
 $ sudo update-initramfs -u
 $ sudo service gdm stop
 ```
+
+<br>
 
 E. 제거 확인. 아무 것도 안 나와야 함. 혹시 나오면 reboot도 해볼 것.
 ```
@@ -64,10 +72,14 @@ $ sudo apt-get install gcc
 $ sudo apt-get install make
 ```
 
+<br>
+
 B. update kernel initramfs  
 ```
 $ sudo update-initramfs -u
 ```
+
+<br>
 
 C. install driver
 ```
@@ -82,10 +94,14 @@ $ sudo ubuntu-drivers autoinstall
     $ sudo apt-get install nvidia-driver-[버전]
     ```  
 
+<br>
+
 D. reboot
 ```
 $ sudo reboot
-````
+```
+
+<br>
 
 E. 검증
 ```
@@ -175,12 +191,16 @@ B. 다운로드된 파일 압축 풀기(다른 이름일 경우 바꿀 것.)
 $ sudo tar -xvf cudnn-11.0-linux-x64-v8.0.5.39.tar
 ```
 
+<br>
+
 C. 파일을 CUDA toolkit 디렉토리로 옮기고 권한 부여
 ```
 $ sudo cp cuda/include/cudnn*.h /usr/local/cuda/include
 $ sudo cp cuda/lib64/libcudnn* /usr/local/cuda/lib64
 $ sudo chmod a+r /usr/local/cuda/include/cudnn*.h /usr/local/cuda/lib64/libcudnn*
 ```
+
+<br>
 
 D. 설치 검증
 ```
