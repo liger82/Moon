@@ -76,12 +76,11 @@ $ sudo ubuntu-drivers autoinstall
 ```
 
 * 제 서버에서는 nvidia-driver-465 가 설치되었습니다.
-
-* autoinstall이 안 먹을때는 아래 명령어로 설치가능한 목록 보고 직접 설치
-```
-$ ubuntu-drivers devices
-$ sudo apt-get install nvidia-driver-[버전]
-```
+    * autoinstall이 안 먹을때는 아래 명령어로 설치가능한 목록 보고 직접 설치
+    ```
+    $ ubuntu-drivers devices
+    $ sudo apt-get install nvidia-driver-[버전]
+    ```  
 
 D. reboot
 ```
@@ -121,6 +120,8 @@ $ sudo apt-get update
 $ sudo apt-get -y install cuda-11-0
 ```
 
+<br>
+
 B. path 등록
 
 * bash_profile 이거나 zshrc 인 경우 알아서 바꿔서 열기
@@ -135,8 +136,12 @@ export PATH=/usr/local/cuda/bin${PATH:+:${PATH}}
 export LD_LIBRARY_PATH=/usr/local/cuda/lib64:${LD_LIBRARY_PATH:+:${LD_LIBRARY_PATH}}
 ```  
 
-아래 명령어 실행(bashrc가 아닌 경우 알아서 바꿔서 실행)
+* 아래 명령어 실행(bashrc가 아닌 경우 알아서 바꿔서 실행)  
+```
 source ~/.bashrc
+```
+
+<br>
 
 C. 검증  
 ```
@@ -163,6 +168,7 @@ A. cuDNN 파일 다운로드
 * CUDA 11.0을 위한 cuDNN 8.0.5 파일 중 다음 파일을 다운로드
     > cuDNN Library for Linux(x86)
 
+<br>
 
 B. 다운로드된 파일 압축 풀기(다른 이름일 경우 바꿀 것.)  
 ```
