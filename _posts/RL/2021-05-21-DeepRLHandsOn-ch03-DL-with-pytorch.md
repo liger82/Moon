@@ -156,8 +156,107 @@ gradient 계산에는 두 가지 접근법이 있습니다.
 
 <br>
 
+## Tensors and gradients
+
+pytorch tensor는 gradient 계산 기능을 내장하고 있습니다. gradient와 관련한 tensor의 속성은 다음과 같습니다.  
+* grad : 계산된 그래디언트 값을 포함하여 동일한 모양의 텐서를 유지시키는 속성
+* is_leaf : 해당 텐서가 유저에 의해 만들어졌으면 True, 아니면 False
+* requires_grad : 텐서의 그래디언트를 계산하길 원하면 True, 아니면 False. 이 속성은 리프 텐서부터 상속받을 수 있다.
+
+```python
+>>> v1 = torch.tensor([1.0, 1.0], requires_grad=True)
+>>> v2 = torch.tensor([2.0, 2.0])
+
+>>> v_sum = v1 + v2
+>>> v_res = (v_sum*2).sum()
+>>> v_res
+tensor(12., grad_fn=<SumBackward0>)
+
+>>> v_sum = v1 + v2
+>>> v_res = (v_sum*2).sum()
+>>> v_res
+tensor(12., grad_fn=<SumBackward0>)
+
+>>> v1.is_leaf, v2.is_leaf
+(True, True)
+>>> v_sum.is_leaf, v_res.is_leaf
+(False, False)
+>>> v1.requires_grad
+True
+>>> v2.requires_grad
+False
+>>> v_sum.requires_grad
+True
+>>> v_res.requires_grad
+True
+
+>>> v_res.backward()
+>>> v1.grad
+tensor([ 2., 2.])
+>>> v2.grad
+```
+
+v2는 requires_grad=True를 주지 않았기 때문에 grad 계산이 되지 않습니다.
+
+위와 같은 그래디언트 계산 능력으로 neuralnet optimizer를 만들 수 있습니다. 댜음 세션에서는 뉴럴넷 빌딩 블럭, 인기 있는 최적화 알고리즘, loss function을 간편하게 사용할 수 있는 함수들을 다룰 예정이지만 그것들이 아니더라도 torch tensor를 이용해서 자기 입맛에 맞게 바꿀 수 있습니다. 이 점이 pytorch가 DL 연구자들에게 인기 있는 이유 중 하나 입니다.
+
+<br>
+
 > <subtitle> NN building blocks </subtitle>
 
+**torch.nn** package는 기본적인 기능 블럭들과 함께 사전 정의한 클래스들을 제공합니다. 모두 실제 상황을 고려하여 설계되었습니다. 예를들어, minibatch를 지원하고 기본값이 정상이며 가중치가 적절히 초기화되어 있습니다. 모든 모듈들은 callable하게 만들었습니다. 모든 클래스의 인스턴스는 인자가 적용되면 함수 역할을 할 수 있다는 의미입니다. 아래 예시에서 nn.Linear는 인스턴스 생성 후에는 함수로 역할을 수행합니다.
+
+```python
+>>> import torch.nn as nn
+>>> l = nn.Linear(2, 5)
+>>> v = torch.FloatTensor([1, 2])
+>>> l(v)
+tensor([ 1.0532,  0.6573, -0.3134,  1.1104, -0.4065], grad_
+fn=<AddBackward0>)
+```
+
+<br>
+
+torch.nn의 모든 클래스는 nn.Module 클래스를 상속하는데 이 nn.Module 클래스의 유용한 메서드를 살펴봅시다.
+
+* parameters(): 그래디언트 계산에 필요한 모든 변수들의iterator를 반환 (즉, module weigts)
+* zero_grad(): 모든 패러미터의 그래디언트를 0으로 초기화
+* to(device): 모든 모듈 패러미터를 주어진 디바이스로 옮김.
+* state_dict(): 모든 모듈 패러미터를 딕셔너리 형태로 반환하고 이는 model serialization에 유용함.
+* load_state_dict(): state dictionary를 지닌 모듈을 초기화.
+
+모든 클래스 목록은 [다음 공식 문서](http://pytorch.org/docs){:target="_blank"}에서 찾아볼 수 있습니다.
+
+<br>
+
+## Sequential
+
+Sequential은 파이프라인 구조로 레이어를 쌓을 때 쓸 수 있는 아주 유용한 클래스입니다. 다음처럼 사용할 수 있습니다.
+
+```python
+>>> s = nn.Sequential(
+... nn.Linear(2, 5),
+... nn.ReLU(),
+... nn.Linear(5, 20),
+... nn.ReLU(),
+... nn.Linear(20, 10),
+... nn.Dropout(p=0.3),
+... nn.Softmax(dim=1))
+>>> s
+Sequential(
+    (0): Linear(in_features=2, out_features=5, bias=True)
+    (1): ReLU()
+    (2): Linear(in_features=5, out_features=20, bias=True)
+    (3): ReLU()
+    (4): Linear(in_features=20, out_features=10, bias=True)
+    (5): Dropout(p=0.3)
+    (6): Softmax()
+)
+
+>>> s(torch.FloatTensor([[1,2]]))
+tensor([[0.1115, 0.0702, 0.1115, 0.0870, 0.1115, 0.1115, 0.0908,
+0.0974, 0.0974, 0.1115]], grad_fn=<SoftmaxBackward>)
+```
 
 <br>
 
