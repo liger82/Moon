@@ -262,10 +262,110 @@ tensor([[0.1115, 0.0702, 0.1115, 0.0870, 0.1115, 0.1115, 0.0908,
 
 > <subtitle> Custom layers </subtitle>
 
+앞서 간단히 nn.Module 클래스를 사용해서 NN building block를 만들어보았습니다. 이번 섹션에서는 nn.Module의 subclass들을 이용해서 custom layer를 만들 것입니다. 이는 여러 개를 쌓을 수도 있고 나중에 재사용도 가능합니다. 
+
+nn.Module은 꽤 풍부한 기능들을 자식 클래스에 제공합니다.
+
+* 현재 모듈이 포함하고 있는 하부 모듈들을 모두 추적해준다. 
+* 등록된 하부 모듈들의 모든 패러미터를을 처리하는 함수를 제공한다. 모듈의 패러미터들의 리스트를 *parameters()* method로 얻을 수 있고 gradients를 0으로 초기화할 수 있고(*zero_grads()* method), 모듈을 serialize, deserialize할 수도 있다.(*state_dict()*, *load_state_dict()*)
+* 데이터에 대한 Module application의 관습을 만들었다. 모든 모듈은 forward() method를 overriding함으로써 forward() 메서드 안에서 data transformation을 수행할 필요가 있다.
+
+이 기능들은 하위 모델들을 통일된 방식으로 상위 모델에 중첩시킬 수 있으며, 이는 복잡성을 처리할 때 매우 유용합니다. 한 겹의 선형 레이어가 될 수도 있고 1001 층의 ResNet이 될 수도 있지만 둘 다 동일한 방식으로 컨트롤할 수 있다는 이야기입니다.
+
+그래서 custom module을 만들기 위해서는 보통 두 가지를 하면 됩니다. submodule들을 등록하고 *forward()* method를 구현하는 것입니다.
+
+<br>
+
+이전 챕터에서 사용했던 Sequential 예제를 통해 커스텀 모듈을 만들어보겠습니다. (Chapter03/01_modules.py)
+
+```python
+class OurModule(nn.Module):
+       def __init__(self, num_inputs, num_classes, dropout_prob=0.3):
+           super(OurModule, self).__init__()
+           self.pipe = nn.Sequential(
+               nn.Linear(num_inputs, 5),
+               nn.ReLU(),
+               nn.Linear(5, 20),
+               nn.ReLU(),
+               nn.Linear(20, num_classes),
+               nn.Dropout(p=dropout_prob),
+               nn.Softmax(dim=1)
+```
+
+class 형태의 모델은 항상 nn.Module을 상속 받아야 하며, *super(모델명, self).__init()__* 을 통해 *nn.Module.__init()__* 을 실행시킵니다. 
+생성자에서 self.pipe라는 하위 모듈을 만들어놓으면 다음과 같이 재사용할 수 있습니다. 
+
+```python
+def forward(self, x):
+    return self.pipe(x)
+```
+
+*forward()* 는 모델이 학습 데이터를 입력받아서 forward propagation을 진행시키는 함수이고, 반드시 *forward* 라는 이름의 함수여야 합니다. 모듈들은 callable하기 때문에 사용자들도 forward()를 직접 호출하는 방식을 사용하지 않습니다. 이는 nn.Module 이 __call__() method를 override해서 인스턴스가 callable 하도록 했기 때문입니다.  
+
+아래 예제는 위에서 작성한 custom module을 사용해본 것입니다. 
+
+```python
+if __name__ == "__main__":
+       net = OurModule(num_inputs=2, num_classes=3)
+       v = torch.FloatTensor([[2, 3]])
+       out = net(v)
+       print(net)
+       print(out)
+```
+
+제 노트북에서 실행한 결과입니다.
+
+```
+OurModule(
+  (pipe): Sequential(
+    (0): Linear(in_features=2, out_features=5, bias=True)
+    (1): ReLU()
+    (2): Linear(in_features=5, out_features=20, bias=True)
+    (3): ReLU()
+    (4): Linear(in_features=20, out_features=3, bias=True)
+    (5): Dropout(p=0.3, inplace=False)
+    (6): Softmax(dim=1)
+  )
+)
+tensor([[0.4031, 0.4031, 0.1937]], grad_fn=<SoftmaxBackward>)
+```
+
+<br>
+
+그 다음은 loss function과 optimizer에 대해 알아보겠습니다.
 
 <br>
 
 > <subtitle> The final glue - loss functions and optimizers </subtitle>
+
+## Loss Function
+
+손실 함수(loss function) 혹은 비용 함수(cost function)이라고 불리는 것은 모델이 예측한 값과 실제 값이 얼마나 유사한지 판단하는 기준을 정해주는 역할을 합니다. 예측값과 실제값 간 차이를 loss라고 하며, 이 loss를 줄이는 방향으로 학습이 진행됩니다.
+
+통계학적 모델은 일반적으로 회귀와 분류로 나뉘는데 손실 함수도 그에 따라 두 가지 종류로 나뉩니다. 회귀에 쓰이는 대표적 손실 함수는 MAE, MSE, RMSE가 있으며, 분류에 쓰이는 손실함수는 Binary cross-entropy, Categorical cross-entropy 등이 있습니다.
+
+손실 함수도 nn.Module의 하위모듈로 구현되어 있으며 자주 사용되는 것은 다음과 같습니다.
+
+* nn.MSELoss : MSE(Mean Squared Error) 손실 함수
+* nn.BCELoss & nn.BCEWithLogits : Binary cross-entropy loss. 
+    - nn.BCELoss : 보통 sigmoid layer의 결과로 하나의 확률 값을 반환한다.
+    - nn.BCEWithLogits : BCELoss 앞에 sigmoid layer를 더한 레이어로 sigmoid를 사용한다면 sigmoid와 BCELoss를 둘 다 사용하는 것보다는 한 번에 쓰는 것이 더 안정적이다.
+* nn.CrossEntropyLoss & nn.NLLLoss : multi classification problem에서 사용됨.
+    - nn.LogSoftmax : 신경망 말단의 결과 값들을 확률 개념으로 해석하기 위한 softmax의 결과에 log 값을 취한 연산
+    - nn.NLLLoss : nn.LogSoftmax의 log 결과값에 대한 교차 엔트로피 손실 연산
+    - nn.CrossEntropyLoss : nn.LogSoftmax와 nn.NLLLoss의 연산의 조합으로, 수식이 간소화되어 역전파가 더 안정적으로 이루어지므로 실제 사용에 권장된다.
+
+<br>
+
+## Optimizer
+
+기본 optimizer의 책임은 모델 패러미터의 그래디언트를 받아서 loss value가 작아지도록 패러미터를 변화시키는 것입니다. PyTorch에서는 **torch.optim** 패키지에서 여러 유명한 optimizer를 통일된 interface로 제공합니다. 다음이 가장 넓게 쓰이는 optimizer입니다.
+
+* SGD : torch에서 제공하는 SGD는 momentum 옵션이 가능한 SGD.
+* Adagrad : 학습률이 너무 작으면 학습 시간이 너무 길고, 학습률이 너무 크면 발산해서 학습이 제대로 이루어지지 않는데 이 문제를 Adagrad는 학습률 감소(learning rate decay)로 해결한다. AdaGrad 가 간단한 convex function 에선 잘 동작하지만, 복잡한 다차원 곡면 함수를 (상대적으로) 잘 탐색하도록 설계되지 않기도 했고. 기울기의 단순한 누적만으로는 충분하지 않다.
+* RMSprop : 기울기를 단순 누적하지 않고 지수 가중 이동 평균(Exponentially weighted moving average)를 사용하여 최신 기울기들이 더 크게 반영되도록 하였다. 
+* Adam : Adagrad와 RMSprop의 조합으로 가장 성공적이고 유명하다. 주요 장점은 step size가 gradient의 rescaling에 영향을 받지 않는다는 점이다. gradient가 커져도 step size는 제한이 있어서 어떠한 objective function을 사용한다 하더라도 안정적으로 최적화를 위한 하강이 가능하다.
+
 
 
 <br>
@@ -288,8 +388,6 @@ tensor([[0.1115, 0.0702, 0.1115, 0.0870, 0.1115, 0.1115, 0.0908,
 
 
 
-<br><center><img src= "https://liger82.github.io/assets/img/post/20210507-DeepRLHandsOn-ch02-OpenAI-Gym/fig_record.png" width="70%"></center><br>
-
 > <subtitle> Summary </subtitle>
 
 
@@ -299,4 +397,8 @@ tensor([[0.1115, 0.0702, 0.1115, 0.0870, 0.1115, 0.1115, 0.0908,
 
 > <subtitle> References </subtitle>
 * Deep Reinforcement Learning Hands On 2/E Chapter 03 : Deep Learning with PyTorch
+* [https://brunch.co.kr/@mnc/9](https://brunch.co.kr/@mnc/9){:target="_blank"}
+* [https://light-tree.tistory.com/141](https://light-tree.tistory.com/141){:target="_blank"}
+* [https://dalpo0814.tistory.com/29](https://dalpo0814.tistory.com/29){:target="_blank"}
+
 <br>
