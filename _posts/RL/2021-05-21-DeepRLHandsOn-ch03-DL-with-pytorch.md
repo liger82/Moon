@@ -366,30 +366,473 @@ tensor([[0.4031, 0.4031, 0.1937]], grad_fn=<SoftmaxBackward>)
 * RMSprop : 기울기를 단순 누적하지 않고 지수 가중 이동 평균(Exponentially weighted moving average)를 사용하여 최신 기울기들이 더 크게 반영되도록 하였다. 
 * Adam : Adagrad와 RMSprop의 조합으로 가장 성공적이고 유명하다. 주요 장점은 step size가 gradient의 rescaling에 영향을 받지 않는다는 점이다. gradient가 커져도 step size는 제한이 있어서 어떠한 objective function을 사용한다 하더라도 안정적으로 최적화를 위한 하강이 가능하다.
 
+<br>
 
+다음은 학습 루프의 일반적인 청사진입니다.
+
+```python
+for batch_x, batch_y in iterate_batches(data, batch_size=32):   #1
+    batch_x_t = torch.tensor(batch_x)                           #2
+    batch_y_t = torch.tensor(batch_y)                           #3
+    out_t = net(batch_x_t)                                      #4
+    loss_t = loss_function(out_t, batch_y_t).                   #5
+    loss_t.backward()                                           #6
+    optimizer.step()                                            #7
+    optimizer.zero_grad()                                       #8
+```
+
+* #1
+    - 보통 학습 시에 데이터는 반복 과정을 거칩니다. (학습 전체 예제를 모두 돌리는 것을 epoch 이라고 부릅니다.) 데이터는 CPU 혹은 GPU 메모리에 한 번에 들어가기 큰 경우가 많아서 이를 동일한 크기의 배치로 자릅니다. 
+* #2, #3
+    - 모든 배치는 데이터 샘플과 레이블, 그리고 이 두개의 텐서를 가지고 있습니다.
+* #4
+    - 데이터 샘플을 위에서 만든 네트워크에 입력으로 주고 출력값을 out_t에 할당합니다.
+* #5
+    - 출력값과 레이블을 손실 함수에 입력으로 주고 손실값을 할당 받습니다. 손실값은 타겟 레이블과 비교하여 네트워크 결과의 "안좋음"을 보여줍니다. 네트워크와 네트워크 가중치의 입력이 모두 텐서이기 때문에 네트워크의 transformation은 중간 텐서 인스턴스를 사용하는 작업의 그래프에 지나지 않습니다. 
+* #6
+    - 이 계산 그래프의 모든 텐서는 상위 텐서를 기억하므로 전체 네트워크의 그래디언트를 계산하기 위해 손실 함수의 결과에서 backward() method를 호출하기만 하면 됩니다. require_grad=True 가 되어 있는 모든 leaf tensor에 대해서 역전파 계산이 이루어질 것입니다. 
+* #7 
+    - 역전파 후에 그래디언트 값들을 축적하고 optimizer가 그래디언트 값을 기반으로 작업을 수행합니다. 이 작업은 step() 하나로 됩니다.
+* #8
+    - 그래디언트를 0으로 만듭니다. training loop의 처음에 하는 경우도 있습니다.
+
+<br>
+
+이 구성은 최적화를 수행하는 데 매우 유연한 방법이며 정교한 연구에서도 적용될 수 있습니다. 예를 들어, Generative Adversarial Network(GAN) 학습에서는 2개의 optimizer를 쓸 수도 있습니다.
+
+이로써 기본적인 PyTorch 기능에 대해 알아보았고, 텐서보드를 통해 학습 프로세스를 모니터링하는 법을 배우고 나서 중간 사이즈의 예제를 보겠습니다.
 
 <br>
 
 > <subtitle> Monitoring with TensorBoard </subtitle>
 
+뉴럴넷을 설계하고 그 결과를 얻는 데 있어서 여러 어려움이 있는데 학습 과정을 관찰할 수 있는 것은 큰 장점을 지닙니다. 보통 다음 값들이 관찰 대상입니다.
+
+* **손실값** 
+* **학습, 테스트 데이터 검증 결과** 
+* **그래디언트와 가중치에 대한 통계치** 
+* **네트워크에 의해 만들어진 값들** : 예를 들어, 분류 문제의 경우 예측 클래스 확률의 엔트로피를 측정하기를 원할 것이고, 회귀 문제의 경우 예측값을 원할 것이다.
+* **학습율과 다른 hyperparameters** : 만약 시간에 따라 변한다면 보여주는 것이 좋다.
+
+이외에도 학습 속도 등을 관찰 대상으로 지정할 수 있습니다. 
+
+<br>
+
+## TensorBoard 101
+
+이 책에서는 모니터링 툴로 TensorBoard를 사용할 것입니다. 텐서보드는 학습 과정에서 뉴럴넷 특징들을 관찰하고 분석할 수 있는 툴입니다. 텐서보드는 강력하고 제너럴한 솔루션이면서 외양도 꽤 이쁩니다.
+
+<br><center><img src= "https://liger82.github.io/assets/img/post/20210521-DeepRLHandsOn-ch03-PyTorch/fig3.4_tensorboad_web_interface.png" width="70%"></center><br>
+
+텐서보드는 로컬에서 띄울 수 있는 python web service입니다. 클라우드에 올려놓고 어디서든 볼 수도 있습니다. 원래는 Tensorflow의 일부로 deploy되었지만 최근에는 별개의 프로젝트로 옮겨졌고 tensorflow와 별개로 사용할 수 있습니다. 다만 여전히 TensorBoard는 tensorflow 데이터포맷을 사용하기 때문에 Tensorflow와 TensorBoard 둘 다 설치해야 합니다.  
+
+몇몇 써드파티 오픈소스에서 텐서보드를 이용해서 더 편리하고 고급진 인터페이스를 제공하고 있고 그 중 하나가 tensorboardX입니다. 이 책에서는 이를 다룰 예정입니다.
+
+* 참고사항
+    - PyTorch 1.1부터 TensorBoard format을 실험적으로 지원하고 있어서 tensorboardX를 설치할 필요가 없지만 뒤에 나올 PyTorch Ignite가 tensorboardX에 의존성이 있어서 계속 쓸 예정입니다.
+
+<br>
+
+## Plotting stuff
+
+간단한 예제(뉴럴넷 아님)를 통해 tensorboardX에 대해 알아보겠습니다. 다음 예제는 *Chapter03/02_tensorboard.py* 에 있는 내용입니다. 
+
+```python
+import math
+from tensorboardX import SummaryWriter
+if __name__ == "__main__":
+    writer = SummaryWriter()
+    funcs = {"sin": math.sin, "cos": math.cos, "tan": math.tan}
+```
+
+먼저 필요한 패키지를 임포트하고 writer를 생성하고 시각화할 예정인 함수들을 정의합니다.
+SummaryWriter는 기본적으로 *runs* 디렉토리를 생성하고 여기에 내용을 저장합니다. runs 디렉토리 밑에 오늘 날짜, 시간, hostname을 포함한 디렉토리를 기준으로 로그가 작성됩니다. 동일한 디렉토리에 계속 저장하고 싶으면 *log_dir* argument를 사용하면 됩니다.
+
+```python
+    for angle in range(-360, 360):
+        angle_rad = angle * math.pi / 180
+        for name, fun in funcs.items():
+            val = fun(angle_rad)
+            writer.add_scalar(name, val, angle)
+    writer.close()
+```
+
+이 예제는 -360도에서 360도까지 각도를 변해가면서 라디안으로 바꾸고 사전에 정의한 함수들에 입력하여 결과값을 얻고 **add_scalar** 함수로 값을 저장하고 있습니다. writer는 주기적으로 flush(기본은 매 2분마다)하기 때문에 오래 걸리는 최적화 과정도 그 값들을 볼 수 있습니다.
+
+저 예제를 실행하고 나면 runs/date_time_hostname 해당하는 디렉토리 밑에 이벤트 파일이 생깁니다. 그러면 다음과 같이 명령어를 작성합니다.
+
+```
+.../Chapter03$ tensorboard --logdir runs
+Serving TensorBoard on localhost; to expose to the network, use a proxy or pass --bind_all
+TensorBoard 2.4.0 at http://localhost:6006/ (Press CTRL+C to quit)
+```
+
+그러면 "http://localhost:6006" 이 주소 가면 로그를 볼 수 있습니다.
+
+<br><center><img src= "https://liger82.github.io/assets/img/post/20210521-DeepRLHandsOn-ch03-PyTorch/fig3.5_plots.png" width="70%"></center><br>
+
+* 그래프에 마우스를 올리면 그 지점에서의 값을 볼 수 있습니다. 
+* 로그가 여러 개가 쌓였을 경우에는 runs 아래에 여러 디렉토리가 생겼을텐데 그러면 각 디렉토리별로 내용을 볼 수 있고 비교도 가능합니다.
+* 스칼라 값 뿐만 아니라 이미지, 오디오, 텍스트 데이터, 임베딩도 분석 가능하고, 심지어 네트워크 구조도 보여줄 수 있습니다.
+
+이제 모니터링 툴까지 준비했으니 토치를 이용한 실제 뉴랄넷 최적화 문제를 통해 이번 챕터에서 배운 내용들을 실습해보도록 하겠습니다.
 
 <br>
 
 > <subtitle> Example - GAN on Atari images </subtitle>
 
+실습 예제는 아타리 게임에서의 GAN입니다. 
+
+* 가장 간단한 GAN 구조 사용
+    * 두 개의 경쟁적인 관계를 가진 네트워크를 가지고 있음
+        - cheater( == the generator) : 가짜 데이터를 만들어냄
+        - detective( == the discriminator) : 생성된 데이터(가짜)를 탐지해내고자 함.
+* GAN의 실용적인 측면보다는 복잡한 모델을 PyTorch를 통해 얼마나 깔끔하고 짧게 코딩할 수 있는지 보여주고자 함.
+* *Chapter03/03_atari_gan.py*  
+
+```python
+
+IMAGE_SIZE = 64
+
+class InputWrapper(gym.ObservationWrapper):
+    """
+    Preprocessing of input numpy array:
+    1. resize image into predefined size
+    2. move color channel axis to a first place
+    """
+    def __init__(self, *args):
+        super(InputWrapper, self).__init__(*args)
+        assert isinstance(self.observation_space, gym.spaces.Box)
+        old_space = self.observation_space
+        self.observation_space = gym.spaces.Box(
+            self.observation(old_space.low),
+            self.observation(old_space.high),
+            dtype=np.float32)
+
+    def observation(self, observation):
+        # resize image
+        new_obs = cv2.resize(
+            observation, (IMAGE_SIZE, IMAGE_SIZE))
+        # transform (210, 160, 3) -> (3, 210, 160)
+        new_obs = np.moveaxis(new_obs, 2, 0)
+        return new_obs.astype(np.float32)
+```
+
+이 Wrapper 클래스는 다음과 같은 작업을 합니다.
+* 210 X 160 크기의 입력 이미지를 64 x 64 사이즈로 변환한다.
+* 색깔을 첫번째 축에서 마지막 축으로 변경한다.
+    - pytorch가 (채널, 높이, 너비) 순으로 받기 때문
+* 이미지를 bytes에서 float 타입으로 변환
+
+<br>
+
+이제 두개의 nn.Module class(Discriminator와 Generator)를 작성하면 됩니다. 이 두 개의 네트워크는 경쟁 관계이면서 형태를 보면 데칼코마니 같이 유사합니다. 
+
+<br><center><img src= "https://media.springernature.com/m685/springer-static/image/art%3A10.1038%2Fs41524-020-00352-0/MediaObjects/41524_2020_352_Fig1_HTML.png" width="70%"></center><br>
+
+여기서 GAN 자체가 초점이 아니라 GAN에 대한 자세한 설명은 생략하겠습니다.
+
+<br><center><img src= "https://liger82.github.io/assets/img/post/20210521-DeepRLHandsOn-ch03-PyTorch/fig3.6_atari_games.png" width="70%"></center><br>
+
+입력값으로 랜덤 에이전트에서 동시에 플레이하는 여러 개의 아타리 게임의 스크린샷을 이용할 것이고 그림 3.6은 입력 데이터가 어떻게 생겼는지 보여줍니다. 이 예제는 다음 함수에 의해 생성됩니다.
+
+```python
+def iterate_batches(envs, batch_size=BATCH_SIZE):
+    batch = [e.reset() for e in envs]
+    env_gen = iter(lambda: random.choice(envs), None)
+
+    while True:
+        e = next(env_gen)
+        obs, reward, is_done, _ = e.step(e.action_space.sample())
+        if np.mean(obs) > 0.01:
+            batch.append(obs)
+        if len(batch) == batch_size:
+            # Normalising input between -1 to 1
+            batch_np = np.array(batch, dtype=np.float32) * 2.0 / 255.0 - 1.0
+            yield torch.tensor(batch_np)
+            batch.clear()
+        if is_done:
+            e.reset()
+```
+
+1. 이 함수를 통해 제공된 배열에서 환경을 무한히 샘플링하고 임의의 action을 하게 하며 배치 리스트에 관찰값들을 저장합니다. 
+2. 배치가 필요한 크기가 되면, 이미지를 정규화하고 텐서로 변환하여 generator로부터 이미지를 생성시킵니다.
+
+<br>
+
+이제 main function을 봐보면, 먼저 CUDA 설정과 환경을 준비합니다.
+
+```python
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--cuda", default=False, action='store_true',
+        help="Enable cuda computation")
+    args = parser.parse_args()
+
+    device = torch.device("cuda" if args.cuda else "cpu")
+    envs = [
+        InputWrapper(gym.make(name))
+        for name in ('Breakout-v0', 'AirRaid-v0', 'Pong-v0')
+    ]
+    input_shape = envs[0].observation_space.shape
+```
+
+--cuda argument로 GPU 사용하도록 설정할 수 있고, 3개의 아타리 게임을 환경 리스트로 만들었습니다. 이 환경들이 *iterate_batches* function을 거치면 학습 데이터가 만들어 집니다.
+
+<br>
+
+```python
+    net_discr = Discriminator(input_shape=input_shape).to(device)
+    net_gener = Generator(output_shape=input_shape).to(device)
+
+    objective = nn.BCELoss() # Binary Cross Entropy Loss
+    gen_optimizer = optim.Adam(
+        params=net_gener.parameters(), lr=LEARNING_RATE,
+        betas=(0.5, 0.999))
+    dis_optimizer = optim.Adam(
+        params=net_discr.parameters(), lr=LEARNING_RATE,
+        betas=(0.5, 0.999))
+    writer = SummaryWriter()
+```
+
+이 코드에서는 summary writer, 두 개의 네트워크, 손실 함수, 두 개의 optimizer를 만들었습니다.
+
+<br>
+
+```python
+    gen_losses = []
+    dis_losses = []
+    iter_no = 0
+
+    true_labels_v = torch.ones(BATCH_SIZE, device=device)
+    fake_labels_v = torch.zeros(BATCH_SIZE, device=device)
+```
+
+두 네트워크의 손실값들을 저장할 리스트, counter, 진짜, 가짜 레이블의 변수를 만들었습니다.
+
+<br>
+
+```python
+    for batch_v in iterate_batches(envs):
+        # fake samples, input is 4D: batch, filters, x, y
+        gen_input_v = torch.FloatTensor(
+            BATCH_SIZE, LATENT_VECTOR_SIZE, 1, 1)
+        gen_input_v.normal_(0, 1)
+        gen_input_v = gen_input_v.to(device)
+        batch_v = batch_v.to(device)
+        gen_output_v = net_gener(gen_input_v)
+```
+
+학습 루트 처음에는 랜덤 벡터를 생성하고 이를 generator network에 입력으로 넘깁니다.
+
+<br>
+
+```python
+        # train discriminator
+        dis_optimizer.zero_grad()
+        dis_output_true_v = net_discr(batch_v)
+        dis_output_fake_v = net_discr(gen_output_v.detach())
+        dis_loss = objective(dis_output_true_v, true_labels_v) + \
+                   objective(dis_output_fake_v, fake_labels_v)
+        dis_loss.backward()
+        dis_optimizer.step()
+        dis_losses.append(dis_loss.item())
+```
+
+각각 실제 데이터 샘플과 그 레이블, 생성된 샘플과 그 레이블로 discriminator를 학습시킵니다.
+discriminator의 학습에서 사용한 그래디언트가 generator로 유입되는 것을 막기 위해 detach() 를 호출합니다. detach()는 상위 operation과의 연결 없이 복사본을 만드는 텐서 방법입니다.
+
+<br>
+
+```python
+        # train generator
+        gen_optimizer.zero_grad()
+        dis_output_v = net_discr(gen_output_v)
+        gen_loss_v = objective(dis_output_v, true_labels_v)
+        gen_loss_v.backward()
+        gen_optimizer.step()
+        gen_losses.append(gen_loss_v.item())
+```
+
+이제는 generator의 학습입니다. generator의 출력값을 discriminator로 전달하지만 gradient를 막지 않습니다. 대신 true label이 있는 데이터쌍만 목적함수의 입력으로 사용합니다. 이로 인해 실제 데이터와 더 유사하게 만드는 방향으로 나아갈 것입니다.
+
+<br>
+
+위에까지가 학습이고 다음은 100개 이터레이션마다 로그를 찍고 텐서보드에 관찰값들을 기록하는 코드입니다. 이미지는 1000개마다 저장합니다.
+
+```python
+        iter_no += 1
+        if iter_no % REPORT_EVERY_ITER == 0:
+            log.info("Iter %d: gen_loss=%.3e, dis_loss=%.3e",
+                     iter_no, np.mean(gen_losses),
+                     np.mean(dis_losses))
+            writer.add_scalar(
+                "gen_loss", np.mean(gen_losses), iter_no)
+            writer.add_scalar(
+                "dis_loss", np.mean(dis_losses), iter_no)
+            gen_losses = []
+            dis_losses = []
+        if iter_no % SAVE_IMAGE_EVERY_ITER == 0:
+            writer.add_image("fake", vutils.make_grid(
+                gen_output_v.data[:64], normalize=True), iter_no)
+            writer.add_image("real", vutils.make_grid(
+                batch_v.data[:64], normalize=True), iter_no)
+
+```
+
+<br>
+
+이 예제의 학습 과정은 꽤 오래 걸립니다. 처음에 만든 이미지들은 거의 랜덤한 노이즈 값인데 10,000~20,000번의 이터레이션 후에는 점점 더 실제 이미지와 유사해지는 경향이 있습니다. 저자는 40,000~50,000 정도 했을 때 다음과 같이 꽤 잘 따라한 이미지를 얻을 수 있다고 합니다.
+
+<br><center><img src= "https://liger82.github.io/assets/img/post/20210521-DeepRLHandsOn-ch03-PyTorch/fig3.7_fake_imges.png" width="70%"></center><br>
 
 <br>
 
 > <subtitle> PyTorch Ignite </subtitle>
 
+pytorch를 사용하면서 함께 쓰면 유용한 라이브러리들이 있습니다. *ptlearn*, *fastai*, *ignite* 등 입니다. 다른 라이브러리들은 [https://pytorch.org/ecosystem](https://pytorch.org/ecosystem){:target="_blank"} 이 곳에서 확인할 수 있습니다.
 
+물론 이런 라이브러리들만 쓰다가 pytorch를 비롯해 low level의 디테일을 잊으면 안됩니다. 그래서 초반에는 pytorch code 중심으로 사용하고 후에는 high level 라이브러리들을 사용할 예정입니다. 특히 [pytorch ignite](https://pytorch.org/ignite/){:target="_blank"} 를 사용할 예정인데 여기서 간단히 살펴보도록 하겠습니다.
 
+<br>
 
+## Ignite concepts
 
+Ignite는 PyTorch에서 학습 루트의 코드 작성을 단순화해줍니다. Ignite의 핵심은 **Engine** class 입니다. 이 클래스는 데이터 소스에서 루프를 돌리고 데이터 배치에서 학습을 진행시킵니다. 또한 Ignite는 학습 루프의 다믕과 같은 조건에서 호출되는 기능을 제공합니다.
 
+* 전체 학습 절차의 처음과 끝
+* 학습 에폭의 처음과 끝
+* 단일 배치 과정의 처음과 끝
+
+이외에도 커스텀 이벤트가 존재합니다. 예를 들어, 100개의 배치 또는 매 초마다 계산을 수행하려는 경우와 같이 모든 N개의 이벤트로 호출할 함수를 지정할 수 있습니다.
+
+다음과 같은 식으로 Ignite를 쓸 수 있습니다. 아래 코드는 형태만 어떤 방식인지 써놓은 것입니다. 
+
+```python
+from ignite.engine import Engine, Events
+
+def training(engine, batch):
+    optimizer.zero_grad()
+    x, y = prepare_batch()
+    y_out = model(x)
+    loss = loss_fn(y_out, y)
+    loss.backward()
+    optimizer.step()
+    return loss.item()
+
+engine = Engine(training)
+engine.run(data)
+```
+
+<br>
+
+Ignite의 다양한 기능에 대한 설명은 공식 홈페이지에서 확인하면 되고, 여기에선 앞서 다룬 아타리 게임 코드를 Ignite를 쓰면 어떻게 바뀔지 살펴보겠습니다.
+
+```python
+from ignite.engine import Engine, Events
+from ignite.metrics import RunningAverage
+from ignite.contrib.handlers import tensorboard_logger as tb_logger
+```
+
+코드를 보기 전에 임포트할 클래스를 살펴보면, RunningAverage는 np.mean() 대신에 손실값들을 평균 내주는 역할을 합니다. 이 메서드가 더 간편하면서 수학적으로 더 정확하다고 합니다.  그리고 텐서보드의 로거를 임포트합니다.
+
+<br>
+
+```python
+    def process_batch(trainer, batch):
+        gen_input_v = torch.FloatTensor(
+            BATCH_SIZE, LATENT_VECTOR_SIZE, 1, 1)
+        gen_input_v.normal_(0, 1)
+        gen_input_v = gen_input_v.to(device)
+        batch_v = batch.to(device)
+        gen_output_v = net_gener(gen_input_v)
+
+        # train discriminator
+        dis_optimizer.zero_grad()
+        dis_output_true_v = net_discr(batch_v)
+        dis_output_fake_v = net_discr(gen_output_v.detach())
+        dis_loss = objective(dis_output_true_v, true_labels_v) + \
+                   objective(dis_output_fake_v, fake_labels_v)
+        dis_loss.backward()
+        dis_optimizer.step()
+
+        # train generator
+        gen_optimizer.zero_grad()
+        dis_output_v = net_discr(gen_output_v)
+        gen_loss = objective(dis_output_v, true_labels_v)
+        gen_loss.backward()
+        gen_optimizer.step()
+
+        if trainer.state.iteration % SAVE_IMAGE_EVERY_ITER == 0:
+            fake_img = vutils.make_grid(
+                gen_output_v.data[:64], normalize=True)
+            trainer.tb.writer.add_image(
+                "fake", fake_img, trainer.state.iteration)
+            real_img = vutils.make_grid(
+                batch_v.data[:64], normalize=True)
+            trainer.tb.writer.add_image(
+                "real", real_img, trainer.state.iteration)
+            trainer.tb.writer.flush()
+        return dis_loss.item(), gen_loss.item()
+
+```
+
+그 다음으로는 processing function을 정의해야 합니다. processing function은 데이터 배치를 받아서 discriminator와 generator 모델을 업데이트합니다. 이 함수는 학습 과정에서 추적되는 모든 데이터를 반환할 수 있습니다. 이 예제에서는 각 모델의 손실값이 해당됩니다. 텐서보드에 표시할 이미지도 저장할 수 있습니다.
+
+<br>
+
+그 다음은 Engine instance를 생성하고 logger를 붙이고, 학습 프로세스를 실행시키는 코드입니다.
+
+```python
+    engine = Engine(process_batch)
+    tb = tb_logger.TensorboardLogger(log_dir=None)
+    engine.tb = tb
+    RunningAverage(output_transform=lambda out: out[1]).\
+        attach(engine, "avg_loss_gen")
+    RunningAverage(output_transform=lambda out: out[0]).\
+        attach(engine, "avg_loss_dis")
+
+    handler = tb_logger.OutputHandler(tag="train",
+        metric_names=['avg_loss_gen', 'avg_loss_dis'])
+    tb.attach(engine, log_handler=handler,
+              event_name=Events.ITERATION_COMPLETED)
+
+```
+
+정리하면, processing function을 전달하고 RunningAverage 를 거친 두 개의 손실값을 입력으로 주어 Engine을 만듭니다. 학습 과정에서 RunnningAverage는 계속해서 측정값을 생성하고 generator로부터 온 값은 "avg_loss_gen"이고 discriminator에서 온 값은 "avg_loss_dis"입니다. 이 두 값은 매 이터레이션 후에 텐서보드에 기록됩니다.
+
+<br>
+
+```python
+    @engine.on(Events.ITERATION_COMPLETED)
+    def log_losses(trainer):
+        if trainer.state.iteration % REPORT_EVERY_ITER == 0:
+            log.info("%d: gen_loss=%f, dis_loss=%f",
+                     trainer.state.iteration,
+                     trainer.state.metrics['avg_loss_gen'],
+                     trainer.state.metrics['avg_loss_dis'])
+
+    engine.run(data=iterate_batches(envs))
+```
+
+log_losses는 매 이터레이션 완료시 엔진에 의해 호출되는 로깅 함수입니다. 그리고 마지막은 엔진을 실행시키는 코드입니다.
+
+<br>
+
+지금 규모가 작은 코드에서는 큰 차이를 못 느끼지만, 실제 프로젝트에서 Ignite는 코드를 더 깔끔하고 확장가능한 형태로 만들어주는 이점이 있습니다.
+
+<br>
 
 > <subtitle> Summary </subtitle>
 
+* PyTorch 기능 및 특징들 알아보았습니다.
+* 손실함수, optimizer, 학습 모니터링 툴에 대해 알아보았습니다.
+* 고급 인터페이스를 제공하는 라이브러리인 PyTorch Ignite에 대해 알아보았습니다.
+
+<br>
+
+다음 챕터에서는 강화학습의 메인 주제들에 대해 다뤄보도록 하겠습니다.
 
 <br>
 
