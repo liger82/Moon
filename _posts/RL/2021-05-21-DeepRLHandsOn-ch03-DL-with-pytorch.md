@@ -17,8 +17,8 @@ comments: true
 
 이번 챕터에서는 다음과 같은 내용을 다룰 예정입니다.
 * PyTorch 라이브러리 세부사항 및 구현 세부 정보
+* 실시간 학습 모니터링 툴
 * DL 문제를 단순화하기 위한 목적으로 PyTorch 상의 고차원 라이브러리들
-* PyTorch ignite
 
 <br>
 
@@ -66,7 +66,7 @@ c = torch.zeros((3,2))
 
 ```
 
-numpy array를 활용할 때 유의할 점이 있습니다. numpy.zeros() 로 만든 배열을 tensor로 만들 경우에 numpy array는 디폴트로 64-bit float으로 만들어집니다. 이 배열을 입력으로 받은 텐서도 DoubleTensor(64-bit float) type으로 만들어지게 되고요. 근데, DL에서 보통 이 정도 정밀하게 필요없고 또 메모리가 더 필요하거나 성능 오버헤드가 일어날 수 있습니다. 일반적으로는 32-bit float이나 심지어 16-bit float으로 해도 충분합니다. 그래서 이 경우에 다음과 같이 데이터 타입을 어느 한 쪽에서라도 특정해주는 것이 좋습니다.  
+numpy array를 활용할 때 유의할 점이 있습니다. numpy.zeros() 로 만든 배열을 tensor로 만들 경우에 numpy array는 디폴트로 64-bit float으로 만들어집니다. 이 배열을 입력으로 받은 텐서도 DoubleTensor(64-bit float) type으로 만들어지게 되고요. 근데, DL에서 보통 이 정도로 정밀할 필요없고 또 메모리가 부족하거나 성능 오버헤드가 일어날 수 있습니다. 일반적으로는 32-bit float이나 심지어 16-bit float으로 해도 충분합니다. 그래서 이 경우에 다음과 같이 데이터 타입을 어느 한 쪽에서라도 특정해주는 것이 좋습니다.  
 ```
 >>> n = np.zeros(shape=(3, 2), dtype=np.float32)
 >>> torch.tensor(n)
@@ -166,11 +166,6 @@ pytorch tensor는 gradient 계산 기능을 내장하고 있습니다. gradient�
 ```python
 >>> v1 = torch.tensor([1.0, 1.0], requires_grad=True)
 >>> v2 = torch.tensor([2.0, 2.0])
-
->>> v_sum = v1 + v2
->>> v_res = (v_sum*2).sum()
->>> v_res
-tensor(12., grad_fn=<SumBackward0>)
 
 >>> v_sum = v1 + v2
 >>> v_res = (v_sum*2).sum()
