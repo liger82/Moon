@@ -324,9 +324,9 @@ cartpole은 한 번 움직이기만 하면 보상을 줍니다. 오래 버티는
 *Chapter04/03_frozenlake_tweaked.py* 에서는 몇 개의 수정을 통해
 cross-entropy로 frozenLake를 해결하고자 했습니다.
 
-* batch size를 늘리기 : 
+* batch size를 늘리기
 * 보상에 discount factor 적용
-* 좋은 에피소드는 오래 지니고 있기 :
+* 좋은 에피소드는 오래 지니고 있기
 * 학습률 줄이기
 * 학습시간 늘리기
 
@@ -414,6 +414,8 @@ Solved!
 
 
 > <subtitle> The theoretical background of the cross-entropy method </subtitle>
+
+보통은 이론적 배경이 앞에 나오는데 뒤에 배치된 이유는 책에서 이 부분을 옵션으로 여기고 있어서입니다. 
 
 cross-entropy method는 importance sampling theorem에 기초를 두고 있습니다. (다음은 importance sampling 수식입니다.)
 
