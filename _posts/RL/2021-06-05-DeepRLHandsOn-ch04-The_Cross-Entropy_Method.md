@@ -115,7 +115,7 @@ class Net(nn.Module):
         return self.net(x)
 ```
 
-구조는 정말 간단합니다. 다만 마지막에 행동들에 대한 softmax를 계산하는게 보통인데 여기선 없습니다. 대신에, softmax와 cross-entropy를 하나의 수치적으로 더 안정적인 표현으로 결합하는 **nn.CrossEntropyLoss** 를 사용합니다. **nn.CrossEntropyLoss** 는 뉴럴넷에서 나온 정규화되지 않은 원시 값(logit)이 필요합니다. 단점은 뉴럴넷의 출력으로부터 확률을 얻기 위해서는 필요할 때마다 softmax를 적용해야 한다는 점입니다. 
+구조는 정말 간단합니다. 다만 마지막에 행동들에 대한 softmax를 계산하는게 보통인데 여기선 없습니다. 대신에, softmax와 cross-entropy를 하나의 수치적으로 더 안정적인 표현으로 결합하는 **nn.CrossEntropyLoss** 를 목적함수로 사용합니다. **nn.CrossEntropyLoss** 는 뉴럴넷에서 나온 정규화되지 않은 원시 값(logit)이 필요합니다. 단점은 뉴럴넷의 출력으로부터 확률을 얻기 위해서는 필요할 때마다 softmax를 적용해야 한다는 점입니다. 
 
 <br>
 
@@ -176,14 +176,242 @@ def iterate_batches(env, net, batch_size):
 
 <br>
 
+이제 학습을 위해 필터링하는 함수에 대해 알아보겠습니다. **filter_batch()**는 cross-entropy 메서드의 핵심입니다. 주어진 배치와 백분위수를 기준으로 경계가 되는 보상값을 계산하고 이를 필터링하는데 씁니다. 필터링된 에피소드는 학습에 사용됩니다. 
 
+```python
+def filter_batch(batch, percentile):
+    rewards = list(map(lambda s: s.reward, batch))
+    # 백분위수로 입력 배치의 경계 보상값 계산함.
+    reward_bound = np.percentile(rewards, percentile)
+    # 오직 monitoring 목적
+    reward_mean = float(np.mean(rewards))
 
+    train_obs = []
+    train_act = []
+    for reward, steps in batch:
+        # 보상이 경계값보다 작으면 생략한다.
+        if reward < reward_bound:
+            continue
+        # 각각 관찰값과 행동을 저장한다.
+        train_obs.extend(map(lambda step: step.observation, steps))
+        train_act.extend(map(lambda step: step.action, steps))
+
+    # 텐서로 변환
+    train_obs_v = torch.FloatTensor(train_obs)
+    train_act_v = torch.LongTensor(train_act)
+    return train_obs_v, train_act_v, reward_bound, reward_mean
+```
+
+<br>
+
+학습 절차를 마무리하고 Tensorboard로 모니터링 해보도록 하겠습니다.
+
+```python
+if __name__ == "__main__":
+    # 환경, 뉴럴넷, 목적함수, optimizer, 텐서보드 사용을 위한 summaryWriter의 인스턴스를 생성합니다.
+    env = gym.make("CartPole-v0")
+    # video를 만들고 싶으면 주석 풀기
+    #env = gym.wrappers.Monitor(env, directory="cartpole-mon", force=True)
+    obs_size = env.observation_space.shape[0]
+    n_actions = env.action_space.n
+
+    net = Net(obs_size, HIDDEN_SIZE, n_actions)
+    objective = nn.CrossEntropyLoss()
+    optimizer = optim.Adam(params=net.parameters(), lr=0.01)
+    writer = SummaryWriter(comment="-cartpole")
+
+    for iter_no, batch in enumerate(iterate_batches(
+            env, net, BATCH_SIZE)):
+        # filtering
+        obs_v, acts_v, reward_b, reward_m = \
+            filter_batch(batch, PERCENTILE)
+        optimizer.zero_grad()
+        action_scores_v = net(obs_v)
+        loss_v = objective(action_scores_v, acts_v)
+        loss_v.backward()
+        optimizer.step()
+        print("%d: loss=%.3f, reward_mean=%.1f, rw_bound=%.1f" % (
+            iter_no, loss_v.item(), reward_m, reward_b))
+        writer.add_scalar("loss", loss_v.item(), iter_no)
+        writer.add_scalar("reward_bound", reward_b, iter_no)
+        writer.add_scalar("reward_mean", reward_m, iter_no)
+        # 보상 평균값이 199보다 높으면 푼 것으로 하다.
+        if reward_m > 199:
+            print("Solved!")
+            break
+    writer.close()
+```
+
+<br>
+
+결과를 보면 점차 보상의 경계값이 더 커지면서 loss값은 줄어드는 것을 확인할 수 있습니다.
+
+```
+0: loss=0.668, reward_mean=18.6, rw_bound=20.0
+1: loss=0.676, reward_mean=17.4, rw_bound=14.5
+2: loss=0.663, reward_mean=17.0, rw_bound=17.0
+3: loss=0.664, reward_mean=20.8, rw_bound=21.5
+4: loss=0.678, reward_mean=25.2, rw_bound=28.5
+5: loss=0.673, reward_mean=26.8, rw_bound=37.5
+...
+34: loss=0.575, reward_mean=138.9, rw_bound=179.0
+35: loss=0.560, reward_mean=139.1, rw_bound=174.0
+36: loss=0.561, reward_mean=163.9, rw_bound=200.0
+37: loss=0.540, reward_mean=159.2, rw_bound=198.0
+38: loss=0.558, reward_mean=161.1, rw_bound=200.0
+39: loss=0.550, reward_mean=178.7, rw_bound=200.0
+40: loss=0.546, reward_mean=176.6, rw_bound=200.0
+41: loss=0.537, reward_mean=182.4, rw_bound=200.0
+42: loss=0.541, reward_mean=181.7, rw_bound=200.0
+43: loss=0.533, reward_mean=193.8, rw_bound=200.0
+44: loss=0.530, reward_mean=199.6, rw_bound=200.0
+Solved!
+```
+
+<br>
+
+위 결과는 텐서보드에서 그림으로 명확하게 볼 수 있습니다.
+
+<br><center><img src= "https://liger82.github.io/assets/img/post/20210605-DeepRLHandsOn-ch04-cross-entropy/fig1_cartpole.png" width="70%"></center><br>
+
+다음 세션에서는 또 다른 환경에서 cross-entropy를 다뤄보겠습니다.
 
 <br>
 
 > <subtitle> The cross-entropy method on FrozenLake </subtitle>
 
+FrozenLake 환경은 4 X 4 크기의 그리드월드이고 에이전트는 상하좌우로 움직일 수 있습니다. 좌상단에서 에이전트는 시작하고 우하단이 목표 지점입니다. 여기에 함정이 있는데 이 칸에 들어갈 경우 보상이 0이 되고 에피소드는 종료됩니다. 목표지점에 도달할 경우는 보상이 1이 되고 에피소드는 종료됩니다. 
+또 다른 조건은 환경의 이름처럼 이 환경에서는 미끄러질 수 있습니다. 그래서 에이전트가 왼쪽으로 가고자 해도 100%로 가는 것이 아니라 33% 확률로 가게 됩니다. 
+
 <br>
+
+cartPole 예제에서 사용한 뉴럴넷을 그대로 쓰려는데 입력값에 차이가 있습니다. 뉴럴넷은 벡터 형태로 받기 원하면서 코드를 줄이기 위해 ObservationWrapper class를 상속한 *DiscreteOneHotWrapper*를 정의하였습니다.
+
+```python
+class DiscreteOneHotWrapper(gym.ObservationWrapper):
+    def __init__(self, env):
+        super(DiscreteOneHotWrapper, self).__init__(env)
+        assert isinstance(env.observation_space,
+                          gym.spaces.Discrete)
+        shape = (env.observation_space.n, )
+        self.observation_space = gym.spaces.Box(
+            0.0, 1.0, shape, dtype=np.float32)
+
+    def observation(self, observation):
+        res = np.copy(self.observation_space.low)
+        res[observation] = 1.0
+        return res
+```
+
+<br>
+
+환경과 관찰값 형태만 바꾼 *Chapter04/02_ frozenlake_naive.py* 를 실행하면 앞선 경우와는 다른 결과가 나옵니다.
+
+<br><center><img src= "https://liger82.github.io/assets/img/post/20210605-DeepRLHandsOn-ch04-cross-entropy/fig2_naive.png" width="70%"></center><br>
+
+왜 그럴까요?
+
+cartpole은 한 번 움직이기만 하면 보상을 줍니다. 오래 버티는 것이 목표이기 때문이죠. 그런데 frozenLake는 각 스텝마다 보상을 주는 것이 아니라 목표지점에 가야 1점을 주고 중간 중간 함정도 있습니다. 백분위수 기준으로 좋은 학습 데이터를 뽑을 수가 없으니 개선의 여지가 없습니다. 
+
+이 예제는 cross-entropy의 한계를 보여줍니다.
+
+* 학습을 위해서, 에피소드는 유한해야 하고, 가급적이면 짧아야 한다.
+* 좋은 에피소드와 나쁜 에피소드를 분리할 수 있을 정도로 학습 에피소드들의 총 보상은 충분한 분산을 가져야 한다.
+* 에이전트가 성공했는지 실패했는지 중간 지시자가 없다.
+
+<br>
+
+*Chapter04/03_frozenlake_tweaked.py* 에서는 몇 개의 수정을 통해
+cross-entropy로 frozenLake를 해결하고자 했습니다.
+
+* batch size를 늘리기 : 
+* 보상에 discount factor 적용
+* 좋은 에피소드는 오래 지니고 있기 :
+* 학습률 줄이기
+* 학습시간 늘리기
+
+```python
+def filter_batch(batch, percentile):
+    # gamma 할인율
+    filter_fun = lambda s: s.reward * (GAMMA ** len(s.steps))
+    disc_rewards = list(map(filter_fun, batch))
+    reward_bound = np.percentile(disc_rewards, percentile)
+
+    train_obs = []
+    train_act = []
+    elite_batch = []
+    for example, discounted_reward in zip(batch, disc_rewards):
+        if discounted_reward > reward_bound:
+            train_obs.extend(map(lambda step: step.observation,
+                                 example.steps))
+            train_act.extend(map(lambda step: step.action,
+                                 example.steps))
+            elite_batch.append(example)
+
+    return elite_batch, train_obs, train_act, reward_bound
+```
+
+<br>
+
+아래 메인 함수 내에도 변화가 있는데, full_batch를 통해서 좋은 에피소드는 오랫동안 가지고 있게 됩니다.
+
+```python
+    # main함수에서 
+    full_batch = []
+    for iter_no, batch in enumerate(iterate_batches(
+            env, net, BATCH_SIZE)):
+        reward_mean = float(np.mean(list(map(
+            lambda s: s.reward, batch))))
+        full_batch, obs, acts, reward_bound = \
+            filter_batch(full_batch + batch, PERCENTILE)
+        if not full_batch:
+            continue
+        obs_v = torch.FloatTensor(obs)
+        acts_v = torch.LongTensor(acts)
+        full_batch = full_batch[-500:]
+
+```
+
+<br>
+
+이 코드로 돌리면 다음과 같이 개선된 결과를 볼 수 있습니다.
+
+<br><center><img src= "https://liger82.github.io/assets/img/post/20210605-DeepRLHandsOn-ch04-cross-entropy/fig3_tweak.png" width="70%"></center><br>
+
+*Chapter04/04_frozenlake_nonslippery.py* 에서는 넘어짐 조건을 비활성화하여 실행합니다. 
+
+```python
+env = gym.envs.toy_text.frozen_lake.FrozenLakeEnv(is_slippery=False)
+env.spec = gym.spec("FrozenLake-v0")
+env = gym.wrappers.TimeLimit(env, max_episode_steps=100)
+env = DiscreteOneHotWrapper(env)
+```
+
+<br>
+
+이렇게 할 경우 120~140 배치 사이에 문제를 풀 수 있습니다.(제한된 목표 설정 하에)
+
+```
+rl_book_samples/Chapter04$ ./04_frozenlake_nonslippery.py
+0: loss=1.379, reward_mean=0.010, reward_bound=0.000, batch=1
+1: loss=1.375, reward_mean=0.010, reward_bound=0.000, batch=2
+2: loss=1.359, reward_mean=0.010, reward_bound=0.000, batch=3
+3: loss=1.361, reward_mean=0.010, reward_bound=0.000, batch=4
+4: loss=1.355, reward_mean=0.000, reward_bound=0.000, batch=4
+5: loss=1.342, reward_mean=0.010, reward_bound=0.000, batch=5
+6: loss=1.353, reward_mean=0.020, reward_bound=0.000, batch=7
+7: loss=1.351, reward_mean=0.040, reward_bound=0.000, batch=11
+......
+124: loss=0.484, reward_mean=0.680, reward_bound=0.000, batch=68
+125: loss=0.373, reward_mean=0.710, reward_bound=0.430, batch=114
+126: loss=0.305, reward_mean=0.690, reward_bound=0.478, batch=133
+128: loss=0.413, reward_mean=0.790, reward_bound=0.478, batch=73
+129: loss=0.297, reward_mean=0.810, reward_bound=0.478, batch=108 
+Solved!
+```
+
+<br><center><img src= "https://liger82.github.io/assets/img/post/20210605-DeepRLHandsOn-ch04-cross-entropy/fig4_nonslippery.png" width="70%"></center><br>
+
 
 > <subtitle> The theoretical background of the cross-entropy method </subtitle>
 
@@ -207,12 +435,13 @@ RL에서 $$H(X)$$ 는 policy $$x$$에 의해 얻어진 보상값이고, $$p(x)$$
 
 엄격하게 봤을 때 위 식은 정규화 조건을 빠뜨렸으나 우리 예제에서는 잘 작동합니다. 
 
-
 <br>
 
 > <subtitle> Summary </subtitle>
 
+이번 장에서는 cross-entropy method의 실용적 쓰임새와 두 개의 환경에서 실행을 통해 cross-entropy의 장단점에 대해 알아보았습니다.
 
+다음 챕터에서는 value-based method 중심으로 다뤄보도록 하겠습니다.
 
 <br>
 
