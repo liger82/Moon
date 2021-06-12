@@ -43,7 +43,7 @@ cross-entropy는 model-free, policy-based 방법입니다. 이 의미에 대해 
 
 강화학습 알고리즘을 구분하는 주요 지점 중 하나는 에이전트가 **환경의 모델에 접근(혹은 학습)**을 할 수 있느냐입니다. 환경의 모델은 상태 전이와 보상을 예측하는 함수를 의미합니다. 
 
-Model-based 알고리즘은 **계획(planning)**이 가능하다는 장점을 지닙니다. 자신의 행동에 따라 환경이 어떻게 변할지 예측해서 최적의 행동을 계획하여 실행할 수 있다는 것입니다. 모델을 지닌다면 에이전트는 효율적으로 행동할 수 있습니다.
+Model-based 알고리즘은 환경의 모델을 지닌 알고리즘을 뜻합니다.  Model-based 알고리즘은 **계획(planning)**이 가능하다는 장점을 지닙니다. 자신의 행동에 따라 환경이 어떻게 변할지 예측해서 최적의 행동을 계획하여 실행할 수 있다는 것입니다. 모델을 지닌다면 에이전트는 효율적으로 행동할 수 있습니다.
 
 문제는 이 환경이 복잡할 경우에 환경의 모델을 알아내기 어렵거나 불가능하다는 점입니다. 모델이 환경을 제대로 반영하지 않는다면 이는 바로 에이전트의 오류로 이어지게 될 것입니다. 
 
@@ -55,6 +55,33 @@ Model-free 알고리즘은 환경의 모델을 사용하지 않는 경우를 말
 
 최근에는 두 알고리즘을 융합하는 시도도 하고 있습니다. 예를 들어, 딥마인드에서 내놓은 *[Imagination-Augmented Agents for Deep Reinforcement Learning](https://arxiv.org/abs/1707.06203)* 도 이러한 부류입니다. (22장에서 다룰 예정)
 
+<br>
+
+## Policy-based vs Value-based
+
+Policy-based 방법은 에이전트의 정책, 즉 에이전트가 모든 단계에서 수행해야 하는 작업을 직접 근사화합니다. 여기서 정책은 일반적으로 사용 가능한 작업에 대한 확률 분포로 표시됩니다.
+
+반면, Value-based 방법의 에이전트는 액션의 확률 대신 가능한 모든 액션의 값을 계산하고 최상의 값을 가진 액션을 선택합니다. 그렇기 때문에 policy-based 방법과 달리 value-based 방법은 value function을 먼저 구하고 정책을 추정합니다. 
+
+<br>
+
+## On-policy vs Off-policy
+
+off-policy는 action을 취하는 policy(behavior policy)와 improve하는 policy(target policy)를 다르게 취하는 것이고, on-policy는 두 policy가 동일한 경우를 뜻합니다.
+
+cross-entropy는 on-policy에 해당합니다.
+
+<br>
+
+> <subtitle> The cross-entropy method in practice  </subtitle>
+
+cross-entropy method의 핵심은 안좋은 에피소드는 버리고 좋은 에피소드에서 학습하는 것입니다. 학습 단계는 다음과 같습니다.
+
+1. 현재 모델과 환경으로 N번의 에피소드를 돌린다.
+2. 매 에피소드마다 총 보상을 계산하고 보상의 경계를 정한다. 보통 모든 보상의 백분위수를 사용한다.
+3. 경계 밖의 에피소드는 모두 버린다.
+4. 남은 에피소드를 기반으로 학습하고 결과를 비교한다.
+5. 만족스러운 결과가 나올 때까지 1~4의 스텝을 반복한다.
 
 <br>
 
@@ -68,6 +95,18 @@ Model-free 알고리즘은 환경의 모델을 사용하지 않는 경우를 말
 
 > <subtitle> The theoretical background of the cross-entropy method </subtitle>
 
+cross-entropy method는 importance sampling theorem에 기초를 두고 있습니다.
+
+<center>$$ \mathbb{E}_{x \sim p(x)}[H(x)]=\int_{x}p(x)H(x)dx = \int_{x}q(x)\frac{p(x)}{q(x)}H(x)dx = \mathbb{E}_{x \sim q(x)}[\frac{p(x)}{q(x)}H(x)] $$ </center><br>
+
+RL에서 $H(X)$ 는 policy $x$에 의해 얻어진 보상값이고, $p(x)$ 는 모든 가능한 정책의 분포입니다. 모든 정책들을 뒤져가며 보상을 최대화하는 것이 아니라 두 확률 분포의 거리를 줄이기를 반복하면서 $ \frac{p(x) H(x)}{q(x)} $ 을 근사하는 방법을 찾고자 합니다. 두 확률 분포 간 거리는 Kullback-Leibler(KL) divergence로 계산합니다.
+
+<center> $$ KL(p_1(x) \parallel p_2(x)) = \mathbb{E}_{x \sim p_1(x)}log\frac{p_1(x)}{p_2(x)} = \mathbb{E}_{x \sim p_1(x)}[log p_1(x)] - \mathbb{E}_{x \sim p_1(x)}[log p_2(x)] $$ </center><br>
+
+
+<center> $$ q_{i+1}(x) = \underset{q_{i+1}(x)}{argmin} - \mathbb{E}_{x \sim q_i(x)}log\frac{p(x)}{q_i(x)}H(x)log q_{i+1}(x) $$ </center><br>
+
+<center> $$ \pi_{i+1}(a|s) = \underset{\pi_{i+1}}{argmin} - \mathbb{E}_{z \sim \pi_i(a|s)}[R(z) \ge \Psi_i] log \pi_{i+1}(a|s) $$ </center><br>
 
 
 <br>
