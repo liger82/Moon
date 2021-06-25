@@ -1,10 +1,10 @@
 ---
 layout: post
-title: "[Deep Reinforcement Learning Hands On 2/E] Chapter 04 : The Cross-Entropy Method"
+title: "[Deep Reinforcement Learning Hands On 2/E] Chapter 05 : Tabular Learning and the Bellman Equation"
 date: 2021-06-23
 excerpt: ""
 categories: [RL/RL]
-tags : [Reinforcement Learning, RL, Deep Reinforcement Learning Hands On, chapter 4, The cross-entropy method]
+tags : [Reinforcement Learning, RL, Deep Reinforcement Learning Hands On, chapter 5, tabular method, bellman equation, q-learning]
 comments: true
 ---
 
