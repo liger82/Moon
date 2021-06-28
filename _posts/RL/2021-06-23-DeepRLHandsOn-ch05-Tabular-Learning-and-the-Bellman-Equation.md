@@ -156,9 +156,7 @@ $$V(s)$$는 $$Q(s,a)$$를 통해 정의될 수도 있습니다. 아래 식을 �
 
 1. 모든 상태의 가치를 특정 값(보통 0)으로 초기화
 2. 모든 상태 s에 대해 MDP에서는 벨만 업데이트를 진행한다.
-
-<center> $$ V_s \leftarrow  max_{a} \sum _{s'} p_{a,s \rightarrow s'} (r_{s,a} + \gamma V_{s'}) $$ </center>
-
+    <center> $$ V_s \leftarrow  max_{a} \sum _{s'} p_{a,s \rightarrow s'} (r_{s,a} + \gamma V_{s'}) $$ </center>
 3. 일정 수 이상의 2단계를 실행하거나 변화한 정도가 정말 작을 때까지 2단계를 반복한다.
 
 <br>
@@ -167,9 +165,7 @@ $$V(s)$$는 $$Q(s,a)$$를 통해 정의될 수도 있습니다. 아래 식을 �
 
 1. 모든 행동 가치, $$Q_{s,a}$$ 값을 초기화
 2. 모든 상태 s와 행동 a에 대해 업데이트
-
-<center> $$ Q_{s,a} \leftarrow  \sum _{s'} p_{a,s \rightarrow s'} (r_{s,a} + \gamma max_{a'} Q_{s', a'}) $$ </center>
-
+    <center> $$ Q_{s,a} \leftarrow  \sum _{s'} p_{a,s \rightarrow s'} (r_{s,a} + \gamma max_{a'} Q_{s', a'}) $$ </center>
 3. 2단계 반복
 
 <br>
@@ -360,6 +356,52 @@ cross-entropy 방법과 비교했을 때 엄청난 진전입니다. 동일한 �
 
 > <subtitle> Q-learning for FrozenLake </subtitle>
 
+두 번째 코드는 *Chapter05/02_frozenlake_q_iteration.py* 파일에 있고 첫 번째 파일과는 작은 차이가 있습니다. 가장 큰 차이는 **value table** 입니다. 이전 예제 코드에서는 상태의 가치를 저장했다면 이번에는 q값을 저장합니다. 즉, 2개의 패러미터(상태, 행동)를 사용합니다. 
+
+두 번째 차이는 **calc_action_value() method가 필요없다**는 점입니다. 행동 가치는 value table에 저장하기 때문입니다. 
+
+마지막 차이는 value_iteration() 에 있습니다. 이전 코드에서 value_iteration()는 calc_action_value()의 wrapper와 다름 없었습니다. 이번에는 value table로 대체되었으니 value iteration()에서 벨만 근사를 해야 합니다.
+
+```python
+    def value_iteration(self):
+        for state in range(self.env.observation_space.n):
+            for action in range(self.env.action_space.n):
+                action_value = 0.0
+                target_counts = self.transits[(state, action)]
+                total = sum(target_counts.values())
+                for tgt_state, count in target_counts.items():
+                    key = (state, action, tgt_state)
+                    reward = self.rewards[key]
+                    best_action = self.select_action(tgt_state)
+                    val = reward + GAMMA * \
+                          self.values[(tgt_state, best_action)]
+                    action_value += (count / total) * val
+                self.values[(state, action)] = action_value
+
+```
+
+이 코드는 전 예제에서 calc_action_value()와 상당히 유사합니다. V와 Q 값의 관계를 보면 그럴 수 밖에 없습니다. (위 수식에서도 확인 가능)
+
+<br>
+
+```python
+    def select_action(self, state):
+        best_action, best_value = None, None
+        for action in range(self.env.action_space.n):
+            action_value = self.values[(state, action)]
+            if best_value is None or best_value < action_value:
+                best_value = action_value
+                best_action = action
+        return best_action
+```
+
+v iteration에서 select_action은 행동 가치를 계산했겠지만, 여기서는 value table에서 가져오기만 하면 됩니다. 이 부분은 사실 작은 개선이지만 calc_action_value에서 사용한 데이터를 생각해 보면 RL에서 V-function 학습보다 Q-function 학습이 훨씬 더 인기 있는 이유가 분명해보입니다. 
+
+이번 calc_action_value 함수는 보상과 확률에 대한 정보를 모두 사용합니다. 이는 학습 중에 이러한 정보에 의존하는 value iteration method에는 큰 문제가 되지 않습니다. 그러나 다음 장에서는 확률 근사치가 필요 없고 환경 샘플에서 추출하는 value iteration 확장판에 대해 알아볼 예정인데 이러한 방법의 경우, 확률에 대한 의존성은 에이전트에 추가적인 부담을 가중시킵니다. **Q-learning의 경우, 에이전트가 결정을 내리는 데 필요한 것은 Q값 뿐입니다.**
+
+V function이 완전히 쓸모없다는 게 아닙니다. (actor-critic에서 또 사용됩니다.) 하지만 value learning 영역에서는 Q function이 선호도가 높습니다.
+
+이 예제에서는 결과 차이가 거의 없습니다.
 
 ```
 $ python 02_frozenlake_q_iteration.py
@@ -377,11 +419,13 @@ Solved in 21 iterations!
 
 <br>
 
-
-<br>
-
 > <subtitle> Summary </subtitle>
 
+이번 챕터에서는 Deep RL에서 널리 쓰이고 있는 중요한 개념들(상태 가치, 행동 가치, 벨만 방정식)을 배웠습니다.
+
+value iteration 방법에 대해 다뤘고 FrozenLake 환경에서 실헙해보았습니다. 
+
+다음 챕터에서는 deep Q-networks에 대해 알아보겠습니다. DQN은 아타리 2600개의 게임들 중 많은 게임에서 인간을 이겨 2013년 deep RL 혁명을 시작한 장본인입니다.
 
 <br>
 
@@ -389,6 +433,6 @@ Solved in 21 iterations!
 
 > <subtitle> References </subtitle>
 * Deep Reinforcement Learning Hands On 2/E Chapter 05 : Tabular Learning and the Bellman Equation
-* [](){:target="_blank"}
+* [벨만 방정식 위키피디아](https://en.wikipedia.org/wiki/Bellman_equation){:target="_blank"}
 
 <br>
