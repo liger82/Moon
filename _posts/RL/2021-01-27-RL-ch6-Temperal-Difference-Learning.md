@@ -46,20 +46,14 @@ Sutton 교수의 "introduction to reinforcement learning" 교재를 기반으로
 
 * TD(0)의 프로세스
 
-<br><center><img src= "https://liger82.github.io/assets/img/post/20210127-RL-ch6-Temperal-Difference-Learning/fig6.1.png" width="60%"></center><br>
+<br><center><img src= "https://liger82.github.io/assets/img/post/20210127-RL-ch6-Temperal-Difference-Learning/algo-td.png" width="60%"></center><br>
 
-## MC error & TD error
+> <subtitle> n-Step TD Prediction </subtitle>
 
-* TD error : $$ \delta _t \doteq R_{t+1}+\gamma V(S_{t+1}) - V(S_t)$$
-* MC error는 TD error들을 discount해서 다 더한 값과 같다.
-    - MC는 한 번에 전부, TD는 한 개씩 업데이트하는 것이니 일견 타당하다.
-    - 다음은 증명
+* n-step으로 확장한 TD method
+* MC와 TD(0)를 일반화한 것
 
-<br><center><img src= "https://liger82.github.io/assets/img/post/20210127-RL-ch6-Temperal-Difference-Learning/fig6.2.png" width="70%"></center><br>
-
-* 아래 그림처럼 같은 경로를 가더라도 계산 방식이 다르다. MC에 비해 TD가 단일 스텝 기준으로 error값이 더 작기 때문에 수렴이 더 빠르다.
-
-<br><center><img src= "https://liger82.github.io/assets/img/post/20210127-RL-ch6-Temperal-Difference-Learning/fig6.3.png" width="70%"></center><br>
+<br><center><img src= "https://liger82.github.io/assets/img/post/20210127-RL-ch6-Temperal-Difference-Learning/fig7.1.png" width="60%"></center><br>
 
 
 <br>
