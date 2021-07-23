@@ -32,7 +32,35 @@ Sutton 교수의 "introduction to reinforcement learning" 교재를 기반으로
 
 > <subtitle> TD Prediction </subtitle>
 
-# 작성 중 ...
+* constant $$\alpha$$ Monte Carlo Algorithm
+    - $$G_t$$는 total return 이기 때문에 하나의 에피소드가 끝나야 얻을 수 있다. 즉, 하나의 에피소드가 끝나야 가치를 업데이트할 수 있다.(offline method)
+
+<center> $$ V(S_t) \leftarrow V(S_t) + \alpha (G_t - V(S_t)) $$ </center>
+
+<br>
+
+* TD에서는 즉각적인 업데이트를 위해 $$G_t$$를 $$R_{t+1}+\gamma V(S_{t+1})$$로 대체한다.
+    - 한 스텝만 고려하고 있어서 **one-step TD, TD(0)**로 표현
+
+<center> $$ V(S_t) \leftarrow V(S_t) + \alpha( R_{t+1}+\gamma V(S_{t+1}) - V(S_t)) $$ </center>
+
+* TD(0)의 프로세스
+
+<br><center><img src= "https://liger82.github.io/assets/img/post/20210127-RL-ch6-Temperal-Difference-Learning/fig6.1.png" width="60%"></center><br>
+
+## MC error & TD error
+
+* TD error : $$ \delta _t \doteq R_{t+1}+\gamma V(S_{t+1}) - V(S_t)$$
+* MC error는 TD error들을 discount해서 다 더한 값과 같다.
+    - MC는 한 번에 전부, TD는 한 개씩 업데이트하는 것이니 일견 타당하다.
+    - 다음은 증명
+
+<br><center><img src= "https://liger82.github.io/assets/img/post/20210127-RL-ch6-Temperal-Difference-Learning/fig6.2.png" width="70%"></center><br>
+
+* 아래 그림처럼 같은 경로를 가더라도 계산 방식이 다르다. MC에 비해 TD가 단일 스텝 기준으로 error값이 더 작기 때문에 수렴이 더 빠르다.
+
+<br><center><img src= "https://liger82.github.io/assets/img/post/20210127-RL-ch6-Temperal-Difference-Learning/fig6.3.png" width="70%"></center><br>
+
 
 <br>
 
