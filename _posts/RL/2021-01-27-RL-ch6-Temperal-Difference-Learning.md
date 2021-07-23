@@ -52,9 +52,11 @@ Sutton 교수의 "introduction to reinforcement learning" 교재를 기반으로
 
 * n-step으로 확장한 TD method
 * MC와 TD(0)를 일반화한 것
+    - N = 종단 상태면 MC와 같음
 
-<br><center><img src= "https://liger82.github.io/assets/img/post/20210127-RL-ch6-Temperal-Difference-Learning/fig7.1.png" width="60%"></center><br>
+<br><center><img src= "https://liger82.github.io/assets/img/post/20210127-RL-ch6-Temperal-Difference-Learning/fig7.1.png" width="80%"></center><br>
 
+* n-step TD의 업데이트 식은 다음과 같다.
 
 <br>
 
