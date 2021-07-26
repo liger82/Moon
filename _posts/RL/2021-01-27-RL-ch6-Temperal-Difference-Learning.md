@@ -56,15 +56,40 @@ Sutton 교수의 "introduction to reinforcement learning" 교재를 기반으로
 
 <br><center><img src= "https://liger82.github.io/assets/img/post/20210127-RL-ch6-Temperal-Difference-Learning/fig7.1.png" width="80%"></center><br>
 
+<br>
+
 * n-step TD의 업데이트 식은 다음과 같다.
 
+    - For n = 1, one-step return
+
+<center> $$ G_{t:t+1} = R_{t+1} + \gamma V_t(S_{t+1}) $$ </center>
+
+    - For n = 2, two-step return
+
+<center> $$ G_{t:t+2} = R_{t+1} + \gamma R_{t+2} + \gamma^2 V_{t+1}(S_{t+2}) $$ </center>
+
+    - For general n, n-step return
+
+<center> $$ G_{t:t+n} = R_{t+1} + \gamma R_{t+2} + ... + \gamma^{n-1} R_{t+n} + \gamma^{n} V_{t+n-1}(S_{t+n}) $$ </center>
+
+    - n-step TD prediction algorithm
+
+<center> $$ V_{t+n}(S_{t}) = V_{t+n-1}(S_{t}) + \alpha(G_{t:t+n} - V_{t+n-1}(S_{t})) $$ </center>
+<center> while $$ V_{t+n}(s) \neq V_{t+n-1}(s), \forall s = S_t $$ </center>
+
+        - while 조건의 의미는 변화가 없을 때까지 계속 업데이트 한다는 것입니다.
 <br>
 
-> <subtitle>  </subtitle>
+* Error reduction property
+
+<center> $$ max_s |E_{\pi}[G_{t:t+n}|S_t=s] - v_{\pi}(s)| \leq \gamma^n max_s \left | V_{t+n-1}(S_t) - v_{\pi}(s) \right | $$ </center>
+
+
+> <subtitle> $\lambda$-return </subtitle>
 
 <br>
 
-> <subtitle>  </subtitle>
+> <subtitle> Model-Free Control </subtitle>
 
 <br>
 
