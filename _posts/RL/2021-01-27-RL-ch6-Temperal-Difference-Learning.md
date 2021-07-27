@@ -46,7 +46,7 @@ Sutton 교수의 "introduction to reinforcement learning" 교재를 기반으로
 
 * TD(0)의 프로세스
 
-<br><center><img src= "https://liger82.github.io/assets/img/post/20210127-RL-ch6-Temperal-Difference-Learning/algo-td.png" width="60%"></center><br>
+<center><img src= "https://liger82.github.io/assets/img/post/20210127-RL-ch6-Temperal-Difference-Learning/algo-td.png" width="60%"></center><br>
 
 > <subtitle> n-Step TD Prediction </subtitle>
 
@@ -54,7 +54,7 @@ Sutton 교수의 "introduction to reinforcement learning" 교재를 기반으로
 * MC와 TD(0)를 일반화한 것
     - N = 종단 상태면 MC와 같음
 
-<br><center><img src= "https://liger82.github.io/assets/img/post/20210127-RL-ch6-Temperal-Difference-Learning/fig7.1.png" width="80%"></center><br>
+<center><img src= "https://liger82.github.io/assets/img/post/20210127-RL-ch6-Temperal-Difference-Learning/fig7.1.png" width="80%"></center><br>
 
 <br>
 
@@ -85,7 +85,7 @@ Sutton 교수의 "introduction to reinforcement learning" 교재를 기반으로
 <center> $$ max_s |E_{\pi}[G_{t:t+n}|S_t=s] - v_{\pi}(s)| \leq \gamma^n max_s \left | V_{t+n-1}(S_t) - v_{\pi}(s) \right | $$ </center>
 
 
-> <subtitle> $\lambda$-return </subtitle>
+> <subtitle> $$\lambda$$-return </subtitle>
 
 <br>
 
