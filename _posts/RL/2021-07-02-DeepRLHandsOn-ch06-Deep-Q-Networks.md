@@ -94,7 +94,7 @@ Value Iteration에는 **명백한 문제점**이 있습니다.
 
 - backup diagram
 
-<center><img src= "https://liger82.github.io/assets/img/post/20210702-DeepRLHandsOn-ch06-Deep-Q-Networks/fig6.1-qlearning-backup-diagram.png" width="70%"></center><br>
+<center><img src= "https://liger82.github.io/assets/img/post/20210702-DeepRLHandsOn-ch06-Deep-Q-Networks/fig6.1-qlearning-backup-diagram.png" width="50%"></center><br>
 
 - Q-learning은 기존의 off-policy와 다르다.
     - 기존 off-policy는 behavior policy와 target policy가 다르기 때문에 behavior policy에서 학습한 내용을 target policy에서도 보장하기 위해 sampling data의 분포가 같다는 것을 증명해야 한다. 여기서 사용되는 것이 **importance sampling**이다. importance sampling은 다른 분포에서 sampling한 데이터를 알아야할 분포에 맞게끔 보정해서 estimate하는 기법을 말한다.
@@ -234,8 +234,43 @@ Solved in 13117 iterations!
 
 방금 다룬 Q-learning 방법은 전체 상태 집합에서 반복되는 문제를 해결하긴 하지만 관찰 가능한 상태 집합의 수가 매우 많은 상황에서는 여전히 어려움을 겪을 수 있습니다.
 
+atari 게임 중 pong은 $$10^{70802}$$ 개의 가능한 상황이 있습니다. 이렇게 많은 상황에서 에이전트는 다르게 행동해야 합니다.
 
+이 문제에 대한 해결책으로 state와 action을 모두 value에 매핑하는 nonlinear representation을 사용할 수 있습니다. 머신러닝에서는 이를 "회귀 문제"라고 합니다. 이를 구현하는 방법은 다양하지만 이미지로 표현되는 관찰을 처리할 때 deep neural net을 사용하는 것이 가장 인기가 많습니다. 이 점을 염두에 두고 Q-learning 알고리즘을 수정하면 다음과 같습니다.
 
+1. Q(s,a) 초기 근사값으로 초기화
+2. 환경과 상호작용하면서 (s, a, r, s') 튜플을 얻는다.
+3. Loss 계산
+    1. if 에피소드 종료: $$L = (Q(s,a) - r)^2 $$
+    2. else : $$L=(Q(s,a) - (r+\gamma \max_{a' \in A} Q_{s', a'}))^2$$
+4. 각 모델 패러미터에 대해 loss 값을 줄이면서, stochastic gradient descent(SGD) 알고리즘으로 Q(s,a) 업데이트
+5. 수렴할 때까지 스텝2부터 반복
+
+이 알고리즘은 간단해보이지만 작동도 잘 안되다고 하네요.... 왜 그러는지 살펴보겠습니다.
+
+<br>
+
+## Interaction with the environment
+
+랜덤하게 행동하면 효율적이지 못하고 현재 경험 바탕으로 근사만 하면 local minima에 머무를 수 있습니다. exploration과 exploitation은 tradeoff 관계면서도 이를 적절히 해결하기 위한 방법이 **epsilon-greedy**($$\epsilon - greedy$$) 알고리즘입니다. 엡실론은 랜덤 행동의 비율입니다. 처음에 100%의 엡실론으로 시작하여 점차 그 값을 줄여나가서 2~5% 정도까지 줄이면 적절하게 랜덤 행동하면서 최적 행동을 찾고 기존 경험에서 최적 행동을 하면서 학습하는 정책입니다.
+
+<br>
+
+## SGD optimization
+
+Q-learning 절차의 핵심은 지도학습에서 빌려온 것입니다. 뉴럴넷과 함께 복잡하고 비선형 함수 Q(s,a)를 근사하고자 했습니다.  
+
+<br>
+
+## Correlation between steps
+
+<br>
+
+## The Markov property
+
+<br>
+
+## The final form of DQN training
 
 <br>
 
