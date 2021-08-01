@@ -36,8 +36,12 @@ Q value(행동 가치)를 위한 버전도 거의 동일합니다. 차이점은 
 
 Value Iteration에는 **명백한 문제점**이 있습니다.
 
+<div style="color:orange">
 ### 문제 1. 환경의 모든 상태에 대해 알고 있어야 한다.
+</div>
+<div style="color:orange">
 ### 문제 2. 모든 상태들에 대해 여러 번 반복할 수 있고, 근사값을 저장도 할 수 있어야 한다.
+</div>
 
 <br>
 
@@ -54,7 +58,9 @@ Value Iteration에는 **명백한 문제점**이 있습니다.
     
 <br>
 
+<div style="color:orange">
 ### 문제 3. 또 다른 문제는 value iteration 접근법은 이산 행동 공간으로 그 대상을 한정한다는 점입니다. 
+</div>
 
 실제로 Q(s,a)와 V(s) 근사는 행동이 서로 배제적이며 이산적인 셋일 때 가능합니다. 휠 조종 각도나 히터기의 온도 조절 같이 연속적인 컨트롤 문제에는 적용할 수 없습니다. 
 
@@ -94,7 +100,7 @@ Value Iteration에는 **명백한 문제점**이 있습니다.
 
 - backup diagram
 
-<center><img src= "https://liger82.github.io/assets/img/post/20210702-DeepRLHandsOn-ch06-Deep-Q-Networks/fig6.1-qlearning-backup-diagram.png" width="50%"></center><br>
+<center><img src= "https://liger82.github.io/assets/img/post/20210702-DeepRLHandsOn-ch06-Deep-Q-Networks/fig6.1-qlearning-backup-diagram.png" width="40%"></center><br>
 
 - Q-learning은 기존의 off-policy와 다르다.
     - 기존 off-policy는 behavior policy와 target policy가 다르기 때문에 behavior policy에서 학습한 내용을 target policy에서도 보장하기 위해 sampling data의 분포가 같다는 것을 증명해야 한다. 여기서 사용되는 것이 **importance sampling**이다. importance sampling은 다른 분포에서 sampling한 데이터를 알아야할 분포에 맞게끔 보정해서 estimate하는 기법을 말한다.
@@ -258,15 +264,54 @@ atari 게임 중 pong은 $$10^{70802}$$ 개의 가능한 상황이 있습니다.
 
 ## SGD optimization
 
-Q-learning 절차의 핵심은 지도학습에서 빌려온 것입니다. 뉴럴넷과 함께 복잡하고 비선형 함수 Q(s,a)를 근사하고자 했습니다.  
+Q-learning 절차의 핵심은 지도학습에서 빌려온 것입니다. 뉴럴넷과 함께 복잡하고 비선형 함수 Q(s,a)를 근사하고자 했습니다.  벨만 방정식을 사용하여 이 함수를 위한 타켓을 계산하고, 가까이에 지도학습 문제가 있는 것처럼 해야 합니다. SGD 최적화의 가장 기본적인 조건 중 하나는 학습 데이터가 **독립 동일 분포**(independent and identically distributed, 줄여서 i.i.d) 를 따라야 한다는 점입니다.
+
+
+<div style="color:grey; font-size:12px">
+i.i.d.는 어떠한 랜덤 확률변수의 집합이 있을때 각각의 랜덤 확률변수들은 독립적이면서 (자기 사건의 발생의 영향이 다른 랜덤 확률변수에게 미치지 않을 때) 동일한 분포를 가질때를 의미한다. 
+
+예를들어서, 이항확률 분포 (성공 or 실패)를 가지는 동전던지기를 3회 실시한다고 가정하자. 각각의 시행은 이전이나 이후의 시행에 영향을 주지않는 독립시행이며 각각의 시행에서 나오는 동전의 앞,뒤에 대한 결과값의 분포는 동일한 이항확률 분포를 따르기 때문에 이는 i.i.d.라고 할수 있다.
+</div>
+
+<br>
+
+그런데 현재 이 책에서 SGD 업데이트를 위해 사용하려는 데이터는 조건을 충족하지 못 합니다.
+
+1. 우리의 표본은 독립적이지 않다. 많은 배치를 모았더라도 그것들은 서로 매우 가깝다. 왜냐하면 동일한 에피소드에서 나왔기 때문이다.
+2. 학습 데이터의 분포가 학습하고자 하는 최적 정책이 제공하는 표본의 분포와 다를 것이다. 우리가 가진 데이터는 다른 정책(현재 정책, 랜덤, 혹은 둘다)의 결과가 될 것이지만 랜덤하게 학습하는 법은 배우기 싫다. 최고 보상을 주는 최적 정책을 원한다.
+
+<span style="color:red">이 문제를 해결하기 위해 최신 경험만 사용하는 것이 아니라 과거 경험들과 학습 데이터 샘플들을 모아둔 큰 buffer를 사용합니다. 이를 **replay buffer**라고 합니다. </span> 가장 간단한 replay buffer 구현은 고정된 크기의 버퍼를 만들고 새로운 데이터가 들어오면 버퍼의 마지막에 추가하여 가장 오래된 데이터는 밖으로 빠져나가게 하는 것입니다. 
+
+replay buffer 는 다소 독립적인 데이터를 학습하도록 해주지만, 데이터는 우리의 최근 정책에 의해 생성된 샘플에서 학습할 수 있을만큼 충분히 새로워집니다. 
+
+(다음 챕터에서는 보다 정교한 샘플링 방식을 제공하는 replay buffer, prioritized 를 확인할 것입니다.)
 
 <br>
 
 ## Correlation between steps
 
+기본 학습 절차의 또 다른 현실적인 문제는 조금 다르긴 하지만 역시 i.i.d 데이터의 부족과 관련이 있습니다. 벨만 방정식은 Q(s', a') 를 통해 Q(s, a) 값을 제공합니다.(bootstrapping) 하지만 두 상태 s, s' 는 겨우 한 스텝 차이입니다. 즉, 이 두 상태는 매우 유사해서 뉴럴넷에게는 구분하기 어려운 부분입니다.  
+Q(s,a)를 바람직한 결과에 가깝도록 만들기 위해 뉴럴넷 패러미터들을 업데이트할 때, 간접적으로 Q(s', a') 값과 근처 다른 상태들을 변경할 수 있습니다.  학습을 매우 불안정하게 만들 수 있습니다. 
+
+<div style="color:red">
+학습 과정을 안정적이게 하려면, **target network**를 써야 합니다. target network 는 우리의 네트워크를 복사해놓고 이 네트워크를 벨만 방정식의 Q(s', a') 값을 위해 사용하는 것입니다. target network는 주기적으로(예: N step 마다) 메인 네트워크와 동기화를 합니다. 
+</div>
+
 <br>
 
 ## The Markov property
+
+강화학습 방법은 Markov decision process(MDP)를 기초로 합니다. MDP 는 환경이 Markov property를 지녔다고 가정합니다.
+
+<div style="color:grey; font-size:12px">
+Markov property : 어떤 시간에 특정 state에 도달하든 그 이전에 어떤 state를 거쳐왔든 다음 state로 갈 확률은 항상 같다는 성질입니다. 아래 수식을 만족하면 Markov property를 지녔다고 할 수 있습니다.
+
+<center> $$ Pr{s_{t+1}, r_{t+1} = r | s_t, a_t, r_t, s_{t-1}, a_{t-1}, ... , r_1, s_0, a_0} = Pr{s_{t+1} = s', r_{t+1}=r | s_t, a_t} $$ </center>
+</div>
+
+아타리 게임과 같이 이미지를 입력으로 사용하는 환경의 경우, 단일 캡쳐 이미지 하나는 중요한 정보를 담기에 충분치 않아서 여러 개의 캡쳐를 하나의 입력으로 사용합니다. 그런데 이는 명백하게 Markov Propery 위반이면서 단일 프레임의 환경을 **partially observable MDPs(POMDPs)** 로 바꿉니다. 
+
+POMDP는 markov property를 지니지 않은 MDP 이고, 현실에서 매우 중요한 역할을 합니다. 예를 들어 상대의 카드가 보이지 않는 대부분의 카드 게임에서 게임 관찰값은 POMDP 입니다. 현재 관찰값(당신의 카드와 테이블에 있는 카드)이 상대의 손에 있는 다른 카드에 해당될 수 있기 때문입니다. 
 
 <br>
 
@@ -300,6 +345,7 @@ Q-learning 절차의 핵심은 지도학습에서 빌려온 것입니다. 뉴럴
 * Deep Reinforcement Learning Hands On 2/E Chapter 06 : Deep Q-Networks
 * [https://talkingaboutme.tistory.com/entry/RL-Off-policy-Learning-for-Prediction](https://talkingaboutme.tistory.com/entry/RL-Off-policy-Learning-for-Prediction){:target="_blank"}
 * [https://mangkyu.tistory.com/61](https://mangkyu.tistory.com/61){:target="_blank"}
+* [https://electronicsdo.tistory.com/entry/independent-identically-distribution-%EB%8F%85%EB%A6%BD-%EB%8F%99%EC%9D%BC-%EB%B6%84%ED%8F%AC](https://electronicsdo.tistory.com/entry/independent-identically-distribution-%EB%8F%85%EB%A6%BD-%EB%8F%99%EC%9D%BC-%EB%B6%84%ED%8F%AC){:target="_blank"}
 * [](){:target="_blank"}
 
 <br>
