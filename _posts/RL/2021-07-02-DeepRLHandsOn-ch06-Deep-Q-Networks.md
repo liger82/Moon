@@ -294,7 +294,7 @@ replay buffer 는 다소 독립적인 데이터를 학습하도록 해주지만,
 Q(s,a)를 바람직한 결과에 가깝도록 만들기 위해 뉴럴넷 패러미터들을 업데이트할 때, 간접적으로 Q(s', a') 값과 근처 다른 상태들을 변경할 수 있습니다.  학습을 매우 불안정하게 만들 수 있습니다. 
 
 <div style="color:red">
-학습 과정을 안정적이게 하려면, **target network**를 써야 합니다. target network 는 우리의 네트워크를 복사해놓고 이 네트워크를 벨만 방정식의 Q(s', a') 값을 위해 사용하는 것입니다. target network는 주기적으로(예: N step 마다) 메인 네트워크와 동기화를 합니다. 
+학습 과정을 안정적이게 하려면, <b>target network</b>를 써야 합니다. target network 는 우리의 네트워크를 복사해놓고 이 네트워크를 벨만 방정식의 Q(s', a') 값을 위해 사용하는 것입니다. target network는 주기적으로(예: N step 마다) 메인 네트워크와 동기화를 합니다. 
 </div>
 
 <br>
@@ -313,13 +313,43 @@ Markov property : 어떤 시간에 특정 state에 도달하든 그 이전에 �
 
 POMDP는 markov property를 지니지 않은 MDP 이고, 현실에서 매우 중요한 역할을 합니다. 예를 들어 상대의 카드가 보이지 않는 대부분의 카드 게임에서 게임 관찰값은 POMDP 입니다. 현재 관찰값(당신의 카드와 테이블에 있는 카드)이 상대의 손에 있는 다른 카드에 해당될 수 있기 때문입니다. 
 
+이 책에서 POMDP에 대해 자세히 다루지는 않을 예정이지만, 앞선 환경을 MDP 도메인으로 돌려보낼 작은 테크닉을 보여줄 것입니다. 그 해결책은 **과거의 일부 관찰값들을 유지하고, 상태값으로 사용하는 것입니다.** 아타리 게임의 경우 k개의 프레임을 쌓아 매 상태의 관찰값으로 사용합니다. 이는 에이전트가 (예를 들어) 공의 속력과 방향을 알아내기 위해 현재 state의 dynamics를 추론하도록 해줍니다. 아타리 게임에서 k는 보통 4입니다. 이는 트릭이지만 대부분 게임에서 꽤 잘 작동합니다. 
+
 <br>
 
 ## The final form of DQN training
 
+epsilon-greedy, replay buffer, target network는 딥마인드가 49개의 아타리 게임에서 DQN을 성공적으로 학습하고 복잡한 환경에 적용할 때 이 접근법의 효율성을 입증할 수 있는 기반이 되었습니다.
+
+(DQN 학습을 보다 안정적이고 효율적으로 수행하기 위해 연구자들이 발견한 여러 가지 팁과 요령에 대해 다음 장에서 더 다룰 것입니다.)
+
+<br>
+
+DQN이 등장한 논문(target network는 없음)은 2013년 말에 나왔고(*Playing Atari with Deep Reinforcement Learning, 1312.5602v1, Mnih and others*) 테스트에 7개 게임을 사용했습니다. 15년 초에 새 버전을 49개 게임으로 테스트하여 *Nature*지에 기고하였습니다.(*Human-Level Control Through Deep Reinforcement Learning, doi:10.1038/nature14236, Mnih and others*) 
+
+DQN 알고리즘은 다음과 같이 진행됩니다.
+
+1. $$Q(s,a)$$ 와 $$\widehat{Q}(s,a)$$ 의 패러미터를 임의의 가중치값들로 초기화한다. epsilon=1.0, replay buffer는 빈값.
+2. 엡실론의 확률로, 임의의 행동 a를 선택하거나 $$a=argmax_{a}Q(s,a)$$ Q(s,a) 최대가 되는 행동 a를 선택한다.
+3. emulator에서 행동 a를 실행하고, 보상 r과 다음 상태 s'를 얻는다.
+4. transition (s, a, r, s')를 replay buffer에 저장한다.
+5. replay buffer 로부터 transition 의 미니배치를 랜덤하게 표집한다.
+6. 모든 transition마다, 다음을 계산한다.
+    - $$y=r$$ (이번 스텝이 에피소드 마지막일 때)
+    - $$y=r + \gamma \max_{a' \in A} \widehat{Q}(s',a')$$
+7. loss 계산 : $$L=(Q(s,a) - y)^2$$
+8. 각 모델 패러미터에 대해 loss 를 최소화하면서 SGD 알고리즘으로 Q(s,a)를 업데이트한다.
+9. N step마다 Q에서 $$\widehat{Q}$$로 가중치를 복사한다.
+10. 수렴될 때까지 2단계부터 반복 실행한다.
+
+<br>
+
+다음 세션에서는 위 내용을 구현하고 아타리 게임을 더 잘 수행하도록 조정해보겠습니다.
+
 <br>
 
 > <subtitle> DQN on Pong </subtitle>
+
 
 
 <br>
