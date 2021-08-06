@@ -330,13 +330,13 @@ DQN이 등장한 논문(target network는 없음)은 2013년 말에 나왔고(*P
 DQN 알고리즘은 다음과 같이 진행됩니다.
 
 1. $$Q(s,a)$$ 와 $$\widehat{Q}(s,a)$$ 의 패러미터를 임의의 가중치값들로 초기화한다. epsilon=1.0, replay buffer는 빈값.
-2. 엡실론의 확률로, 임의의 행동 a를 선택하거나 $$a=argmax_{a}Q(s,a)$$ Q(s,a) 최대가 되는 행동 a를 선택한다.
+2. 엡실론의 확률로, 임의의 행동 a를 선택하거나 Q(s,a) 최대가 되는 행동 a를 선택한다($$a=argmax_{a}Q(s,a)$$).
 3. emulator에서 행동 a를 실행하고, 보상 r과 다음 상태 s'를 얻는다.
 4. transition (s, a, r, s')를 replay buffer에 저장한다.
 5. replay buffer 로부터 transition 의 미니배치를 랜덤하게 표집한다.
 6. 모든 transition마다, 다음을 계산한다.
     - $$y=r$$ (이번 스텝이 에피소드 마지막일 때)
-    - $$y=r + \gamma \max_{a' \in A} \widehat{Q}(s',a')$$
+    - $$y=r + \gamma \max_{a' \in A} \widehat{Q}(s',a')$$ (마지막 에피소드가 아닐 때)
 7. loss 계산 : $$L=(Q(s,a) - y)^2$$
 8. 각 모델 패러미터에 대해 loss 를 최소화하면서 SGD 알고리즘으로 Q(s,a)를 업데이트한다.
 9. N step마다 Q에서 $$\widehat{Q}$$로 가중치를 복사한다.
@@ -344,13 +344,51 @@ DQN 알고리즘은 다음과 같이 진행됩니다.
 
 <br>
 
-다음 세션에서는 위 내용을 구현하고 아타리 게임을 더 잘 수행하도록 조정해보겠습니다.
+다음 세션에서는 위 내용을 코드로 구현하고 아타리 게임을 더 잘 수행하도록 조정해보겠습니다.
 
 <br>
 
 > <subtitle> DQN on Pong </subtitle>
 
+이번 코드는 길이, 논리적 구조, 재사용성 때문에 3개의 모듈로 나뉘어져 있습니다.
 
+* Chapter06/lib/wrappers.py: 아타리 게임 환경에 대한 wrapper class
+* Chapter06/lib/dqn_model.py: Nature 지에 나온 딥마인드 DQN과 동일한 아키텍쳐를 지닌 DQN 뉴럴넷 레이어
+* Chapter06/02_dqn_pong.py: 메인 모듈로 학습 과정 포함.
+
+<br>
+
+## Wrappers
+
+강화학습으로 아타리 게임을 다루는 것은 자원적인 측면에서 상당히 어려운 일입니다. 학습 속도를 더 빨리 진행하기 위해 DeepMind의 논문에 설명된 아타리 게임 환경에 몇 가지 변형을 한 것이 wrapper 입니다. 이러한 변형들에는 성능에만 영향을 끼치는 것도 있으나 일부는 학습을 더 길게, 더 불안정하게 만드는 것도 있습니다. 구현 코드는 다양하게 있는데 이 책에서는 [OpenAI Baselines 레포지토리](https://github.com/openai/baselines){:target="_blank"}를 다룰 예정입니다. 이 레포지토리가 텐서플로우로 구현되어 있고 유명한 벤치마크로 비교해놨기 때문입니다. 
+
+다음은 강화학습 연구자들에게 가장 인기 있는 아타리 게임 변형들 목록입니다.
+
+* *Converting individual lives in the game into separate episodes* : 일반적으로 에피소드는 시작부터 게임이 끝날 때까지의 모든 스텝을 포함하고 있다. 이 변형은 **전체 에피소드를 플레이어가 살아있는 작은 에피소드로 분리**한 것이다. 모든 게임에서 지원하는 것은 아니지만 **수렴 속도를 빠르게** 해주는 효과가 있다.
+* *At the beginning of the game, performing a random amount (up to 30) of no-op actions* : 게임 플레이와 무관한 시작 장면을 생략한다. (일부 게임에서만)
+* *Making an action decision every K steps, where K is usually 4 or 3* : 매 K 스텝마다 행동을 선택해서 반복한다. 뉴럴넷을 사용하여 모든 프레임을 처리하는 작업은 상당히 까다롭지만 결과 프레임 간의 차이는 보통 미미하기 때문에 학습 속도를 크게 높일 수 있습니다.
+* *Taking the maximum of every pixel in the last two frames and using it as an observation* : 일부 아타리 게임 중에는 플랫폼의 한계로 인해 깜빡임이 있는 것들이 있다. 인간은 이를 인식하지 못하지만 뉴럴넷은 혼동할 수 있다. 그래서 마지막 두 프레임에서 최대값을 관찰값으로 사용한다.
+* *Pressing FIRE at the beginning of the game* : 게임 시작 때 FIRE 버튼을 누른다. 일부 게임(Pong과 Breakout)은 게임 시작을 위해서는 사용자가 FIRE 버튼을 눌러야 한다. 버튼 누르는 것 없으면 환경은 POMDP가 된다. 관찰값으로부터 에이전트가 버튼이 이미 눌렸는지 구분할 수 없기 때문이다.
+* *Scaling every frame down from 210×160, with three color frames, to a single-color 84×84 image* : 210x160 픽셀의 3개 색상을 가진 프레임을 단일 색상 84x84 이미지로 스케일링한다. 이 방식만 있는 것은 아니고 다양하게 활용 가능합니다. 그레이스케일을 하는 것도 가능합니다.
+* *Stacking several (usually four) subsequent frames together to give the network information about the dynamics of the game's objects* : 
+* *Clipping the reward to –1, 0, and 1 values* : 
+* *Converting observations from unsigned bytes to float32 value* : 
+
+<br>
+
+## The DQN model
+
+<br>
+
+## Training
+
+<br>
+
+## Running and performance
+
+<br>
+
+## Your model in action
 
 <br>
 
