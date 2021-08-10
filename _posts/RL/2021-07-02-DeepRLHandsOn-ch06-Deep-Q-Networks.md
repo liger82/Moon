@@ -100,7 +100,7 @@ Value Iteration에는 **명백한 문제점**이 있습니다.
 
 - backup diagram
 
-<center><img src= "https://liger82.github.io/assets/img/post/20210702-DeepRLHandsOn-ch06-Deep-Q-Networks/fig6.1-qlearning-backup-diagram.png" width="40%"></center><br>
+<center><img src= "https://liger82.github.io/assets/img/post/20210702-DeepRLHandsOn-ch06-Deep-Q-Networks/fig6.1-qlearning-backup-diagram.png" width="30%"></center><br>
 
 - Q-learning은 기존의 off-policy와 다르다.
     - 기존 off-policy는 behavior policy와 target policy가 다르기 때문에 behavior policy에서 학습한 내용을 target policy에서도 보장하기 위해 sampling data의 분포가 같다는 것을 증명해야 한다. 여기서 사용되는 것이 **importance sampling**이다. importance sampling은 다른 분포에서 sampling한 데이터를 알아야할 분포에 맞게끔 보정해서 estimate하는 기법을 말한다.
@@ -364,31 +364,642 @@ DQN 알고리즘은 다음과 같이 진행됩니다.
 
 다음은 강화학습 연구자들에게 가장 인기 있는 아타리 게임 변형들 목록입니다.
 
-* *Converting individual lives in the game into separate episodes* : 일반적으로 에피소드는 시작부터 게임이 끝날 때까지의 모든 스텝을 포함하고 있다. 이 변형은 **전체 에피소드를 플레이어가 살아있는 작은 에피소드로 분리**한 것이다. 모든 게임에서 지원하는 것은 아니지만 **수렴 속도를 빠르게** 해주는 효과가 있다.
-* *At the beginning of the game, performing a random amount (up to 30) of no-op actions* : 게임 플레이와 무관한 시작 장면을 생략한다. (일부 게임에서만)
-* *Making an action decision every K steps, where K is usually 4 or 3* : 매 K 스텝마다 행동을 선택해서 반복한다. 뉴럴넷을 사용하여 모든 프레임을 처리하는 작업은 상당히 까다롭지만 결과 프레임 간의 차이는 보통 미미하기 때문에 학습 속도를 크게 높일 수 있습니다.
-* *Taking the maximum of every pixel in the last two frames and using it as an observation* : 일부 아타리 게임 중에는 플랫폼의 한계로 인해 깜빡임이 있는 것들이 있다. 인간은 이를 인식하지 못하지만 뉴럴넷은 혼동할 수 있다. 그래서 마지막 두 프레임에서 최대값을 관찰값으로 사용한다.
-* *Pressing FIRE at the beginning of the game* : 게임 시작 때 FIRE 버튼을 누른다. 일부 게임(Pong과 Breakout)은 게임 시작을 위해서는 사용자가 FIRE 버튼을 눌러야 한다. 버튼 누르는 것 없으면 환경은 POMDP가 된다. 관찰값으로부터 에이전트가 버튼이 이미 눌렸는지 구분할 수 없기 때문이다.
-* *Scaling every frame down from 210×160, with three color frames, to a single-color 84×84 image* : 210x160 픽셀의 3개 색상을 가진 프레임을 단일 색상 84x84 이미지로 스케일링한다. 이 방식만 있는 것은 아니고 다양하게 활용 가능합니다. 그레이스케일을 하는 것도 가능합니다.
+* *Converting individual lives in the game into separate episodes* :
+    - 일반적으로 에피소드는 시작부터 게임이 끝날 때까지의 모든 스텝을 포함하고 있다. 이 변형은 **전체 에피소드를 플레이어가 살아있는 작은 에피소드로 분리**한 것이다. 모든 게임에서 지원하는 것은 아니지만 **수렴 속도를 빠르게** 해주는 효과가 있다.
+* *At the beginning of the game, performing a random amount (up to 30) of no-op actions* : 
+    - 게임 플레이와 무관한 시작 장면을 생략한다. (일부 게임에서만)
+* *Making an action decision every K steps, where K is usually 4 or 3* : 
+    - 매 K 스텝마다 행동을 선택해서 반복한다. 뉴럴넷을 사용하여 모든 프레임을 처리하는 작업은 상당히 까다롭지만 결과 프레임 간의 차이는 보통 미미하기 때문에 학습 속도를 크게 높일 수 있습니다.
+* *Taking the maximum of every pixel in the last two frames and using it as an observation* : 
+    - 일부 아타리 게임 중에는 플랫폼의 한계로 인해 깜빡임이 있는 것들이 있다. 인간은 이를 인식하지 못하지만 뉴럴넷은 혼동할 수 있다. 그래서 마지막 두 프레임에서 최대값을 관찰값으로 사용한다.
+* *Pressing FIRE at the beginning of the game* :
+    - 게임 시작 때 FIRE 버튼을 누른다. 일부 게임(Pong과 Breakout)은 게임 시작을 위해서는 사용자가 FIRE 버튼을 눌러야 한다. 버튼 누르는 것 없으면 환경은 POMDP가 된다. 관찰값으로부터 에이전트가 버튼이 이미 눌렸는지 구분할 수 없기 때문이다.
+* *Scaling every frame down from 210×160, with three color frames, to a single-color 84×84 image* : 
+    - 210x160 픽셀의 3개 색상을 가진 프레임을 단일 색상 84x84 이미지로 스케일링한다. 이 방식만 있는 것은 아니고 다양하게 활용 가능합니다. 그레이스케일을 하는 것도 가능합니다.
 * *Stacking several (usually four) subsequent frames together to give the network information about the dynamics of the game's objects* : 
+    - 보통 4개 이어진 프레임을 엮어서 입력으로 사용하는 것.
 * *Clipping the reward to –1, 0, and 1 values* : 
+    - 보상의 범위를 -1 ~ 1로 제한. normalization 효과
 * *Converting observations from unsigned bytes to float32 value* : 
+    - 관찰값을 unsigned bytes에서 float32 로 형변환. emulator 출력값으로 0~255의 범위를 갖는 bytes tensor를 받는데 이는 뉴럴넷에 최적화된 값의 형태가 아니어서 float으로 바꾸고 0~1로 범위도 스케일링합니다.
+
+아타리 게임에서 위에 나온 모든 wrapper를 쓰는 것이 아니더라도 wrapper를 알고 있으면 적절한 상황에서 적용 가능할 수 있어 유용합니다. 가끔 DQN이 수렴하지 않는 원인이 코드가 아니라 잘못된 환경설정 때문일 수 있습니다. 즉, wrapper를 잘 쓰는 것도 중요합니다. 
+
+<br>
+
+이제 몇 개의 wrapper class 코드를 보며 어떻게 구현되었는지 살펴보겠습니다.
+
+```python
+import cv2
+import gym
+import gym.spaces
+import numpy as np
+import collections
+
+
+class FireResetEnv(gym.Wrapper):
+    def __init__(self, env=None):
+        """For environments where the user need to press FIRE for the game to start."""
+        super(FireResetEnv, self).__init__(env)
+        assert env.unwrapped.get_action_meanings()[1] == 'FIRE'
+        assert len(env.unwrapped.get_action_meanings()) >= 3
+
+    def step(self, action):
+        return self.env.step(action)
+
+    def reset(self):
+        self.env.reset()
+        obs, _, done, _ = self.env.step(1)
+        if done:
+            self.env.reset()
+        obs, _, done, _ = self.env.step(2)
+        if done:
+            self.env.reset()
+        return obs
+```
+
+FireResetEnv wrapper class는 게임 시작을 위해 FIRE 버튼을 눌러야만 하는 조건을 init 함수에 명시하였습니다. 
+
+<br>
+
+```python
+class MaxAndSkipEnv(gym.Wrapper):
+    def __init__(self, env=None, skip=4):
+        """Return only every `skip`-th frame"""
+        super(MaxAndSkipEnv, self).__init__(env)
+        # most recent raw observations (for max pooling across time steps)
+        self._obs_buffer = collections.deque(maxlen=2)
+        self._skip = skip
+
+    def step(self, action):
+        total_reward = 0.0
+        done = None
+        for _ in range(self._skip):
+            obs, reward, done, info = self.env.step(action)
+            self._obs_buffer.append(obs)
+            total_reward += reward
+            if done:
+                break
+        max_frame = np.max(np.stack(self._obs_buffer), axis=0)
+        return max_frame, total_reward, done, info
+
+    def reset(self):
+        """Clear past frame buffer and init. to first obs. from inner env."""
+        self._obs_buffer.clear()
+        obs = self.env.reset()
+        self._obs_buffer.append(obs)
+        return obs
+
+```
+
+MaxAndSkipEnv wrapper class는 K(=skip)개 만큼 관찰값을 쌓아서 max pooling한 값을 반환해줍니다. 
+
+<br>
+
+```python
+class ProcessFrame84(gym.ObservationWrapper):
+    def __init__(self, env=None):
+        super(ProcessFrame84, self).__init__(env)
+        self.observation_space = gym.spaces.Box(
+            low=0, high=255, shape=(84, 84, 1), dtype=np.uint8)
+
+    def observation(self, obs):
+        return ProcessFrame84.process(obs)
+
+    @staticmethod
+    def process(frame):
+        if frame.size == 210 * 160 * 3:
+            img = np.reshape(frame, [210, 160, 3]).astype(
+                np.float32)
+        elif frame.size == 250 * 160 * 3:
+            img = np.reshape(frame, [250, 160, 3]).astype(
+                np.float32)
+        else:
+            assert False, "Unknown resolution."
+        img = img[:, :, 0] * 0.299 + img[:, :, 1] * 0.587 + \
+              img[:, :, 2] * 0.114
+        resized_screen = cv2.resize(
+            img, (84, 110), interpolation=cv2.INTER_AREA)
+        x_t = resized_screen[18:102, :]
+        x_t = np.reshape(x_t, [84, 84, 1])
+        return x_t.astype(np.uint8)
+```
+
+ProcessFrame84 wrapper class는 RGB 색상의 210x160 해상도를 갖는 픽셀 이미지를 grayscale 84x84 이미지로 변환해줍니다. 
+
+<br>
+
+```python
+class BufferWrapper(gym.ObservationWrapper):
+    def __init__(self, env, n_steps, dtype=np.float32):
+        super(BufferWrapper, self).__init__(env)
+        self.dtype = dtype
+        old_space = env.observation_space
+        self.observation_space = gym.spaces.Box(
+            old_space.low.repeat(n_steps, axis=0),
+            old_space.high.repeat(n_steps, axis=0), dtype=dtype)
+
+    def reset(self):
+        self.buffer = np.zeros_like(
+            self.observation_space.low, dtype=self.dtype)
+        return self.observation(self.env.reset())
+
+    def observation(self, observation):
+        self.buffer[:-1] = self.buffer[1:]
+        self.buffer[-1] = observation
+        return self.buffer
+```
+BufferWrapper class는 0번째 차원에 연속된 프레임을 스택으로 쌓아 관찰값으로 반환합니다. 이렇게 하는 이유는 네트워크에게 그 물체의 동적인 움직임(예-Pong에서 볼의 속도와 방향 등)에 대한 정보를 주기 위함입니다. 이건 매우 중요한 정보이면서 단일 이미지로는 표현하기 어려운 정보입니다.
+
+<br>
+
+```python
+class ImageToPyTorch(gym.ObservationWrapper):
+    def __init__(self, env):
+        super(ImageToPyTorch, self).__init__(env)
+        old_shape = self.observation_space.shape
+        new_shape = (old_shape[-1], old_shape[0], old_shape[1])
+        self.observation_space = gym.spaces.Box(
+            low=0.0, high=1.0, shape=new_shape, dtype=np.float32)
+
+    def observation(self, observation):
+        return np.moveaxis(observation, 2, 0)
+```
+
+이 wrapper class는 관찰값 포맷을 (Height, Width, Channel) 에서 (Channel, Height, Width)로 바꿔줍니다. CHW는 PyTorch에서 요구하는 포맷입니다. 
+
+<br>
+
+```python
+def make_env(env_name):
+    env = gym.make(env_name)
+    env = MaxAndSkipEnv(env)
+    env = FireResetEnv(env)
+    env = ProcessFrame84(env)
+    env = ImageToPyTorch(env)
+    env = BufferWrapper(env, 4)
+    return ScaledFloatFrame(env)
+```
+
+이 함수는 간단하게 모든 wrapper 를 환경에 적용하는 방법입니다. 이제는 DQN 모델에 대해 알아보겠습니다.
 
 <br>
 
 ## The DQN model
 
+네이쳐지에 게재한 모델은 3개의 convolution layer에 2개의 fully connected layer를 이은 모델입니다. 모든 레이어는 ReLU를 활성화 함수로 쓰고 있습니다. (단, 모델의 출력값에는 비선형 활성화함수 적용 안 됨.) 네트워크의 하나의 패스로 모든 Q value를 계산하는 것은 Q(s,a)를 말그대로 관찰값과 행동을 입력으로 넣어 행동의 가치를 얻어내는 방식보다 속도가 훨씬 빠르다는 이점을 지닙니다.
+
+모델 코드는 *Chapter06/lib/dqn_model.py*에 있습니다.
+
+```python
+import torch
+import torch.nn as nn
+import numpy as np
+
+
+class DQN(nn.Module):
+    def __init__(self, input_shape, n_actions):
+        super(DQN, self).__init__()
+
+        self.conv = nn.Sequential(
+            nn.Conv2d(input_shape[0], 32, kernel_size=8, stride=4),
+            nn.ReLU(),
+            nn.Conv2d(32, 64, kernel_size=4, stride=2),
+            nn.ReLU(),
+            nn.Conv2d(64, 64, kernel_size=3, stride=1),
+            nn.ReLU()
+        )
+
+        conv_out_size = self._get_conv_out(input_shape)
+        self.fc = nn.Sequential(
+            nn.Linear(conv_out_size, 512),
+            nn.ReLU(),
+            nn.Linear(512, n_actions)
+        )
+
+    def _get_conv_out(self, shape):
+        o = self.conv(torch.zeros(1, *shape))
+        return int(np.prod(o.size()))
+
+    def forward(self, x):
+        conv_out = self.conv(x).view(x.size()[0], -1)
+        return self.fc(conv_out)
+```
+
+모델은 크게 convolution과 sequential 파트로 나뉘어져 있습니다. 두 파트간 요구하는 차원이 다르기 때문에 변환 과정이 필요하지만 PyTorch는 "flatter"(다차원 텐서를 1차원 벡터로 펴주는) layer가 없어서 forward()에서 view()를 이용해 reshape해줍니다. 4D 입력 텐서를 (배치 사이즈, 모든 패러미터 개수) 2D 텐서로 바꿔준 것입니다.
+
+또한 convolution layer에서 나온 출력값이 linear layer의 입력값에 들어갈 때 사이즈를 모르기 때문에 계산하는 함수를 추가했습니다. *_get_conv_out()* 은 0으로 채워진 텐서를 집어넣어 직접 계산합니다. 이 부분은 tensorflow가 편해보이네요. 
+
 <br>
 
 ## Training
+
+세 번째 모듈은 experience replay buffer, agent, loss function, training loop를 포함한 학습 과정을 담고 있습니다. 코드를 보기 전에 학습 하이퍼패러미터에 대해 먼저 알아보겠습니다. 네이쳐지에 낸 논문에 모든 하이퍼패러미터 정보를 테이블로 정리되어 있습니다. 딥마인드에서는 이 모든 패러미터를 49종의 모든 아타리 게임에 동일하게 적용합니다. DQN이 각광받았던 이유 중 하나가 각기 다른 디테일을 지닌 게임에 대해 동일한 아키텍쳐와 하이퍼패러미터를 적용시켜 좋은 성능을 냈다는 점입니다. (학습은 모델별로 따로 진행.) 
+
+<center><img src= "https://liger82.github.io/assets/img/post/20210702-DeepRLHandsOn-ch06-Deep-Q-Networks/fig6.3-table_of_dqn_hyperparameters.png" width="70%"></center><br>
+
+<br>
+
+일단 이 챕터에서는 Pong game에 대해서만 다룰 예정입니다. Pong game이 다른 게임에 비해 심플하고 직선적이라서 위의 하이퍼패러미터 중 일부가 과다한 경향이 있습니다. 예를 들어, replay memory size를 백만으로 해놨는데 이는 20GB의 램이 필요합니다. Pong 게임과 같이 간단한 게임에는 과하게 메모리를 잡는 것이라 10K로 수정해서 사용했습니다. 
+
+원 논문에서는 처음 백만 프레임에서 epsilon을 1.0에서 0.1로 선형적으로 줄여나가는데 저자가 Pong game 실험해본 결과, 처음 150K 프레임까지는 엡실론을 줄여나가고 그 다음은 유지하는 것만으로도 충분하다는 결론을 지었습니다. 이렇게 했을 때, 원논문의 패러미터보다 10배 이상 수렴 속도가 빨랐다고 합니다. (GTX 1080i에서 수렴하는데 원 논문의 설정으로는 적어도 1일이 소요되었고, 새 설정으로는 1~2시간 정도 걸렸습니다. )
+
+```python
+#!/usr/bin/env python3
+from lib import wrappers
+from lib import dqn_model
+
+import argparse
+import time
+import numpy as np
+import collections
+
+import torch
+import torch.nn as nn
+import torch.optim as optim
+
+from tensorboardX import SummaryWriter
+
+# 환경 이름
+DEFAULT_ENV_NAME = "PongNoFrameskip-v4"
+# 학습 종료를 위한 마지막 100개 에피소드의 보상 평균 경계값
+MEAN_REWARD_BOUND = 19
+
+# 벨만 방정식 근사에서 사용하는 감마값
+GAMMA = 0.99
+# replay buffer로부터 표집한 batch size
+BATCH_SIZE = 32
+# replay buffer의 최대 용량
+REPLAY_SIZE = 10000
+# 학습을 시작하기 전에 replay buffer를 채우기 위해 기다리는 프레임 수
+REPLAY_START_SIZE = 10000
+# 학습률
+LEARNING_RATE = 1e-4
+# training model과 target model을 얼만큼의 주기로 동기화 시켜야 하는지
+SYNC_TARGET_FRAMES = 1000
+
+# epsilon 값은 1.0에서 시작하여 0.01로 줄여나간다.
+# 150000 부터는 0.01로 유지
+EPSILON_DECAY_LAST_FRAME = 150000
+EPSILON_START = 1.0
+EPSILON_FINAL = 0.01
+
+```
+
+<br>
+
+다음은 replay buffer 에 대한 코드입니다. 주된 목적은 전이값들(현재 상태, 행동, 보상, done flag, 다음 상태)을 저장하는 것입니다. 학습할 때, 이 버퍼에서 램덤하게 배치사이즈만큼 표집합니다. 
+
+```python
+Experience = collections.namedtuple(
+    'Experience', field_names=['state', 'action', 'reward',
+                               'done', 'new_state'])
+
+
+class ExperienceBuffer:
+    def __init__(self, capacity):
+        self.buffer = collections.deque(maxlen=capacity)
+
+    def __len__(self):
+        return len(self.buffer)
+
+    def append(self, experience):
+        self.buffer.append(experience)
+
+    def sample(self, batch_size):
+        indices = np.random.choice(len(self.buffer), batch_size,
+                                   replace=False)
+        states, actions, rewards, dones, next_states = \
+            zip(*[self.buffer[idx] for idx in indices])
+        # loss function에 편리하기 위해 NumPy array로 변환
+        return np.array(states), np.array(actions), \
+               np.array(rewards, dtype=np.float32), \
+               np.array(dones, dtype=np.uint8), \
+               np.array(next_states)
+
+```
+
+<br>
+
+다음은 에이전트입니다.
+
+```python
+class Agent:
+    def __init__(self, env, exp_buffer):
+        self.env = env
+        self.exp_buffer = exp_buffer
+        self._reset()
+
+    def _reset(self):
+        self.state = env.reset()
+        self.total_reward = 0.0
+
+    @torch.no_grad()
+    def play_step(self, net, epsilon=0.0, device="cpu"):
+        done_reward = None
+        '''
+        epsilon 값이 1.0에서 시작해서 점점 작아지므로 처음에는 랜덤한 행동을 많이 뽑다가
+        점차 기존 경험에서 가장 좋은 행동을 선택한다.        
+        '''
+        if np.random.random() < epsilon:
+            action = env.action_space.sample()
+        else:
+            state_a = np.array([self.state], copy=False)
+            state_v = torch.tensor(state_a).to(device)
+            q_vals_v = net(state_v)
+            _, act_v = torch.max(q_vals_v, dim=1)
+            action = int(act_v.item())
+
+        # do step in the environment
+        new_state, reward, is_done, _ = self.env.step(action)
+        self.total_reward += reward
+
+        # buffer에 저장
+        exp = Experience(self.state, action, reward,
+                         is_done, new_state)
+        self.exp_buffer.append(exp)
+        self.state = new_state
+        if is_done:
+            done_reward = self.total_reward
+            self._reset()
+        return done_reward
+
+
+def calc_loss(batch, net, tgt_net, device="cpu"):
+    # loss function 계산의 기본은 Deep Q-learning 세션에서 다룬 식과 동일합니다.
+
+    # net : 학습 네트워크, gradient 계산하는데 사용
+    # tgt_net : target network, 다음 상태를 위한 가치 계산하는데 사용. 이 과정은 gradient에 영향을 주면 안됨.
+    # 기존 Tensor에서 gradient 전파가 안되는 텐서 생성하기 위해 .detach() 사용
+    states, actions, rewards, dones, next_states = batch
+    # tensor로 변환
+    states_v = torch.tensor(np.array(states, copy=False)).to(device)
+    next_states_v = torch.tensor(np.array(
+        next_states, copy=False)).to(device)
+    actions_v = torch.tensor(actions).to(device)
+    rewards_v = torch.tensor(rewards).to(device)
+    done_mask = torch.BoolTensor(dones).to(device)
+
+    # 학습 네트워크에 관찰값을 입력으로 넣어 행동에 따른 Q값을 추출한다.
+    # .gather의 첫 번째 argument는 모으고 싶은 차원 인덱스를 뜻한다. 1이 행동이다.
+    # .gather의 두 번째 argument는 선택한 요소의 인덱스에 해당하는 텐서입니다.
+    # figure 6.3이 gather()의 프로세스를 간단히 보여줍니다.
+    state_action_values = net(states_v).gather(
+        1, actions_v.unsqueeze(-1)).squeeze(-1)
+    # gradient 계산에 영향을 안 주기 위해서 적용
+    with torch.no_grad():
+        # 타켓 네트워크에 다음 상태를 입력으로 주고
+        # action(dim=1)에 대해 다음 상태에서의 최대 Q값을 계산한다.
+        # .max()은 최대 값과 인덱스 둘 다 반환해서 편리하다. 0을 선택한건 값만 사용하겠다는 의미
+        next_state_values = tgt_net(next_states_v).max(1)[0]
+        ''' 중요 포인트!!
+        에피소드의 마지막 단계에서 transition이 시작되면 다음 상태가 없기 때문에 행동의 가치는 다음 상태에 대한 할인된 보상이 없습니다. 
+        이것은 사소한 것처럼 보일 수 있지만 매우 중요합니다. 그래서 아래처럼 처리를 해주어야 합니다. 이것이 없으면 학습이 수렴되지 않습니다.
+        '''
+        next_state_values[done_mask] = 0.0
+        # gradient 전파가 안되는 텐서 복사
+        next_state_values = next_state_values.detach()
+    # 벨만 근사
+    expected_state_action_values = next_state_values * GAMMA + \
+                                   rewards_v
+    # Mean Squared Error loss 
+    # 학습 네트워크의 값과 타켓 네트워크의 값 비교
+    return nn.MSELoss()(state_action_values,
+                        expected_state_action_values)
+```
+
+아래 figure 6.3은 4개의 행동과 6개의 배치가 있다고 할 때, *gather()* 이 어떤 과정인지 보여줍니다.
+
+<center><img src= "https://liger82.github.io/assets/img/post/20210702-DeepRLHandsOn-ch06-Deep-Q-Networks/fig6.4-gather.png" width="70%"></center><br>
+
+다음은 메인함수입니다. 
+
+```python
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--cuda", default=False,
+                        action="store_true", help="Enable cuda")
+    parser.add_argument("--env", default=DEFAULT_ENV_NAME,
+                        help="Name of the environment, default=" +
+                             DEFAULT_ENV_NAME)
+    args = parser.parse_args()
+    device = torch.device("cuda" if args.cuda else "cpu")
+
+    env = wrappers.make_env(args.env)
+    # 학습 네트워크와 타켓 네트워크의 아키텍처는 동일
+    net = dqn_model.DQN(env.observation_space.shape,
+                        env.action_space.n).to(device)
+    tgt_net = dqn_model.DQN(env.observation_space.shape,
+                            env.action_space.n).to(device)
+    writer = SummaryWriter(comment="-" + args.env)
+    # 네트워크 구조 출력
+    print(net)
+
+    # buffer, agent 인스턴스 생성
+    buffer = ExperienceBuffer(REPLAY_SIZE)
+    agent = Agent(env, buffer)
+    # 엡실론 초기값(1.0) 설정
+    epsilon = EPSILON_START
+
+    optimizer = optim.Adam(net.parameters(), lr=LEARNING_RATE)
+    total_rewards = []
+    frame_idx = 0
+    ts_frame = 0
+    ts = time.time()
+    best_m_reward = None
+
+    while True:
+        frame_idx += 1
+        epsilon = max(EPSILON_FINAL, EPSILON_START -
+                      frame_idx / EPSILON_DECAY_LAST_FRAME)
+        # 엡실론 값에 따라 최적 혹은 랜덤 행동을 하고 그에 따른 결과값을 버퍼에 저장한다. 
+        reward = agent.play_step(net, epsilon, device=device)
+        if reward is not None:
+            total_rewards.append(reward)
+            # 각 단계마다 소요 시간 체크
+            speed = (frame_idx - ts_frame) / (time.time() - ts)
+            ts_frame = frame_idx
+            ts = time.time()
+            # 최근 보상값 최대 100개까지의 평균
+            m_reward = np.mean(total_rewards[-100:])
+            print("%d: done %d games, reward %.3f, "
+                  "eps %.2f, speed %.2f f/s" % (
+                frame_idx, len(total_rewards), m_reward, epsilon,
+                speed
+            ))
+            writer.add_scalar("epsilon", epsilon, frame_idx)
+            writer.add_scalar("speed", speed, frame_idx)
+            writer.add_scalar("reward_100", m_reward, frame_idx)
+            writer.add_scalar("reward", reward, frame_idx)
+            # 최고 보상 평균이 없거나 현재 보상 평균보다 작으면 학습 네트워크 저장
+            if best_m_reward is None or best_m_reward < m_reward:
+                torch.save(net.state_dict(), args.env +
+                           "-best_%.0f.dat" % m_reward)
+                if best_m_reward is not None:
+                    print("Best reward updated %.3f -> %.3f" % (
+                        best_m_reward, m_reward))
+                best_m_reward = m_reward
+            # 현재 보상 평균이 보상 평균 경계값을 넘어서면 문제 풀이 종료
+            if m_reward > MEAN_REWARD_BOUND:
+                print("Solved in %d frames!" % frame_idx)
+                break
+
+        if len(buffer) < REPLAY_START_SIZE:
+            continue
+
+        # SYNC_TARGET_FRAMES 스텝마다 학습 네트워크와 타켓 네트워크 동기화
+        if frame_idx % SYNC_TARGET_FRAMES == 0:
+            tgt_net.load_state_dict(net.state_dict())
+
+        optimizer.zero_grad()
+        batch = buffer.sample(BATCH_SIZE)
+        # loss 계산
+        loss_t = calc_loss(batch, net, tgt_net, device=device)
+        loss_t.backward()
+        optimizer.step()
+    writer.close()
+
+```
 
 <br>
 
 ## Running and performance
 
+Pong game에서 보상 평균이 17점(80% 성공) 정도 되려면 400K 프레임이 필요합니다. 
+책의 저자는 GTX 1080 ti로 학습시켜서 2시간 걸렸다고 합니다. 
+
+제가 올려놓은 환경은 GTX 3090이니 더 빠르지 않을까 싶습니다.
+
+챕터8에서는 학습 속도를 높이고 데이터 효율성을 높이는 다양한 접근법에 대해서 다룰 것이고 챕터9에서는 학습 속도를 높이는 엔지니어링 트릭에 대해 알아볼 것입니다. 
+
+figure 6.4는 시간에 따라 최근 100개의 에피소드 보상 평균이 어떻게 변화되는지 보여줍니다.
+
+<center><img src= "https://liger82.github.io/assets/img/post/20210702-DeepRLHandsOn-ch06-Deep-Q-Networks/fig6.5-dynamics_of_training.png" width="70%"></center><br>
+
+다음은 코드 실행의 초기 결과값들입니다. 
+
+```
+~/Chapter06$ python 02_dqn_pong.py --cuda
+DQN(
+  (conv): Sequential(
+    (0): Conv2d(4, 32, kernel_size=(8, 8), stride=(4, 4))
+    (1): ReLU()
+    (2): Conv2d(32, 64, kernel_size=(4, 4), stride=(2, 2))
+    (3): ReLU()
+    (4): Conv2d(64, 64, kernel_size=(3, 3), stride=(1, 1))
+    (5): ReLU()
+  )
+  (fc): Sequential(
+    (0): Linear(in_features=3136, out_features=512, bias=True)
+    (1): ReLU()
+    (2): Linear(in_features=512, out_features=6, bias=True)
+  )
+)
+958: done 1 games, reward -20.000, eps 0.99, speed 1183.42 f/s
+1806: done 2 games, reward -20.500, eps 0.99, speed 1171.71 f/s
+3083: done 3 games, reward -20.333, eps 0.98, speed 1180.97 f/s
+3970: done 4 games, reward -20.250, eps 0.97, speed 1182.29 f/s
+4900: done 5 games, reward -20.200, eps 0.97, speed 1171.93 f/s
+5812: done 6 games, reward -20.333, eps 0.96, speed 1168.39 f/s
+6680: done 7 games, reward -20.286, eps 0.96, speed 1158.59 f/s
+7530: done 8 games, reward -20.375, eps 0.95, speed 1149.22 f/s
+8352: done 9 games, reward -20.444, eps 0.94, speed 1153.33 f/s
+9276: done 10 games, reward -20.400, eps 0.94, speed 1142.67 f/s
+10117: done 11 games, reward -20.455, eps 0.93, speed 586.96 f/s
+11057: done 12 games, reward -20.500, eps 0.93, speed 147.79 f/s
+11897: done 13 games, reward -20.462, eps 0.92, speed 147.96 f/s
+12699: done 14 games, reward -20.500, eps 0.92, speed 148.66 f/s
+(...생략...)
+
+```
+
+처음에는 초당 1000개 넘는 프레임을 처리하다가 후반부로 갈수록 140 개의 프레임을 처리하고 있습니다. GTX 1080에서는 평균 120개라고 했으니 20개 정도의 차이가 납니다.
+
+10k미만에서 빠른 이유는 10K 프레임까지는 학습하지 않고 기다리기 때문입니다. 
+
+랜덤한 값 때문에 수렴하지 않을 수도 있으니 100k~200k 프레임인데 -21의 보상을 유지하고 있으면 재실행해야 한다고 합니다. 
+
+책의 저자는 1,116,437 번째 프레임에서 문제가 풀렸습니다.
+
 <br>
 
 ## Your model in action
+
+학습 과정은 전체의 반 밖에 오지 않았습니다. 저희의 목적은 모델 학습 뿐만 아니라 이 모델로 게임하여 좋은 결과를 내는 것입니다. 앞선 코드에서 최신 100개 에피소드의 보상 평균이 갱신될 때마다 모델을 "PongNoFrameskip-v4-best.dat"에 저장하였습니다.
+
+*Chapter06/03_dqn_play.py* 에서는 모델 파일을 로드해서 하나의 에피소드를 플레이할 것입니다. 코드는 매우 간단하지만, 백만 개의 매개변수를 가진 여러 매트릭스가 픽셀만 관찰하여 초인적인 정확도로 Pong game을 플레이하는 모습을 볼 수 있습니다.
+
+```python
+#!/usr/bin/env python3
+import gym
+import time
+import argparse
+import numpy as np
+
+import torch
+
+from lib import wrappers
+from lib import dqn_model
+
+import collections
+
+DEFAULT_ENV_NAME = "PongNoFrameskip-v4"
+# Frames Per Second
+FPS = 25
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    # 2번째 코드에서 얻은 모델을 명시한다.
+    parser.add_argument("-m", "--model", required=True,
+                        help="Model file to load")
+    parser.add_argument("-e", "--env", default=DEFAULT_ENV_NAME,
+                        help="Environment name to use, default=" +
+                             DEFAULT_ENV_NAME)
+    parser.add_argument("-r", "--record", help="Directory for video")
+    parser.add_argument("--no-vis", default=True, dest='vis',
+                        help="Disable visualization",
+                        action='store_false')
+    args = parser.parse_args()
+
+    env = wrappers.make_env(args.env)
+    if args.record:
+        env = gym.wrappers.Monitor(env, args.record)
+    # 모델 로드
+    net = dqn_model.DQN(env.observation_space.shape,
+                        env.action_space.n)
+    state = torch.load(args.model, map_location=lambda stg, _: stg)
+    net.load_state_dict(state)
+
+    state = env.reset()
+    total_reward = 0.0
+    c = collections.Counter()
+
+    while True:
+        start_ts = time.time()
+        if args.vis:
+            env.render()
+        state_v = torch.tensor(np.array([state], copy=False))
+        q_vals = net(state_v).data.numpy()[0]
+        action = np.argmax(q_vals)
+        c[action] += 1
+        state, reward, done, _ = env.step(action)
+        total_reward += reward
+        if done:
+            break
+        if args.vis:
+            delta = 1/FPS - (time.time() - start_ts)
+            if delta > 0:
+                time.sleep(delta)
+    print("Total reward: %.2f" % total_reward)
+    print("Action counts:", c)
+    if args.record:
+        env.env.close()
+```
+
+<br>
+
+[https://youtu.be/q0gpmViAuho](https://youtu.be/q0gpmViAuho){:target="_blank"} 는 유튜브에 게임 영상을 올린 것입니다.
 
 <br>
 
