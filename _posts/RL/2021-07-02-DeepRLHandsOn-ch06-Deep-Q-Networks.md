@@ -596,7 +596,7 @@ class DQN(nn.Module):
 
 세 번째 모듈은 experience replay buffer, agent, loss function, training loop를 포함한 학습 과정을 담고 있습니다. 코드를 보기 전에 학습 하이퍼패러미터에 대해 먼저 알아보겠습니다. 네이쳐지에 낸 논문에 모든 하이퍼패러미터 정보를 테이블로 정리되어 있습니다. 딥마인드에서는 이 모든 패러미터를 49종의 모든 아타리 게임에 동일하게 적용합니다. DQN이 각광받았던 이유 중 하나가 각기 다른 디테일을 지닌 게임에 대해 동일한 아키텍쳐와 하이퍼패러미터를 적용시켜 좋은 성능을 냈다는 점입니다. (학습은 모델별로 따로 진행.) 
 
-<center><img src= "https://liger82.github.io/assets/img/post/20210702-DeepRLHandsOn-ch06-Deep-Q-Networks/fig6.3-table_of_dqn_hyperparameters.png" width="70%"></center><br>
+<center><img src= "https://liger82.github.io/assets/img/post/20210702-DeepRLHandsOn-ch06-Deep-Q-Networks/fig6.3-table_of_dqn_hyperparameters.png" width="90%"></center><br>
 
 <br>
 
@@ -1003,18 +1003,14 @@ if __name__ == "__main__":
 
 <br>
 
-> <subtitle> Things to try </subtitle>
-
-
-<br>
-
-
-
-
-<br>
-
 > <subtitle> Summary </subtitle>
 
+* 큰 observation space를 가진 복잡한 환경에서 value iteration의 한계점과 그 한계점을 Q-learning으로 어떻게 극복하는지 알아보았습니다.
+* FrozenLake 환경에서 Q-learning이 어떻게 작동하는지 간단히 알아보았고 뉴럴넷을 사용한 Q-value 근사에 대해 논의했습니다.
+* DQN의 학습 안정성과 수렴을 향상시키기 위한 몇 가지 트릭(experience replay buffer, target networks, frame stacking)에 대해 다뤘습니다. 
+* 이 트릭들과 배운 것을 총괄하여 Pong 환경에서 DQN을 학습하고 게임 플레이를 해보았습니다.
+
+다음 챕터에서는 고수준 강화학습 라이브러리(특히 PTAN)에 대해 다뤄보도록 하겠습니다.
 
 <br>
 
