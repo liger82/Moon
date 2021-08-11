@@ -83,9 +83,9 @@ Value Iteration에는 **명백한 문제점**이 있습니다.
     - 이 단계에서 어떤 행동을 취할지 정해야 하고 항상 옳은 정책이 있다기 보다는 상황에 따라 다를 수 있다.
 3. 다음과 같은 "blending" 기술을 이용한 근사를 사용해서 Q(s,a) 를 업데이트
     - <center>$$ Q(s,a) \leftarrow (1-\alpha)Q(s,a) + \alpha(r + \gamma \max_{a'\in A} Q(s', a')) $$</center>
-    - 이는 학습율($$\alpha$$)을 사용해서 Q의 이전 가치와 새로운 가치의 weighted sum한 것
+    - 이는 학습률($$\alpha$$)을 사용해서 Q의 이전 가치와 새로운 가치의 weighted sum한 것
     - 환경에 노이즈가 많더라도 Q value를 부드럽게 수렴하게 해줌
-4. 수렴 조건을 검사하고 만족하지 않으면 step 2부터 반복
+4. 수렴할 때까지 반복
     - 업데이트 정도나 테스트 성능이 특정 역치에 다다르면 멈추는게 일반적인 종료 조건
 
 <br>
@@ -147,8 +147,8 @@ class Agent:
 
     def best_value_and_action(self, state):
         '''
-        value table 참조하여 인력값 state에 따른 최고 action과 value 반환
-        두 군데에서 사용
+        value table 참조하여 입력값 state에 따른 최고 action과 value 반환
+        두군데에서 사용
         1. test method에서 정책의 퀄리티를 평가하기 위해 현재 value table을 이용하여 하나의 에피소드를 돌릴 때
         2. 다음 state의 가치를 얻기 위해 value update를 수행할 때
         '''
@@ -231,7 +231,7 @@ Best reward updated 0.800 -> 0.850
 Solved in 13117 iterations!
 ```
 
-이전 챕터에서 20~30 iteration만에 역치를 넘긴 것에 비하면 엄청나게 차이가 나는 수치입니다. 이런 차이가 나는 것은 위 코드에서는 test 시에 value update를 하지 않았고 5장에서의 코드에서는 했기 때문입니다.
+이전 챕터에서 20~30 iteration만에 역치를 넘긴 것에 비하면 엄청나게 차이가 나는 수치입니다. 이런 차이가 나는 것은 위 코드에서는 test 시에 value update를 하지 않았고 이전 챕터의 코드에서는 했기 때문입니다.
 전반적으로 환경에 필요한 총 샘플 수도 거의 같고 TensorBoard의 reward 차트도 value iteration 방법과 유사하게 우수한 학습 결과를 보여줍니다.
 
 <center><img src= "https://liger82.github.io/assets/img/post/20210702-DeepRLHandsOn-ch06-Deep-Q-Networks/fig6.2-reward-dynamics-frozenlake.png" width="70%"></center><br>
@@ -264,7 +264,7 @@ atari 게임 중 pong은 $$10^{70802}$$ 개의 가능한 상황이 있습니다.
 
 ## SGD optimization
 
-Q-learning 절차의 핵심은 지도학습에서 빌려온 것입니다. 뉴럴넷과 함께 복잡하고 비선형 함수 Q(s,a)를 근사하고자 했습니다.  벨만 방정식을 사용하여 이 함수를 위한 타켓을 계산하고, 가까이에 지도학습 문제가 있는 것처럼 해야 합니다. SGD 최적화의 가장 기본적인 조건 중 하나는 학습 데이터가 **독립 동일 분포**(independent and identically distributed, 줄여서 i.i.d) 를 따라야 한다는 점입니다.
+Deep Q-learning 절차의 핵심은 지도학습에서 빌려온 것이고 optimizer를 SGD로 쓰고 있습니다. SGD 최적화의 가장 기본적인 조건 중 하나는 학습 데이터가 **독립 동일 분포**(independent and identically distributed, 줄여서 i.i.d) 를 따라야 한다는 점입니다.
 
 
 <div style="color:grey; font-size:12px">
@@ -275,14 +275,14 @@ i.i.d.는 어떠한 랜덤 확률변수의 집합이 있을때 각각의 랜덤 
 
 <br>
 
-그런데 현재 이 책에서 SGD 업데이트를 위해 사용하려는 데이터는 조건을 충족하지 못 합니다.
+그런데 현재 이 책에서 SGD 업데이트를 위해 사용하려는 데이터는 이 조건을 충족하지 못 합니다.
 
 1. 우리의 표본은 독립적이지 않다. 많은 배치를 모았더라도 그것들은 서로 매우 가깝다. 왜냐하면 동일한 에피소드에서 나왔기 때문이다.
-2. 학습 데이터의 분포가 학습하고자 하는 최적 정책이 제공하는 표본의 분포와 다를 것이다. 우리가 가진 데이터는 다른 정책(현재 정책, 랜덤, 혹은 둘다)의 결과가 될 것이지만 랜덤하게 학습하는 법은 배우기 싫다. 최고 보상을 주는 최적 정책을 원한다.
+2. 학습 데이터의 분포가 학습하고자 하는 최적 정책이 제공하는 표본의 분포와 다를 것이다. 
 
 <span style="color:red">이 문제를 해결하기 위해 최신 경험만 사용하는 것이 아니라 과거 경험들과 학습 데이터 샘플들을 모아둔 큰 buffer를 사용합니다. 이를 **replay buffer**라고 합니다. </span> 가장 간단한 replay buffer 구현은 고정된 크기의 버퍼를 만들고 새로운 데이터가 들어오면 버퍼의 마지막에 추가하여 가장 오래된 데이터는 밖으로 빠져나가게 하는 것입니다. 
 
-replay buffer 는 다소 독립적인 데이터를 학습하도록 해주지만, 데이터는 우리의 최근 정책에 의해 생성된 샘플에서 학습할 수 있을만큼 충분히 새로워집니다. 
+replay buffer 는 다소 독립적인 데이터를 학습하도록 해주면서 최근 정책에 의해 생성된 샘플에서 학습할 수 있을만큼 충분히 새로운 데이터를 제공해줍니다. 
 
 (다음 챕터에서는 보다 정교한 샘플링 방식을 제공하는 replay buffer, prioritized 를 확인할 것입니다.)
 
@@ -291,10 +291,10 @@ replay buffer 는 다소 독립적인 데이터를 학습하도록 해주지만,
 ## Correlation between steps
 
 기본 학습 절차의 또 다른 현실적인 문제는 조금 다르긴 하지만 역시 i.i.d 데이터의 부족과 관련이 있습니다. 벨만 방정식은 Q(s', a') 를 통해 Q(s, a) 값을 제공합니다.(bootstrapping) 하지만 두 상태 s, s' 는 겨우 한 스텝 차이입니다. 즉, 이 두 상태는 매우 유사해서 뉴럴넷에게는 구분하기 어려운 부분입니다.  
-Q(s,a)를 바람직한 결과에 가깝도록 만들기 위해 뉴럴넷 패러미터들을 업데이트할 때, 간접적으로 Q(s', a') 값과 근처 다른 상태들을 변경할 수 있습니다.  학습을 매우 불안정하게 만들 수 있습니다. 
+Q(s,a)를 바람직한 결과에 가깝도록 만들기 위해 뉴럴넷 패러미터들을 업데이트할 때, 간접적으로 Q(s', a') 값과 근처 다른 상태들을 변경할 수 있고 이는 학습을 매우 불안정하게 만들 수 있습니다. 
 
 <div style="color:red">
-학습 과정을 안정적이게 하려면, <b>target network</b>를 써야 합니다. target network 는 우리의 네트워크를 복사해놓고 이 네트워크를 벨만 방정식의 Q(s', a') 값을 위해 사용하는 것입니다. target network는 주기적으로(예: N step 마다) 메인 네트워크와 동기화를 합니다. 
+불안정한 학습을 해결하기 위해 나온 것이 <b>target network</b>입니다. target network 는 우리의 네트워크를 복사해놓고 이 네트워크를 벨만 방정식의 Q(s', a') 값을 위해 사용하는 것입니다. target network는 주기적으로(예: N step 마다) 메인 네트워크와 동기화를 합니다. 
 </div>
 
 <br>
