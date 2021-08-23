@@ -1021,6 +1021,5 @@ if __name__ == "__main__":
 * [https://talkingaboutme.tistory.com/entry/RL-Off-policy-Learning-for-Prediction](https://talkingaboutme.tistory.com/entry/RL-Off-policy-Learning-for-Prediction){:target="_blank"}
 * [https://mangkyu.tistory.com/61](https://mangkyu.tistory.com/61){:target="_blank"}
 * [https://electronicsdo.tistory.com/entry/independent-identically-distribution-%EB%8F%85%EB%A6%BD-%EB%8F%99%EC%9D%BC-%EB%B6%84%ED%8F%AC](https://electronicsdo.tistory.com/entry/independent-identically-distribution-%EB%8F%85%EB%A6%BD-%EB%8F%99%EC%9D%BC-%EB%B6%84%ED%8F%AC){:target="_blank"}
-* [](){:target="_blank"}
 
 <br>
