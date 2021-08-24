@@ -8,8 +8,8 @@ tags : [virtual assistant, Open-domain Question Answering, QA, BlenderBot 2.0, F
 comments: true
 ---
 
->Authors : Gautier Izacard, Edouard Grave 
->Institution : Facebook AI Research, ENS, PSL University, Inria 
+>Authors : Gautier Izacard, Edouard Grave  
+>Institution : Facebook AI Research, ENS, PSL University, Inria  
 >Publication Date : Feb 3, 2021   
 >Paper link : [https://arxiv.org/pdf/2007.01282.pdf](https://arxiv.org/pdf/2007.01282.pdf){:target="_blank"}  
 >Github : [https://github.com/facebookresearch/FiD](https://github.com/facebookresearch/FiD){:target="_blank"}  
@@ -76,10 +76,14 @@ open domain QA에서 중요한 단계로, QA 시스템을 개선하는데 핵심
 
 > <subtitle> Method </subtitle>
 
+<center><img src= "https://liger82.github.io/assets/img/post/20210823-paper-FiD/figure2.png" width="70%"></center><br>
+
 open-domain qa를 처리하기 위해 두 가지의 단계를 거칩니다.
 
 1. support passages를 검색한다.
 2. passages 를 seq2seq model로 처리하여 응답을 생성한다.
+
+<br>
 
 ## Retrieval
 
@@ -96,16 +100,73 @@ open-domain qa를 처리하기 위해 두 가지의 단계를 거칩니다.
     - ranking function은 질문과 구절 간 내적(dot-product) 값을 기준으로 함
     - FAISS 라이브러리로 최적 근사값 계산
 
+<br>
+
 ## Reading
 
-생성 모델은 비지도 학습 데이터로 사전학습한 seq2seq network에 기반합니다.
+생성 모델은 비지도 학습 데이터로 사전학습한 seq2seq network에 기반합니다. 모델은 입력으로 질문과 관련 구절을 받아서 대답을 생성합니다.
+정확하게는, 각 검색된 구절, 그 구절의 제목, 질문을 이어서(concat) 인코더로 처리합니다. concat 하고 있기 때문에 구분하기 위해 special token을 추가합니다.
+각각 *context:*, *title:*, *question:* 입니다. 예시를 들어보면 다음과 같습니다. N은 하이퍼패러미터입니다.
 
+```json
+[question: "question" [SEP] title: "passage i 의 title" [SEP] context: "passage i 의 text"]
+[question: "question" [SEP] title: "passage i+1 의 title" [SEP] context: "passage i+1 의 text"]
+[question: "question" [SEP] title: "passage i+2 의 title" [SEP] context: "passage i+2 의 text"]
+...
+[question: "question" [SEP] title: "passage N 의 title" [SEP] context: "passage N 의 text"]
+```
+
+마지막으로 디코더는 모든 구절에 대해 attention을 계산합니다. 이 아키텍처의 이름이 **"Fusion-in-Decoder"** 인 이유는 디코더에서만 fusion(concat)을 하기 때문입니다. 
+
+RAG와 다른 점이 각 구절을 독립적으로 인코더에서 처리한 다음 디코더에서 결합한다는 점입니다. 인코더에서 각 구절을 독립적으로 처리하는 것은 한 번에 하나의 context에서만 self-attention 계산을 하기 때문에 context 개수를 크게 늘릴 수 있게 해줍니다. 이 개수를 늘리면 선형적으로 계산 시간도 늘어나긴 하지만 2차식(quadratically) 시간 만큼으로 늘어나는 것이 아니고 그만큼 집계 능력도 향상하기 때문에 이점이 있습니다.
 
 <br>
 
 > <subtitle> Experiments </subtitle>
 
 <br>
+
+## Datasets
+
+* NaturalQuestions : 위키피디아에서 질문에 대한 짧은 답변과 긴 답변 모두 갖춘 데이터셋
+* TriviaQA : "질문-대답-증거"로 구성된 데이터
+* SQuAD v1.1 : 전형적인 독해 데이터셋으로, 위키피디아의 단락이 주어졌을 때, 질문과 함께 대답의 범위가 있는 데이터셋
+
+각 데이터의 10%를 검증 데이터로 사용했습니다.
+
+<br>
+
+## Evaluation
+
+* EM(Exact Match) : 생성된 대답은 normalization 후에 수용가능한 대답 목록 중에 있으면 맞는 것으로 간주
+    - normalization : 소문자화, 관사, 점, 중복 공백 제거, 
+
+<br>
+
+## Technical details
+
+* 모델을 사전학습된 T5 모델로 초기화함 (HuggingFace 라이브러리 사용)
+    - 두 개의 모델 사이즈 선택
+        - base : 220M parameters
+        - large : 770M parameters
+* finetune
+    - Adam optimizer
+    - learning rate : $$10^{-4}$$ (계속 유지)
+    - batch size : 64
+    - evaluation interval : 500 steps
+    - gpu : 64 Tesla V100 32Gb
+* 학습 및 테스트시에 100개의 구절을 뽑고 250개 단어까지만 잘라서 사용 
+* [DPR 논문](https://arxiv.org/abs/2004.04906){:target="_blank"} 의 결과를 따라 
+    - NQ와 TriviaQA는 DPR로 구절 검색
+    - SQuAD는 BM25로 검색
+* 응답 생성은 greedy decoding을 사용
+
+<br>
+
+## Comparison to state-of-the-art.
+
+<center><img src= "https://liger82.github.io/assets/img/post/20210823-paper-FiD/table1.png" width="70%"></center><br>
+
 
 > <subtitle> Conclusion </subtitle>
 
