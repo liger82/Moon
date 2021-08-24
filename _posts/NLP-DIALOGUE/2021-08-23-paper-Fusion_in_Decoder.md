@@ -160,16 +160,64 @@ RAG와 다른 점이 각 구절을 독립적으로 인코더에서 처리한 다
     - NQ와 TriviaQA는 DPR로 구절 검색
     - SQuAD는 BM25로 검색
 * 응답 생성은 greedy decoding을 사용
+    - greedy decoding : 확률값이 가장 높은 값을 선택하는 방식
 
 <br>
 
 ## Comparison to state-of-the-art.
 
-<center><img src= "https://liger82.github.io/assets/img/post/20210823-paper-FiD/table1.png" width="70%"></center><br>
+<br>
 
+### Table 1 
+
+<center><img src= "https://liger82.github.io/assets/img/post/20210823-paper-FiD/table1.png" width="90%"></center><br>
+
+- FiD가 개념적으로 간단하지만 NQ와 TriviaQA에서는 모든 비교군보다 좋은 성능을 냈습니다.
+- 생성 모델에서 추가적인 지식을 사용한 모델이 중요한 성능 증대를 보였습니다.
+    - NQ에서 T5(*closed book*) 11B의 패러미터를 가지고 36.6% 정확도, FiD는 추가 지식(위키피디아)과 770M의 패러미러로 44.1% 정확도
+
+<br>
+
+### Figure 3
+
+<center><img src= "https://liger82.github.io/assets/img/post/20210823-paper-FiD/figure3.png" width="90%"></center><br>
+
+* 검색된 구절 개수를 늘렸을 때 FiD의 성능이 올라가는 것을 관찰할 수 있음.
+* 구절 개수를 10개에서 100개로 늘릴 때, TriviaQA는 6%의 성능 향상을, NQ에서는 3.5%의 향상을 보임
+* 반면 추출 모델은 10~20개 사이일 때 성능이 최고조
+
+seq2seq model이 여러 구절로부터 정보 결합을 더 잘한다는 것을 보여준 결과라고 해석할 수 있습니다.
+
+<br>
+
+## Impact of the number of training passages.
+
+이전 실험들에서는 모두 학습과 테스트에서 동일한 구절 개수를 사용했습니다.
+학습 계산 예산을 줄이기 위해 간단한 솔루션으로 학습 과정에서 더 적은 수의 구절을 사용해보았습니다. 그 결과가 Table 2 입니다.
+
+<center><img src= "https://liger82.github.io/assets/img/post/20210823-paper-FiD/table2.png" width="90%"></center><br>
+
+학습에서 사용한 구절 개수는 5~100개 까지 5개 조건을 만들었고, 테스트는 100개의 구절로 동일하게 사용하였습니다. 
+
+* 학습 구절 개수를 줄이면 정확도가 떨어짐.
+* finetuning 여부에 따라 어떤 결과가 나오는지
+    - finetuning 하면 학습 구절 개수에 따른 정확도 차이를 줄일 수 있음.
+    - 100개의 학습 구절 사용했을 때, NQ에서 46 EM까지 도달한 시간
+        - w/ finetuning : 147 GPU hours
+        - w/o finetuning : 425 GPU hours
+
+<br>
 
 > <subtitle> Conclusion </subtitle>
 
+이 논문은 간단한 구조 변경을 통해 open-domain QA에 성능 개선을 가져왔습니다. 특히 추가적인 지식을 활용하는데 중점을 두고 있습니다. 
+FiD를 쓸 경우 성능 개선 뿐만 아니라 구절의 확장성, finetuning 시 효율성도 얻을 수 있습니다. 
+
+<center><img src= "https://liger82.github.io/assets/img/post/20210823-paper-FiD/BlenderBot2.0.png" width="90%"></center><br>
+
+FiD는 BlenderBot 2.0에서 인터넷에서 가져온 구절들과 기존 long-term memory에서 가져온 구절들을 합쳐서 디코더에 넣는 장면에서 확인할 수 있습니다. 
+
+연구자들은 추후에는 완전히 end-to-end로 전체시스템을 학습시킬 수 있게 만드는 것이 목표라고 합니다.
 
 <br>
 
@@ -177,7 +225,8 @@ RAG와 다른 점이 각 구절을 독립적으로 인코더에서 처리한 다
 
 > <subtitle> References </subtitle>
 
-* [](){:target="_blank"}
+* [greedy decoding](https://towardsdatascience.com/the-three-decoding-methods-for-nlp-23ca59cb1e9d){:target="_blank"}
+* [parlai blenderbot2](https://parl.ai/projects/blenderbot2/){:target="_blank"}
 
 
 
