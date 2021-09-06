@@ -434,14 +434,235 @@ $$ Q_2 (A^*) = Q_2(argmax _a Q_1 (a)) $$
 
 $$ Q_2 $$ 가 최종인데 두 Q function의 역할을 고정하면 두 Q function 간 간극이 벌어지므로 역할을 교대로 번갈아가면서 수행합니다.
 
+종합해서 target Q value에 대한 표현은 다음과 같습니다.
+
+$$ Q(s_t, a_t) = r_{t} + \gamma \max_a Q'(s_{t+1}, argmax_{a} Q(s_{t+1},a)) $$
+
+Double Q-learning에 DQN에도 적용한 것이 Double DQN 입니다. 저자들에 의하면 이러한 작은 수정이 과대평가하는 것을 완전히 고친다고 합니다.
+
 <br>
+
+## Implementation
+
+이번에도 기존 DQN 코드에서 바꿀 내용이 많지는 않습니다. loss function 을 수정하는 것이 대부분입니다. 
+
+완성된 코드는 *Chapter08/03_dqn_double.py* 에서 확인할 수 있습니다.
+
+loss function 은 다음과 같습니다.
+
+```python
+# loss function for double DQN
+def calc_loss_double_dqn(batch, net, tgt_net, gamma,
+                         device="cpu", double=True):
+    # double : double dqn 방식 사용여부
+    states, actions, rewards, dones, next_states = \
+        common.unpack_batch(batch)
+
+    # torch.tensor & assign device
+    states_v = torch.tensor(states).to(device)
+    actions_v = torch.tensor(actions).to(device)
+    rewards_v = torch.tensor(rewards).to(device)
+    done_mask = torch.BoolTensor(dones).to(device)
+
+    actions_v = actions_v.unsqueeze(-1)
+    # 학습 네트워크에 상태값을 입력으로 주어 상태 행동 가치를 얻는다.
+    state_action_vals = net(states_v).gather(1, actions_v)
+    state_action_vals = state_action_vals.squeeze(-1)
+    with torch.no_grad():
+        next_states_v = torch.tensor(next_states).to(device)
+        if double:
+            # 학습 네트워크에 다음 상태값을 입력으로 넣었을 때 best action 계산
+            next_state_acts = net(next_states_v).max(1)[1]
+            next_state_acts = next_state_acts.unsqueeze(-1)
+            # 하지만 타켓 네트워크로부터 이 best action 에 부합하는 상태값을 받아옴
+            next_state_vals = tgt_net(next_states_v).gather(
+                1, next_state_acts).squeeze(-1)
+        else:
+            next_state_vals = tgt_net(next_states_v).max(1)[0]
+        next_state_vals[done_mask] = 0.0
+        # approximated Q-values
+        exp_sa_vals = next_state_vals.detach() * gamma + rewards_v
+    # MSE loss between Q-values predicted by the network and approximated Q-values.
+    return nn.MSELoss()(state_action_vals, exp_sa_vals)
+```
+
+그 다음 *calc_values_of_states()* 는 보류 상태의 값을 계산합니다. 
+
+```python
+@torch.no_grad()
+def calc_values_of_states(states, net, device="cpu"):
+    mean_vals = []
+    # split held-out states array into equal chunks
+    for batch in np.array_split(states, 64):
+        states_v = torch.tensor(batch).to(device)
+        # pass every chunk to the network to obtain action values
+        action_values_v = net(states_v)
+        # From action values, choose the action with the largest value (for every state)
+        best_action_values_v = action_values_v.max(1)[0]
+        # calculate the mean of such values and store it
+        # 총 1,000개의 states를 저장하기 때문에 충분히 커서 mean value의 변화를 볼 수 있다.
+        mean_vals.append(best_action_values_v.mean().item())
+    # calculate the mean of mean_vals
+    return np.mean(mean_vals)
+```
+
+이 코드 파일의 나머지는 basic DQN 코드와 동일합니다. 이 두 차이 부분이 서로 꼬여있는 loss function을 사용하게 하고, 주기적인 평가를 위한 1,000개의 상태를 랜덤하게 샘플링하는 것을 유지시켜줍니다. 
+
+<br>
+
+## Results
+
+**--double** 을 argument를 추가/삭제하여 두번 돌려서 Double DQN과 Basic DQN을 비교하였습니다.
+
+GTX 1080 Ti 에서 했을 때 백만 프레임 학습은 2시간 정도 걸렸습니다. 
+
+기본 버전에 비해 double DQN의 수렴 빈도가 낮다는 것을 알게 되었습니다. 기본 DQN에서는 10회 시도 중 약 1회가 수렴에 실패하지만 double은 3회 중 약 1회입니다. 하이퍼 파라미터 조정이 필요할 가능성이 높지만, 하이퍼 파라미터에 손대지 않고 확장 버전의 효과를 확인할 수 있도록 비교하려고 동일하게 했습니다.
+
+두 모델을 비교해본 결과, double DQN의 평균 보상이 더 빠르게 올라가는 것을 볼 수 있습니다. 다만 문제를 푸는 최종 시간은 이 코드로는 비슷했습니다.
+
+<center><img src= "https://liger82.github.io/assets/img/post/20210901-DeepRLHandsOn-ch08-DQN_Extensions/fig8.6.png" width="80%"></center><br>
+
+평균 보상 메트릭 말고도 보류 상태들에 대한 평균 값의 변화를 보여준 차트도 있습니다. 기본 DQN 은 값을 과대평가해서, 값이 어느 수준 이상 가면 떨어지는 경향이 있습니다. double DQN 은 꾸준히 오르고요. 그런데 지금 실험 상황이 Pong 이라는 너무 간단한 환경이라서 이것이 정확히 표현되지 않았습니다. 더 복잡한 게임에서는 double DQN 이 더 나은 결과를 가져올 것이라고 저자들은 말합니다.
+
+<center><img src= "https://liger82.github.io/assets/img/post/20210901-DeepRLHandsOn-ch08-DQN_Extensions/fig8.7.png" width="80%"></center><br>
 
 > <subtitle> Noisy networks </subtitle>
 
+이번 네트워크는 RL 의 또 다른 문제인 환경 탐색에 주목합니다. 기존 DQN 은 epsilon-greedy 방식으로 탐색의 정도를 줄여나갔습니다. 짧은 에피소드의 단순한 환경일 때는 이 기법이 잘 작동했지만 큰 규모와 복잡한 환경에서는 비효율적이었습니다. 
+
+이 새로운 네트워크 저자의 해결책은 간단했습니다.
+
+<center>"Network 에 noise 를 추가하여 exploration 을 하자!"</center>
+
+구체적으로는, 네트워크의 fully connected layer의 가중치에 noise를 추가하고 역전파를 이용해서 학습하는 동안 noise 의 패러미터에 적응해나가도록 한 것입니다. 
+물론 이 방법도 어디를 더 탐험할지 결정하는 방법은 아닙니다. 21장에서 더 진보한 탐험 기법에 대해 다룰 것입니다. 
+
+이 방법의 기안자는 두 가지 noise 추가 방법을 제안하였습니다. 이 둘은 다른 계산 오버헤드를 지닙니다.
+
+1. Independent Gaussian noise 
+    - fully connected layer의 모든 가중치에 정규분포에서 뽑은 랜덤 값을 가집니다. 노이즈의 패러미터 $\mu$, $\sigma$ 는 레이어 안에 저장되고, 일반적인 선형 레이어의 가중치를 학습하는 동일한 방식으로 역전파를 이용해 학습됩니다. noisy layer의 출력값은 선형 레이어와 동일한 방식으로 계산됩니다.
+2. Factorized Gaussian noise
+    - 표집하는 랜덤 값의 개수를 최소화하기 위해 두 개의 랜덤 벡터를 유지합니다. 입력 크기의 벡터, 출력 크기의 벡터입니다. 그 다음, 벡터들 간 외적(텐서곱)을 통해 레이어의 랜덤 행렬이 만들어집니다. 
+
 <br>
+
+## Implementation
+
+이 노이즈 네트워크는 nn.Linear 를 상속 받아 커스텀하였고, *Chapter08/lib/dqn_extra.py* 에서 *NoisyLinear* 는 independe Gaussian noise, *NoisyFactorizedLinear* 는 factorized noise 버전을 위한 클래스입니다. 
+
+```python
+# for independent Gaussian noise
+class NoisyLinear(nn.Linear):
+    def __init__(self, in_features, out_features,
+                 sigma_init=0.017, bias=True):
+        super(NoisyLinear, self).__init__(
+            in_features, out_features, bias=bias)
+        # create a matrix of sigma
+        # (mu의 값은 nn.Linear 를 상속받은 행렬에 저장될 것이다.)
+        w = torch.full((out_features, in_features), sigma_init)
+        # sigma를 학습 가능하도록 하기 위해 nn.Parameter로 래핑함
+        self.sigma_weight = nn.Parameter(w)
+        z = torch.zeros(out_features, in_features)
+        # register_buffer 는 네트워크 내의, 역전파하는 동안 업데이트되지 않고 nn.Module 에 의해 통제되는 텐서를 만드는 메서드이다.
+        self.register_buffer("epsilon_weight", z)
+        if bias:
+            # sigma_init==0.017 은 Noisy Network 논문에 나온 수치
+            w = torch.full((out_features,), sigma_init)
+            self.sigma_bias = nn.Parameter(w)
+            z = torch.zeros(out_features)
+            self.register_buffer("epsilon_bias", z)
+        self.reset_parameters()
+
+    # nn.Linear에서 override 한 메서드로, 내용은 논문의 추천을 따랐음.
+    def reset_parameters(self):
+        std = math.sqrt(3 / self.in_features)
+        self.weight.data.uniform_(-std, std)
+        self.bias.data.uniform_(-std, std)
+
+    def forward(self, input):
+        '''
+        weight와 bias buffer 둘 다에서 랜덤 노이즈를 표집하고 nn.Linear가 하는 방식으로 input data의 linear transformation 을 수행
+        '''
+        self.epsilon_weight.normal_()
+        bias = self.bias
+        if bias is not None:
+            self.epsilon_bias.normal_()
+            bias = bias + self.sigma_bias * \
+                   self.epsilon_bias.data
+        v = self.sigma_weight * self.epsilon_weight.data + \
+            self.weight
+        return F.linear(input, v, bias)
+```
+
+<br>
+
+다음은 Factorized Guassian noise 를 적용한 코드입니다. 위 코드와 비슷한 점이 많고,(이 코드로는) 결과가 그리 다르지 않습니다. 
+
+```python
+# for factorized Gaussian noise
+class NoisyFactorizedLinear(nn.Linear):
+    """
+    NoisyNet layer with factorized gaussian noise
+
+    N.B. nn.Linear already initializes weight and bias to
+    """
+    def __init__(self, in_features, out_features,
+                 sigma_zero=0.4, bias=True):
+        super(NoisyFactorizedLinear, self).__init__(
+            in_features, out_features, bias=bias)
+        sigma_init = sigma_zero / math.sqrt(in_features)
+        w = torch.full((out_features, in_features), sigma_init)
+        self.sigma_weight = nn.Parameter(w)
+        z1 = torch.zeros(1, in_features)
+        self.register_buffer("epsilon_input", z1)
+        z2 = torch.zeros(out_features, 1)
+        self.register_buffer("epsilon_output", z2)
+        if bias:
+            w = torch.full((out_features,), sigma_init)
+            self.sigma_bias = nn.Parameter(w)
+
+    def forward(self, input):
+        self.epsilon_input.normal_()
+        self.epsilon_output.normal_()
+
+        func = lambda x: torch.sign(x) * \
+                         torch.sqrt(torch.abs(x))
+        # input size의 벡터
+        eps_in = func(self.epsilon_input.data)
+        # output size의 벡터
+        eps_out = func(self.epsilon_output.data)
+
+        bias = self.bias
+        if bias is not None:
+            bias = bias + self.sigma_bias * eps_out.t()
+        # 텐서곱으로 노이즈를 만든다. 
+        noise_v = torch.mul(eps_in, eps_out)
+        v = self.weight + self.sigma_weight * noise_v
+        return F.linear(input, v, bias)
+```
+
+학습 과정에서 내부 노이즈 레벨을 확인하기 위해 노이즈 레이어의 signal-to-noise ratio(SNR) 을 모니터링할 것입니다.  
+* SNR = RMS($$\mu$$) / RMS($$\sigma$$)
+    - RMS : root mean square (제곱 평균 제곱근)
+* SNR 은 노이즈 레이어의 정적인 구성요소가 주입된 노이즈보다 몇 배 더 큰지 보여줍니다.
+
+<br>
+
+# Results
+
+모델은 60만(600k) 프레임만에 18점(목표치)에 도달합니다. 베이스라인(basic DQN)보다도 빠른 학습 속도를 보이는 것이 확연히 보입니다.
+
+<center><img src= "https://liger82.github.io/assets/img/post/20210901-DeepRLHandsOn-ch08-DQN_Extensions/fig8.8.png" width="90%"></center><br>
+
+figure 8.9 를 보면 두 레이어 모두에서 노이즈 레벨이 빠르게 감소하는 것을 볼 수 있습니다. 첫 번째 레이어(independent guassian noise)는 1 에서 거의 1/2.5 까지 갔고 두 번째 레이어(factorized guassian noise)는 1/3 에서 1/15 까지 감소했습니다. 흥미로운 점은 250k 프레임 이후에는 두 번째 레이어의 노이즈 수준이 다시 증가하기 시작하면서 에이전트가 환경을 더 많이 탐색하게 되었습니다. 이는 높은 점수 수준에 도달한 후 에이전트가 기본적으로 좋은 수준에서 플레이할 줄 알면서도 결과를 더욱 개선하기 위해 행동을 "연마"해야 하기 때문에 의미가 있습니다. 
+
+<center><img src= "https://liger82.github.io/assets/img/post/20210901-DeepRLHandsOn-ch08-DQN_Extensions/fig8.9.png" width="90%"></center><br>
 
 > <subtitle> Prioritized replay buffer </subtitle>
 
+
+
+<br>
 <br>
 
 > <subtitle> Dueling DQN </subtitle>
