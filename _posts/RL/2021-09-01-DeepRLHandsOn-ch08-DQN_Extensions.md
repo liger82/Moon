@@ -357,11 +357,82 @@ Episode 16: reward=-21, steps=880, speed=162.6 f/s, elapsed=0:00:44
 <br>
 <center><img src= "https://liger82.github.io/assets/img/post/20210901-DeepRLHandsOn-ch08-DQN_Extensions/fig8.1_2.png" width="90%"></center><br>
 
-> <subtitle> N-step DQN </subtitle>
+> <subtitle> N-step(Multi-step) DQN </subtitle>
+
+<br>
+<center><img src= "https://liger82.github.io/assets/img/post/20210901-DeepRLHandsOn-ch08-DQN_Extensions/fig8.3.png" width="80%"></center><br>
+(그림 출처 : 김경환씨 rainbow 발표)
+
+기존 DQN은 단일 step 의 보상을 축적하고 다음 스텝에서의 최대 가치를 갖는 행동을 사용하여 부트스트랩하였습니다. multi-step DQN은 주어진 상태 $$S_t$$로 부터 **truncated** n-step return 을 정의하여 사용합니다.
+
+$$ R_t^{(n)} \equiv \sum_{k=0}^{n-1} \gamma_t^{(k)} R_{t+k+1} $$
+
+이는 Sutton의 n-step TD 방식과도 다릅니다. Sutton(1988)은 forward-view multi-step target 을 사용했습니다.
+
+multi-step DQN에 대한 알고리즘을 살펴보려면 식을 다시 볼 필요가 있습니다. 아래는 Q-learning의 벨만 업데이트 식입니다.
+
+$$ Q(s_t, a_t) = r_t + \gamma \max_a Q(s_{t+1}, a_{t+1}) $$
+
+이 식은 재귀적으로 펼쳐질 수 있습니다. 위 식의 $$ Q(s_{t+1}, a{t+1}) $$ 부분을 또 위 식으로 대입하면 다음과 같이 됩니다.
+
+$$ Q(s_t, a_t) = r_t + \gamma \max_a [r_{a,t+1} + \gamma \max_{a'} Q(s_{t+2}, a')] $$
+
+$$ r_{a,t+1} $$ 는 행동 a 후에 * t+1 * 타임 스텝에서 local reward 를 의미합니다. *t+1* 에서 행동 a 를 최적값으로 선택하거나 최적에 가깝게 선택한다고 가정하면 $$ \max_a $$ operation 생략할 수 있어서 다음과 같이 표현할 수 있습니다. 
+
+$$ Q(s_t, a_t) = r_t + \gamma r_{t+1} + \gamma^2 \max_{a'} Q(s_{t+2}, a') $$
+
+이 식은 계속해서 펼쳐질 수 있습니다. 이러한 속성을 DQN 업데이트에도 적용시킨 것입니다. 
+
+1998년 Sutton과 Barto가 multi-step 이 학습 속도를 빠르게 한다고 했습니다. 실제 돌려봤을 때도 n이 1,2,3 늘어날 때 학습이 빨라지는 것을 확인할 수 있었습니다. 그러나 이는 어느 정도 숫자까지만 적용되었습니다. 숫자가 터무늬 없이 커질 때 예를 들어 100이 되면 오히려 성능이 떨어질 수 있습니다.
+
+그 원인 첫 번째는 multi-step 과정에서 중간 단계에서 최대값을 갖는 행동을 선택할 것이라는 가정 아래 max operation 을 생략했는데 그러지 않을 수 있다는 점입니다. 랜덤하게 행동을 취했을 경우에 계산된 Q값은 감소될 것입니다. 그래서 이 방식으로 할 경우 벨만 방정식을 더 풀어헤칠수록(n이 커질수록) 업데이트가 부정확해질 수 있는 것입니다. 
+
+원인 두 번째는 experience replay buffer 의 큰 사이즈가 상황을 악화시킬 수 있다는 점입니다. "n-stepness" 가 off-policy 였던 DQN을 on-policy로 만든다는 점이 문제입니다. off-policy 는 데이터의 신선함에 의존하지 않습니다. off-policy는 학습과 타겟 정책이 다르기 때문에 몇 백만 스텝 전에 썼던 데이터를 샘플링해서 써도 문제가 없기 때문에 buffer 사이즈를 크게 만들어두었습니다. 반면 on-policy는 정책이 하나여서 학습 데이터의 신선함에 엄청 의존합니다. multi-step learning 은 replay buffer가 크다보니 이곳에서 받은 데이터에서 예전의 안좋은 정책의 경험으로부터 학습할 수 있다는 게 상황을 악화시키는 원인입니다. 
+
+이런 단점들에도 불구하고 실전에서 multi-step learning은 종종 쓰입니다. 왜냐하면 실전은 흑백으로 나뉘는 상황이 아니기 때문에 DQN의 학습 속도를 높이는 적절한 N을 설정하면 효과가 있어서 입니다. 보통 2, 3과 같이 작은 값을 썼을 때 잘 작동합니다. 
 
 <br>
 
+## Implementation
+
+*ExperienceSourceFirstLast* class 가 multi-step Bellman unroll을 지원해서 아~~주 간단하게 multi-step DQN을 구현할 수 있습니다. 
+
+앞선 코드와 차이는 두 군데입니다.
+
+* *ExperienceSourceFirstLast* 인스턴스 생성시 *steps_count* parameter에 N을 주면 됩니다.  
+```python
+exp_source = ptan.experience.ExperienceSourceFirstLast(
+        env, agent, gamma=params.gamma, steps_count=args.n)
+```
+
+* *calc_loss_dqn* 함수에 감마 값 n 제곱해주는 것입니다. 이는 수렴에 안 좋은 영향이 있을 수 있습니다. 체인의 마지막 상태를 위한 discount coefficient가 감마가 아니라 감마의 n 제곱을 곱한 값이기 때문입니다.  
+```python
+    loss_v = common.calc_loss_dqn(
+        batch, net, tgt_net.target_model,
+        gamma=params.gamma**args.n, device=device)
+```
+
+<br>
+
+## Results
+
+베이스라인(step=1)과 비교해보면 n이 2,3 일 때 수렴 속도가 훨씬 빨라지는 것을 볼 수 있습니다. 
+
+<center><img src= "https://liger82.github.io/assets/img/post/20210901-DeepRLHandsOn-ch08-DQN_Extensions/fig8.4.png" width="80%"></center><br>
+
 > <subtitle> Double DQN </subtitle>
+
+Q-learning 은 최대화하는 부분이 반복되기 때문에 과대평가하는 문제(Maximization Bias)가 발생하고 이는 학습 효율을 떨어뜨립니다. 이 문제를 해결하고자 나온 것이 Double Q-learning 입니다.
+
+Double Q-learning 은 두 개의 독립적인 Q function을 사용합니다.  
+* 최댓값을 갖는 행동을 선택하는 용도
+* Q function 평가하는 용도
+
+$$ A^* = argmax _a Q_1 (a) $$
+
+$$ Q_2 (A^*) = Q_2(argmax _a Q_1 (a)) $$
+
+$$ Q_2 $$ 가 최종인데 두 Q function의 역할을 고정하면 두 Q function 간 간극이 벌어지므로 역할을 교대로 번갈아가면서 수행합니다.
 
 <br>
 
@@ -396,6 +467,9 @@ Episode 16: reward=-21, steps=880, speed=162.6 f/s, elapsed=0:00:44
 
 > <subtitle> References </subtitle>
 * Deep Reinforcement Learning Hands On 2/E Chapter 08 : DQN Extensions
+* [김경환씨 rainbow 발표](https://www.slideshare.net/KyunghwanKim27/rainbow-2nd-dlcat-in-daejeon){:target="_blank"}
+* [https://wonseokjung.github.io/RL-Totherb7/](https://wonseokjung.github.io/RL-Totherb7/){:target="_blank"}
+* [Rainbow: Combining Improvements in Deep Reinforcement Learning](https://arxiv.org/pdf/1710.02298.pdf){:target="_blank"}
 * [](){:target="_blank"}
 
 <br>
