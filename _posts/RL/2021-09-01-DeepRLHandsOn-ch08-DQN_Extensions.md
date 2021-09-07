@@ -4,7 +4,7 @@ title: "[Deep Reinforcement Learning Hands On 2/E] Chapter 08 : DQN Extensions"
 date: 2021-09-01
 excerpt: ""
 categories: [RL/RL]
-tags : [Reinforcement Learning, RL, Deep Reinforcement Learning Hands On, chapter 8, DQN, DQN 변형 버전, n-step DQN, Double DQN, Noisy Network, prioritized replay buffer, dueling DQN, categorical dqn, rainbow]
+tags : [Reinforcement Learning, RL, Deep Reinforcement Learning Hands On, chapter 8, DQN, DQN 변형 버전, n-step DQN, multi-step DQN, Double DQN, Noisy Network, prioritized replay buffer, dueling DQN, categorical dqn, rainbow]
 comments: true
 ---
 
@@ -660,12 +660,364 @@ figure 8.9 를 보면 두 레이어 모두에서 노이즈 레벨이 빠르게 �
 
 > <subtitle> Prioritized replay buffer </subtitle>
 
+### Prioritizing with TD-error
 
+이번 세션의 아이디어는 *Prioritized Experience Replay* 라는 논문에서 나온 것으로 training loss에 따라 replay buffer 의 샘플의 우선순위를 달리함으로써 샘플 효율성을 높이고자 했습니다.
+
+간단히 말하면, 
+* PER은 replay buffer의 성능 개선으로 DQN을 바꾸고자 함
+* replay buffer 의  저장된 경험을 우선순위를 정해 우선순위가 높은 것을 표집하도록 한다.
+* 우선순위는 TD error에 기반한다. TD error 가 클수록 우선순위를 높인다.
+
+저자가 유의한 점은 양질의 경험을 중요시 여기면서도 샘플의 새로움도 놓치면 안되도록 밸런스를 맞추고자 했다는 점입니다. 버퍼의 작은 섭셋에만 집중하면 i.i.d 속성을 잃고 해당 섭셋에 과적합할 것이기 때문입니다.
+
+그러나 위 내용만 보면 *greedy TD-error prioritization* 알고리즘과 동일합니다. 
+이 알고리즘의 원리는 다음과 같습니다
+
+1. 매 transition을 따라 TD error를 계산해 replay memory에 저장한다.
+2. TD error 의 크기가 가장 큰 transition은 memory로부터 replay 된다.
+3. 각 transition 에는 q-learning update 가 진행되며, TD error에 비례하도록 업데이트된다.
+4. 새로운 transition 은 가장 높은 우선순위를 부여하여 momory 에 저장한다. 이는 한 번 이상 replay 되는 것을 보장하기 위함이다.
+
+PER 제안 논문에서는 이 greedy TD-error 우선순위 방법에 드러나 문제점을 극복하면서 새로운 방법을 제안합니다.
+
+greedy TD error 우선순위 알고리즘의 문제점은 다음과 같습니다.
+
+1. TD error 가 replay된 transition 에 대해서만 업데이트된다. (모든 메모리에 대해 계산하는 것은 계산 부담이 크다)
+    - 이로 인해 처음에 TD-error 가 낮게 평가된 transition에 대해 방문할 기회가 사라진다.
+    - 일부 데이터에 집중하여 다앙햔 경험을 충분히 전달하지 못한다. -> overfitting 위험 올라감.
+2. (보상이 확률적인 경우) noise에 취약하다.
 
 <br>
+
+### Stochastic Prioritization
+
+PER 논문 저자들은 이러한 문제점을 해결하기 위해 greedy 우선순위 방법과 uniform random sampling 방법을 섞은 **stochastic sampling method**를 제안합니다.
+
+이는 replay memory 내의 transition의 우선순위는 유지하되, 모든 transition 에 대해서 non-zero 확률의 방문이 가능하도록 보장할 수 있습니다. (처음 진입 이외에도)
+
+샘플의 우선순위를 수학적으로 표현하면 다음과 같습니다.
+
+$$ P(i) = \frac{p_i^{\alpha}}{\sum _k p_k^{a'}} $$
+
+* P(i): k개의 transition 중 i번째 transition의 sampling 확률
+* $$\alpha$$ : 얼마나 우선순위에 의한 샘플링을 많이 할 것인가를 결정([0,1])
+    - 0 이면 기본 DQN에서처럼 uniform sample
+    - 1 이면 greedy prioritization
+    - 튜닝이 필요한 hyperparameter로, 논문은 0.6을 시작점으로 하라고 권고
+* $$p_i$$ 는 버퍼 내 i 번째 샘플의 우선순위
+
+우선순위를 정의하는 방법은 두 가지가 있으며, 직접적인 방법으로는 **proportional prioritization** 방식으로 TD error 에 비례하지만 작은 constant 값을 포함시켜줌으로써 모든 transition의 방문 확률을 0이 아니도록 만들어줍니다.
+
+$$p_i = |\delta| + \epsilon $$
+$$TD-error : \delta = (R + \gamma \max_a Q(S', a)) - Q(S,A)$$
+
+간접적인 방법인 rank-based prioritization 은 replay memory 내의 transition에 TD error 에 따라 rank 를 매기는 것입니다.
+
+$$ p_i = \frac{1}{rank(i)} $$
+
+rainbow 논문에서도 그렇고 **proportional prioritization** 방식이 더 인기있는 방법이라고 합니다. 
+
 <br>
+
+### Annealing the Bias
+
+prioritized replay 는 보통 편향치를 가져오는데, 주로 expectation 에 대한 distribution이 정형화되지 않은 상태인데 업데이트 때마다 또 바뀌기 때문입니다.
+
+이에 대해서는 **importance-sampling weights** 를 이용해 bias 를 잡으려고 했습니다.
+
+$$ w_i = (\frac{1}{N} \cdot \frac{1}{P(i)})^{\beta}$$
+
+Q-learning 부분에서 TD-error 대신 weighted IS 를 곱한 것을 이용해 업데이트합니다. 
+
+일반적인 RL 시나리오에서 unbiased updates 는 학습 막바지에 수렴하도록 하는 가장 중요한 역할을 합니다. 이 논문에서는 importance sampling correction 정도를 점진적으로 상승시켜서 학습 막바지에 최대로 correction 이 되도록 합니다. 
+
+$$\beta$$ 가 correction의 정도를 조절하는 패러미터이고 학습시 선형적으로 상승하여 학습 마지막에는 1이 되도록 합니다. 특히 우선순위에 대한 조절계수인 $$\alpha$$ 와 함께 올려주면 더욱 확실하게 correction 이 이루어진다고 합니다.
+
+뉴럴넷과 같은 비선형 근사함수와 prioritized replay를 함께 했을 때, importance sampling의 또 다른 이점이 있습니다.
+
+gradient의 first-order approximation의 경우 일반적으로 local하게만 신뢰할 수 있고 큰 step으로 학습할 때는 성능이 좋지 않습니다.
+prioritization 과정에서 transition의 높은 에러가 learning step을 넓게 만들어주기도 하는데, 이 과정에서 IS의 correction이 gradient의 크기를 줄여줘서 효과적으로 step의 크기를 줄여준다는 것입니다. 
+(마지막 부분은 저도 이해가 안되는데 일단 그렇다고 합니다.)
+
+<br>
+
+## Implementation
+
+이번 구현에서는 몇 가지 변화가 있습니다.
+
+1. 새로운 replay buffer
+    - 우선순위 추적
+    - 우선순위에 따라 배치 샘플링
+    - 가중치 계산
+    - loss 계산 후 우선순위 업데이트 
+2. loss function
+    - 가중치를 모든 샘플에 결합시키기
+    - 표집한 transition의 우선순위를 조정하기 위해 loss 값을 replay buffer로 돌려보내기
+
+코드는 *Chapter08/05_dqn_prio_replay.py* 에서 확인할 수 있습니다. 단순성을 위해 새로운 우선순위 replay buffer 클래스는 이전 replay buffer 와 매우 유사한 저장 체계를 사용합니다. 하지만 우선순위 지정을 위한 새로운 요구 사항으로 인해 버퍼 크기에 O(1) 시간 내에 샘플링을 구현하는 것이 불가능합니다. 
+
+단순 리스트를 사용하는 경우, 새로운 배치를 샘플링할 때마다 모든 우선순위를 처리해야 합니다. 따라서 샘플링은 버퍼 크기에 비례하여 O(N) 시간의 복잡성을 가집니다. 10만 개 샘플처럼 버퍼가 작으면 큰 문제가 되지 않지만 수백만 개의 transition이 있는 실제 대용량 버퍼는 문제가 될 수 있습니다. segment tree 데이터 구조를 사용하는 것과 같이 O(log N) 시간 내에 효율적인 샘플링을 지원하는 다른 스토리지 체계도 있습니다. 
+
+1. [OpenAI Baselines project](https://github. com/openai/baselines){:target="_blank"} 
+2. *ptan.experience.PrioritizedReplayBuffer* class 내에 효율적인 우선순위 replay buffer를 제공
+
+일단 내부 구조를 살펴보기 위해 리스트를 사용하여 버퍼를 쓰는 단순한 버전의 우선순위 replay buffer를 살펴보겠습니다.
+(이 코드는 *dqn_extra.py*에 있습니다.)
+
+```python
+# replay buffer params
+# beta는 correction 정도를 조절하는 패러미터
+# 최초 100k frame 동안 0.4에서 시작하여 1.0까지 상승시킨다.
+BETA_START = 0.4
+BETA_FRAMES = 100000
+
+
+class PrioReplayBuffer:
+    def __init__(self, exp_source, buf_size, prob_alpha=0.6):
+        self.exp_source_iter = iter(exp_source)
+        self.prob_alpha = prob_alpha
+        self.capacity = buf_size
+        self.pos = 0
+        self.buffer = [] # 단순하게 리스트로 구성
+        # 우선순위 저장
+        self.priorities = np.zeros(
+            (buf_size, ), dtype=np.float32)
+        self.beta = BETA_START
+
+    # 최초값 0.4에서 1.0까지 조금씩 업데이트한다.
+    # 주기적으로 호출 필요
+    def update_beta(self, idx):
+        v = BETA_START + idx * (1.0 - BETA_START) / \
+            BETA_FRAMES
+        self.beta = min(1.0, v)
+        return self.beta
+
+    def __len__(self):
+        return len(self.buffer)
+
+    def populate(self, count):
+        # 버퍼가 빈값이 아니면 최대 우선순위 반환
+        max_prio = self.priorities.max() if \
+            self.buffer else 1.0
+        for _ in range(count):
+            # count 만큼 ExperienceSource object에서 transition을 추출하여 버퍼에 저장한다.
+            sample = next(self.exp_source_iter)
+            # 버퍼에 여유가 있으면 추가
+            if len(self.buffer) < self.capacity:
+                self.buffer.append(sample)
+            else: # 버퍼가 꽉 찼으면 교체한다.
+                self.buffer[self.pos] = sample
+            self.priorities[self.pos] = max_prio
+            # buffer는 circular buffer 이다. 
+            self.pos = (self.pos + 1) % self.capacity
+
+    # 우선순위들을 알파값을 이용해서 확률로 변환
+    def sample(self, batch_size):
+        if len(self.buffer) == self.capacity:
+            prios = self.priorities
+        else:
+            prios = self.priorities[:self.pos]
+        probs = prios ** self.prob_alpha
+
+        probs /= probs.sum()
+
+        # 버퍼 내의 인덱스를 배치사이즈만큼 랜덤하게 고른다
+        # p에 확률값을 입력으로 주면, 표본이 추출된 확률을 반영해서 샘플링한다
+        indices = np.random.choice(len(self.buffer),
+                                   batch_size, p=probs)
+        # 인덱스에서 값 추출하여 리스트에 담음
+        samples = [self.buffer[idx] for idx in indices]
+        # 가중치 계산
+        total = len(self.buffer)
+        weights = (total * probs[indices]) ** (-self.beta)
+        weights /= weights.max()
+        return samples, indices, \
+               np.array(weights, dtype=np.float32)
+
+    # 새로운 우선순위를 업데이트한다
+    def update_priorities(self, batch_indices,
+                          batch_priorities):
+        for idx, prio in zip(batch_indices,
+                             batch_priorities):
+            self.priorities[idx] = prio
+```
+
+<br>
+
+다음은 loss 계산 함수입니다. PyTorch 의 *MSELoss* class 는 weights 를 지원하지 않습니다. MSE 는 회귀 문제의 loss 계산에서 사용되고 샘플의 가중치 계산은 보통 분류 문제의 loss 계산에서 활용되기 때문입니다. 그래서 MSE 를 계산하고 그 결과에 가중치를 곱하는 custom function을 만들었습니다.
+
+```python
+def calc_loss(batch, batch_weights, net, tgt_net,
+              gamma, device="cpu"):
+    states, actions, rewards, dones, next_states = \
+        common.unpack_batch(batch)
+
+    states_v = torch.tensor(states).to(device)
+    actions_v = torch.tensor(actions).to(device)
+    rewards_v = torch.tensor(rewards).to(device)
+    done_mask = torch.BoolTensor(dones).to(device)
+    batch_weights_v = torch.tensor(batch_weights).to(device)
+
+    # 학습 네트워크의 상태 행동 가치 Q값 계산(prediction)
+    actions_v = actions_v.unsqueeze(-1)
+    state_action_vals = net(states_v).gather(1, actions_v)
+    state_action_vals = state_action_vals.squeeze(-1)
+    with torch.no_grad():
+        # 타켓 네트워크의 다음 상태에서의 best action의 가치 계산
+        next_states_v = torch.tensor(next_states).to(device)
+        next_s_vals = tgt_net(next_states_v).max(1)[0]
+        next_s_vals[done_mask] = 0.0
+        # target
+        exp_sa_vals = next_s_vals.detach() * gamma + rewards_v
+    # MSE = (prediction - target)^2
+    l = (state_action_vals - exp_sa_vals) ** 2
+    # loss = weights * MSE
+    losses_v = batch_weights_v * l
+    # 1e-5 는 loss가 0인 상황에 대비하는 상수
+    return losses_v.mean(), \
+           (losses_v + 1e-5).data.cpu().numpy()
+```
+
+<br>
+
+그 다음 main 함수에서는 위에서 설명한 우선순위 replay buffer 생성하는 부분과 process_batch() 에서 처리 과정을 수정하였습니다.
+
+```python
+if __name__ == "__main__":
+    
+    ...(생략)...
+    
+    # 우선순위 replay buffer 인스턴스 생성
+    buffer = dqn_extra.PrioReplayBuffer(
+        exp_source, params.replay_size, PRIO_REPLAY_ALPHA)
+    optimizer = optim.Adam(net.parameters(), lr=params.learning_rate)
+
+    def process_batch(engine, batch_data):
+        batch, batch_indices, batch_weights = batch_data
+        optimizer.zero_grad()
+        loss_v, sample_prios = calc_loss(
+            batch, batch_weights, net, tgt_net.target_model,
+            gamma=params.gamma, device=device)
+        loss_v.backward()
+        optimizer.step()
+        # 버퍼로 다시 우선순위를 돌려보내서 버퍼 내 샘플의 우선순위를 업데이트한다
+        buffer.update_priorities(batch_indices, sample_prios)
+        epsilon_tracker.frame(engine.state.iteration)
+        # 동기화
+        if engine.state.iteration % params.target_net_sync == 0:
+            tgt_net.sync()
+        return {
+            "loss": loss_v.item(),
+            "epsilon": selector.epsilon,
+            # 베타 상승
+            "beta": buffer.update_beta(engine.state.iteration),
+        }
+    
+    ...(생략)...
+
+```
+
+<br>
+
+## Results
+
+Prioritized replay buffer 는 문제를 푸는데 베이스라인과 거의 유사하게 2시간 걸렸습니다. (왼쪽이 기본 DQN, 오른쪽이 우선순위 DQN)
+
+<center><img src= "https://liger82.github.io/assets/img/post/20210901-DeepRLHandsOn-ch08-DQN_Extensions/fig8.10.png" width="90%"></center><br>
+
+그렇지만 더 적은 학습 이터레이션과 더 적은 에피소드로 문제를 해결했습니다. 
+물론 이는 비효율적인 버퍼를 사용해서 그렇습니다. 
+
+Figure 8.11에서는 베이스라인보다 Prioritized replay buffer 가 더 낮은 loss 를 가짐을 알 수 있습니다.
+
+<center><img src= "https://liger82.github.io/assets/img/post/20210901-DeepRLHandsOn-ch08-DQN_Extensions/fig8.11.png" width="90%"></center><br>
 
 > <subtitle> Dueling DQN </subtitle>
+
+Dueling DQN 은 정확한 값보다 차이를 배우는 것이 더 쉽다는 데에서 시작합니다. 그래서 Q 를 두 가지로 나눕니다. 상태의 가치 V(s) 와 그 상태에서 행동의 advantage A(s,a) 입니다. 
+
+<center><img src= "https://liger82.github.io/assets/img/post/20210901-DeepRLHandsOn-ch08-DQN_Extensions/fig8.12-1.png" width="60%"></center><br>
+
+Dueling DQN 은 네트워크 아키텍쳐에서 value와 advantage 를 명백하게 분리하여 (아타리 게임에서) 더 나은 학습 안정성, 빠른 수렴 속도, 더 나은 성능을 가져왔습니다.
+
+<center><img src= "https://liger82.github.io/assets/img/post/20210901-DeepRLHandsOn-ch08-DQN_Extensions/fig8.12.png" width="80%"></center><br>
+
+Dueling DQN에서 Q 를 구하는 방식이 3가지가 있습니다.
+
+* Sum : 단순 sum으로는 Q 에 대한 V와 A 값이 unique하지 않음. Q가 4일 때 V, A가 (1,3), (2,2), (3,1) 처럼 여러 경우가 존재
+$$ Q(s, a; \theta, \alpha, \beta) = V(s;\theta, \beta) + A(s, a ; \theta, \alpha) $$  
+* Max : 유일한 V와 A를 보장  
+$$ Q(s, a; \theta, \alpha, \beta) = V(s;\theta, \beta) + (A(s, a ; \theta, \alpha) - \max_{a' \in |A|}A(s, a' ; \theta, \alpha))$$  
+* **Average** : 유일한 V와 A를 보장하지는 않지만, max와 유사한 성능을 보이며, 최적화의 안정성이 증가하는 효과 있어서 이 방식을 사용
+$$ Q(s, a; \theta, \alpha, \beta) = V(s;\theta, \beta) + ((A(s, a ; \theta, \alpha) - \frac{1}{|A|}\sum_{a'}A(s, a'; \theta, \alpha))) $$
+
+<br>
+
+## Implementation
+
+코드는 *Chapter08/06_dqn_dueling.py* 에서 학습 프로세스 진행을 할 수 있고 *lib/dqn_extra.py* 에서 DuelingDQN class 를 확인할 수 있습니다.
+
+학습 과정 자체는 바뀐 것이 거의 없어서 DuelingDQN 만 살펴보겠습니다. 
+
+```python
+class DuelingDQN(nn.Module):
+    def __init__(self, input_shape, n_actions):
+        super(DuelingDQN, self).__init__()
+        
+        # convolution layers 부분은 기본 DQN과 동일
+        self.conv = nn.Sequential(
+            nn.Conv2d(input_shape[0], 32,
+                      kernel_size=8, stride=4),
+            nn.ReLU(),
+            nn.Conv2d(32, 64, kernel_size=4, stride=2),
+            nn.ReLU(),
+            nn.Conv2d(64, 64, kernel_size=3, stride=1),
+            nn.ReLU()
+        )
+
+        conv_out_size = self._get_conv_out(input_shape)
+        # inner dim 512 -> 256
+        # fully connected layer for advantage
+        self.fc_adv = nn.Sequential(
+            nn.Linear(conv_out_size, 256),
+            nn.ReLU(),
+            nn.Linear(256, n_actions)
+        )
+        # fully connected layer for value prediction
+        self.fc_val = nn.Sequential(
+            nn.Linear(conv_out_size, 256),
+            nn.ReLU(),
+            nn.Linear(256, 1)
+        )
+
+    def _get_conv_out(self, shape):
+        o = self.conv(torch.zeros(1, *shape))
+        return int(np.prod(o.size()))
+
+    def forward(self, x):
+        adv, val = self.adv_val(x)
+        # average 방법
+        return val + (adv - adv.mean(dim=1, keepdim=True))
+
+    def adv_val(self, x):
+        fx = x.float() / 256
+        conv_out = self.conv(fx).view(fx.size()[0], -1)
+        return self.fc_adv(conv_out), self.fc_val(conv_out)
+```
+
+<br>
+
+## Results
+
+Figure 8.13을 보면 기본 DQN보다 수렴하는 속도가 빠른 것을 볼 수 있습니다.
+
+<center><img src= "https://liger82.github.io/assets/img/post/20210901-DeepRLHandsOn-ch08-DQN_Extensions/fig8.13.png" width="80%"></center><br>
+
+V와 A를 분리해서도 보면, advantage는 0과 그리 다르지 않지만 시간이 지남에 따라 조금씩 상승하는 것을 확인할 수 있습니다. value는 Double DQN 과 닮았습니다.
+
+<center><img src= "https://liger82.github.io/assets/img/post/20210901-DeepRLHandsOn-ch08-DQN_Extensions/fig8.14.png" width="80%"></center><br>
+
 
 <br>
 
@@ -691,6 +1043,7 @@ figure 8.9 를 보면 두 레이어 모두에서 노이즈 레벨이 빠르게 �
 * [김경환씨 rainbow 발표](https://www.slideshare.net/KyunghwanKim27/rainbow-2nd-dlcat-in-daejeon){:target="_blank"}
 * [https://wonseokjung.github.io/RL-Totherb7/](https://wonseokjung.github.io/RL-Totherb7/){:target="_blank"}
 * [Rainbow: Combining Improvements in Deep Reinforcement Learning](https://arxiv.org/pdf/1710.02298.pdf){:target="_blank"}
+* [PER 참고 Lunabot87 블로그](https://ropiens.tistory.com/86){:target="_blank"}
 * [](){:target="_blank"}
 
 <br>
