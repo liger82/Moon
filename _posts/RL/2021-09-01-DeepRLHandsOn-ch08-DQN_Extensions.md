@@ -945,12 +945,17 @@ Dueling DQN 은 네트워크 아키텍쳐에서 value와 advantage 를 명백하
 
 Dueling DQN에서 Q 를 구하는 방식이 3가지가 있습니다.
 
-* Sum : 단순 sum으로는 Q 에 대한 V와 A 값이 unique하지 않음. Q가 4일 때 V, A가 (1,3), (2,2), (3,1) 처럼 여러 경우가 존재
-$$ Q(s, a; \theta, \alpha, \beta) = V(s;\theta, \beta) + A(s, a ; \theta, \alpha) $$  
+* Sum : 단순 sum으로는 Q 에 대한 V와 A 값이 unique하지 않음. Q가 4일 때 V, A가 (1,3), (2,2), (3,1) 처럼 여러 경우가 존재  
+
+<center>$$ Q(s, a; \theta, \alpha, \beta) = V(s;\theta, \beta) + A(s, a ; \theta, \alpha) $$</center>
+
 * Max : 유일한 V와 A를 보장  
-$$ Q(s, a; \theta, \alpha, \beta) = V(s;\theta, \beta) + (A(s, a ; \theta, \alpha) - \max_{a' \in |A|}A(s, a' ; \theta, \alpha))$$  
-* **Average** : 유일한 V와 A를 보장하지는 않지만, max와 유사한 성능을 보이며, 최적화의 안정성이 증가하는 효과 있어서 이 방식을 사용
-$$ Q(s, a; \theta, \alpha, \beta) = V(s;\theta, \beta) + ((A(s, a ; \theta, \alpha) - \frac{1}{|A|}\sum_{a'}A(s, a'; \theta, \alpha))) $$
+
+<center>$$ Q(s, a; \theta, \alpha, \beta) = V(s;\theta, \beta) + (A(s, a ; \theta, \alpha) - \max_{a' \in |A|}A(s, a' ; \theta, \alpha))$$ </center>
+
+* **Average** : 유일한 V와 A를 보장하지는 않지만, max와 유사한 성능을 보이며, 최적화의 안정성이 증가하는 효과 있어서 이 방식을 사용  
+
+<center>$$ Q(s, a; \theta, \alpha, \beta) = V(s;\theta, \beta) + ((A(s, a ; \theta, \alpha) - \frac{1}{|A|}\sum_{a'}A(s, a'; \theta, \alpha))) $$</center>
 
 <br>
 
@@ -1018,21 +1023,254 @@ V와 A를 분리해서도 보면, advantage는 0과 그리 다르지 않지만 �
 
 <center><img src= "https://liger82.github.io/assets/img/post/20210901-DeepRLHandsOn-ch08-DQN_Extensions/fig8.14.png" width="80%"></center><br>
 
+> <subtitle> Categorical DQN(C51) </subtitle>
+
+이 확장판은 17년 6월 DeepMind에서 나온 *"A Distributional Perspective on Reinforcement Learning"* 에서 처음 등장하였습니다. 
+
+이 버전의 뚜렷한 특징은 계산을 위해서 숫자가 아닌 **분포**를 사용한다는 점입니다.
+
+왜 분포가 중요한지 예시를 통해 알아보도록 하겠습니다. 직장까지의 통근 수단을 결정하려고 하는 회사원이 있다고 할 때, 자가용과 기차가 옵션으로 주어집니다.
+
+<center><img src= "https://liger82.github.io/assets/img/post/20210901-DeepRLHandsOn-ch08-DQN_Extensions/fig8.15.png" width="80%"></center><br>
+
+<center><img src= "https://liger82.github.io/assets/img/post/20210901-DeepRLHandsOn-ch08-DQN_Extensions/fig8.16.png" width="80%"></center><br>
+
+자가용의 평균 통근 시간은 35.43분이고 기차의 평균 통근 시간은 40.54 분입니다. 평균 통근 시간만 보면 자가용이 빠르니 자가용을 택할 것 같지만 분포를 본 통근자는 기차를 택할 것 같습니다. 
+
+자가용은 대부분은 안 그렇겠지만 도로 공사, 교통 사고, 교통 체증으로 인해 최대 100분까지도 통근시간이 늘어나는 것을 확인할 수 있습니다. 그러나 기차는 자가용보다 평균적으로는 더 걸리지만 늦어도 60분 정도 걸립니다. 기차가 문제 생길 경우가 더 적기 때문이죠.
+
+즉, 자가용 통근 시간의 분포는 더 큰 분산을 가지고 있어서 항상 그시간에 출근해야 하는 회사원이라면 조금 더 걸리더라도 기차가 더 나은 옵션일 수 있습니다. 
+
+복잡계에서 "평균"이라는 점 하나는 모든 것을 대변하지 못 하고 내재된 역동성에 대한 많은 정보를 잃을 수 있습니다. 이러한 문제의식에서 나온 것이 분포 관점에서 RL을 보자는 이 논문입니다. 분포 안에 숨겨진 의미들을 평균으로 예측하려 하지말고 직접적으로 분포를 갖고 예측해보자는 것입니다. 
+
+수식에서도 분포에 대한 표기를 사용합니다. 벨만 방정식에서는 다음과 같은 변화가 있습니다. 
+
+* Number : $$ Q(s,a) = R(s,a) + \gamma Q(s',a') $$
+* Distributional : $$ Z(s,a) = R(s,a) + \gamma Z(s', a') $$
+
+이 알고리즘에서 Q-value 를 계산하는 방법은 이산확률분포의 기댓값을 구하는 것입니다. 각 action 에 대한 Q-value를 계산하는 식은 다음과 같습니다.
+
+<center><img src= "https://reinforcement-learning-kr.github.io/img/Equation_Q_c51.png" width="80%"></center><br>
+
+결과 분포는 Q-learning 과 정확히 동일한 방식으로, 주어진 상태의 모든 행동에 대한 가치 분포의 더 나은 예측을 제공하도록 네트워크를 학습시키는 데 사용할 수 있습니다. 유일한 차이점은 loss function 이며, 분포 비교에 적합한 것으로 바꿉니다. 여러 가지 대안이 있지만 Kullback-Leibler(KL) divergence(or cross-entropy loss) 를 주로 씁니다. 
+
+<center><img src= "https://reinforcement-learning-kr.github.io/img/Equation_loss_c51.png" width="80%"></center><br>
+
+분포 간 비교시 한 가지 문제가 있는데 두 분포의 x축(atom or support)이 불일치하다는 점입니다. 불일치하는 이유는 target support가 Reward와 $$\gamma$$ 와의 연산 때문에 변경된 것입니다. 그래서 적절한 비교가 어렵습니다. 이에 대해서 target distribution 의 support 를 원래 분포의 support 와 같이 분배해주는 projection 과정을 추가적으로 실행하면 분포 비교를 할 수 있습니다.
+
+<center><img src= "https://reinforcement-learning-kr.github.io/img/bellman_operation.png" width="80%"></center><br>
+
+이 알고리즘은 support의 수가 많아질수록 성능이 좋아지는 편입니다. 특히 51개의 support를 이용했을 때 **SeaQuest** 게임에서 아주 좋은 성능을 보였고 그래서 **C51**이라고 불리기도 합니다.
+
+<center><img src= "https://reinforcement-learning-kr.github.io/img/result_c51.png" width="80%"></center><br>
+
+직접적으로는 DQN, Double DQN, Dueling, PER, PER+Deuling 보다도 좋은 성능을 보입니다.
+
+<center><img src= "https://reinforcement-learning-kr.github.io/img/result_c51_2.png" width="80%"></center><br>
+
+## Limitations
+
+그러나 아쉬운 점이 존재합니다.
+
+1. support와 관련된 패러미터들을 결정해줘야 하고 게임의 reward 범위에 따라 이 값들을 따로 설정해줘야 한다.
+2. 번거로운 projection 과정이 포함되어 있다.
+3. 수학적으로 수렴을 보장하지 않는다.
+    - 분포 간 거리를 측정하는 메트릭으로 처음에 Wasserstein distance 를 썼는데 이는 수렴은 보장하나 distance를 감소시킬 방법을 찾지 못함
+    - cross entropy는 수렴은 보장하지 않지만 loss를 줄일 수 있어서 이것을 사용
+
+이러한 3가지 문제들을 해결한 논문이 C51의 후속작인 [QR-DQN](https://arxiv.org/abs/1710.10044){:target="_blank"}입니다.
+
+## Implementation
+
+C51은 다른 것에 비해 복잡한 편입니다. 이 방법의 핵심 부분은 확률 분포입니다. 분포를 표현하는 방법 중 *parametric distribution* 을 사용합니다. 이는 기본적으로 특정 값 범위에 정기적으로 배치된 고정된 수의 값입니다. 값의 범위는 가능한 누적 할인 보상의 범위를 포함해야 합니다. 논문 저자들이 support 의 개수에 대해 여러 실험 해본 결과, 값의 범위가 -10(Vmin=-10) ~ 10(Vmax=10) 에서 support 개수가 51일개 일 때(N_ATOMS=51) 가장 좋은 결과를 얻을 수 있었다고 합니다. 
+
+*lib/dqn_extra.py* 에서 타겟 분포에 projection 시켜주는 함수입니다.
+
+```python
+def distr_projection(next_distr, rewards, dones, gamma):
+    """
+    Perform distribution projection aka Catergorical Algorithm from the
+    "A Distributional Perspective on RL" paper
+    """
+    batch_size = len(rewards)
+    proj_distr = np.zeros((batch_size, N_ATOMS),
+                          dtype=np.float32)
+    # the width of every atom in our value range
+    delta_z = (Vmax - Vmin) / (N_ATOMS - 1)
+    for atom in range(N_ATOMS):
+        # projection 부분 gamma 를 곱하고, reward 를 더한다.
+        v = rewards + (Vmin + atom * delta_z) * gamma
+        # 범위 한정
+        tz_j = np.minimum(Vmax, np.maximum(Vmin, v))
+        b_j = (tz_j - Vmin) / delta_z
+        l = np.floor(b_j).astype(np.int64)
+        u = np.ceil(b_j).astype(np.int64)
+        eq_mask = u == l
+        proj_distr[eq_mask, l[eq_mask]] += \
+            next_distr[eq_mask, atom]
+    
+    ...(생략)...
+
+    return proj_distr
+```
 
 <br>
 
-> <subtitle> Categorical DQN </subtitle>
+*lib/dqn_extra.py* 에 DistributionalDQN class 가 있습니다.
+
+가장 큰 차이는 fully connected layer의 출력값입니다. 행동의 개수가 아니라 행동의 개수 * atom 개수가 출력값입니다. 
+모든 행동에 대해 51개의 atom 에서 확률 분포를 예측해야 하는 것입니다. 모든 atom(or support)은 특정 보상에 부합하는 값을 가지고 있습니다.
+그 보상들은 -10 ~ 10 사이에 분포합니다. 이 atom들은 네트워크의 버퍼에 저장됩니다.
+
+```python
+class DistributionalDQN(nn.Module):
+    def __init__(self, input_shape, n_actions):
+        super(DistributionalDQN, self).__init__()
+
+        self.conv = nn.Sequential(
+            nn.Conv2d(input_shape[0], 32, kernel_size=8, stride=4),
+            nn.ReLU(),
+            nn.Conv2d(32, 64, kernel_size=4, stride=2),
+            nn.ReLU(),
+            nn.Conv2d(64, 64, kernel_size=3, stride=1),
+            nn.ReLU()
+        )
+
+        conv_out_size = self._get_conv_out(input_shape)
+        self.fc = nn.Sequential(
+            nn.Linear(conv_out_size, 512),
+            nn.ReLU(),
+            # n_actions 가 아니라 n_actions * N_ATOMS 가 outputs
+            # Pong이었다면 6 * 51 = 306
+            nn.Linear(512, n_actions * N_ATOMS)
+        )
+
+        sups = torch.arange(Vmin, Vmax + DELTA_Z, DELTA_Z)
+        self.register_buffer("supports", sups)
+        self.softmax = nn.Softmax(dim=1)
+
+    def _get_conv_out(self, shape):
+        o = self.conv(torch.zeros(1, *shape))
+        return int(np.prod(o.size()))
+
+    def forward(self, x):
+        batch_size = x.size()[0]
+        fx = x.float() / 256
+        conv_out = self.conv(fx).view(batch_size, -1)
+        fc_out = self.fc(conv_out)
+        # (batch, actions, supports)
+        return fc_out.view(batch_size, -1, N_ATOMS)
+
+    def both(self, x):
+        cat_out = self(x)
+        probs = self.apply_softmax(cat_out)
+        weights = probs * self.supports
+        res = weights.sum(dim=2)
+        return cat_out, res
+
+    def qvals(self, x):
+        return self.both(x)[1]
+
+    def apply_softmax(self, t):
+        return self.softmax(t.view(-1, N_ATOMS)).view(t.size())
+```
 
 <br>
+
+마지막 수정사항은 loss function입니다. 
+
+* projection 을 적용
+* 예측 분포와 projected target 분포 간 KL divergence 계산
+
+코드는 *07_dqn_distrib.py* 에서 확인할 수 있습니다.
+
+```python
+def calc_loss(batch, net, tgt_net, gamma, device="cpu"):
+    states, actions, rewards, dones, next_states = \
+        common.unpack_batch(batch)
+    batch_size = len(batch)
+
+    states_v = torch.tensor(states).to(device)
+    actions_v = torch.tensor(actions).to(device)
+    next_states_v = torch.tensor(next_states).to(device)
+
+    # next state distribution
+    next_distr_v, next_qvals_v = tgt_net.both(next_states_v)
+    next_acts = next_qvals_v.max(1)[1].data.cpu().numpy()
+    next_distr = tgt_net.apply_softmax(next_distr_v)
+    next_distr = next_distr.data.cpu().numpy()
+
+    next_best_distr = next_distr[range(batch_size), next_acts]
+    dones = dones.astype(np.bool)
+    
+    # target distribution에 대한 projection
+    proj_distr = dqn_extra.distr_projection(
+        next_best_distr, rewards, dones, gamma)
+
+    # value distribution
+    distr_v = net(states_v)
+    sa_vals = distr_v[range(batch_size), actions_v.data]
+    # KL divergence(cross entropy)
+    state_log_sm_v = F.log_softmax(sa_vals, dim=1)
+    proj_distr_v = torch.tensor(proj_distr).to(device)
+    loss_v = -state_log_sm_v * proj_distr_v
+    return loss_v.sum(dim=1).mean()
+```
+
+<br>
+
+## Results
+
+C51은 베이스라인보다 학습 속도가 더 느리고 덜 안정적이었습니다. 놀라운 일이 아닌게 C51의 네트워크 아웃풋은 51배나 더 큽니다. 그래서 하이퍼 패러미터 튜닝이 필수입니다.
+다른 챕터에서 튜닝 부분을 다룰 것이라 여기서는 비교에 집중하였습니다. 
+
+<center><img src= "https://liger82.github.io/assets/img/post/20210901-DeepRLHandsOn-ch08-DQN_Extensions/fig8.19.png" width="80%"></center><br>
+
+DQN 변형 중 유일하게 베이스라인보다 성능이 떨어져 보이는데 이는 벤치마크로 Pong을 써서 그럴 수 있습니다. Pong은 너무 간단한 게임이라 복잡계를 타켓으로 분포를 사용한 C51이 성능이 떨어질 수 있기 때문입니다. 해당 논문에서의 아타리 게임에도 Pong은 없었습니다.
+
+<center><img src= "https://liger82.github.io/assets/img/post/20210901-DeepRLHandsOn-ch08-DQN_Extensions/fig8.20.png" width="80%"></center><br>
 
 > <subtitle> Combining everything </subtitle>
 
+마지막으로 앞서 살펴본 DQN 확장판들을 결합하여 성능이 더 좋은 새로운 버전을 만드는 게 이 rainbow 논문의 목표입니다. 
+
+figure 1은 다른 모델과 비교하여 rainbow 의 우수한 성능을 볼 수 있습니다.
+
+<center><img src= "https://liger82.github.io/assets/img/post/20210901-DeepRLHandsOn-ch08-DQN_Extensions/fig1.png" width="80%"></center><br>
+
+figure 3를 보면 여러 요소 중 우선순위와 multi-step, distribution이 없을 때 rainbow 성능이 크게 떨어지는 것을 확인할 수 있습니다.
+
+<center><img src= "https://liger82.github.io/assets/img/post/20210901-DeepRLHandsOn-ch08-DQN_Extensions/fig3.png" width="80%"></center><br>
+
+## Implementation
+
+책의 저자는 현재 실험 환경으로 쓰려고 하는 guinea pig 환경에서 double DQN이 성능 개선에 도움이 되지 않는다고 판단하여 제외했습니다. 
+
+* Dueling DQN : state 값 distribution 과 advantage distribution 을 위한 두 개의 분리된 경로를 가지고 있음. advantage distribution 의 평균이 0이 되게 하기 위해 모든 atom에서 mean advantage를 뺐음.
+* Noisy networks : value 및 advantage 경로의 선형 레이어는 nn.Linear 의 noise variants
+* Prioritized replay buffer : 우선순위 replay buffer 사용
+* Multi-step : n-step 을 위해 벨만 방정식을 unroll
 
 <br>
 
+## Results
+
+rainbow는 베이스라인과 비교했을 때 상당히 빠른 속도로 수렴합니다.
+
+<center><img src= "https://liger82.github.io/assets/img/post/20210901-DeepRLHandsOn-ch08-DQN_Extensions/fig8.23.png" width="80%"></center><br>
+
+FPS 측면에서 시스템 성능이 낮기 때문에 wall clock 시간 속도는 샘플 효율성보다 훨씬 느립니다. 학습 초기에 rainbow에서 110 FPS가 나왔지만 재생버퍼의 비효율성 때문입니다. 이는 코드로 최적화될 수 있는 부분입니다.
+
+<center><img src= "https://liger82.github.io/assets/img/post/20210901-DeepRLHandsOn-ch08-DQN_Extensions/fig8.24.png" width="80%"></center><br>
+
+마지막 차트는 에피소드의 step 수(figure 8.25)입니다. rainbow는 매우 효율적으로 승리하는 법을 빠르게 발견했습니다. 첫 번째 피크 ~ 3k 까지의 단계는 시스템이 상대와 더 오래 맞설 수 있는 방법을 찾은 학습의 초기 단계에 해당합니다. 이후 step 수의 감소는 "정책 연마" 단계에 해당하며, 에이전트가 더 빨리 이기기 위해 조치를 최적화했습니다.(할인율 감마가 더 짧은 에피소드로 이동).
+
+<center><img src= "https://liger82.github.io/assets/img/post/20210901-DeepRLHandsOn-ch08-DQN_Extensions/fig8.25.png" width="80%"></center><br>
+
 > <subtitle> Summary </subtitle>
 
-* 
+* DQN과 그 확장판들에 대해 알아보았습니다.
+* 확장판을 결합한 새로운 아키텍쳐 rainbow 를 만들었습니다.
 
 <br>
 
@@ -1044,6 +1282,6 @@ V와 A를 분리해서도 보면, advantage는 0과 그리 다르지 않지만 �
 * [https://wonseokjung.github.io/RL-Totherb7/](https://wonseokjung.github.io/RL-Totherb7/){:target="_blank"}
 * [Rainbow: Combining Improvements in Deep Reinforcement Learning](https://arxiv.org/pdf/1710.02298.pdf){:target="_blank"}
 * [PER 참고 Lunabot87 블로그](https://ropiens.tistory.com/86){:target="_blank"}
-* [](){:target="_blank"}
+* [https://reinforcement-learning-kr.github.io/2018/10/02/C51/](https://reinforcement-learning-kr.github.io/2018/10/02/C51/){:target="_blank"}
 
 <br>
