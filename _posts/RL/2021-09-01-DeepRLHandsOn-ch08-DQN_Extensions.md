@@ -438,7 +438,7 @@ $$ Q_2 $$ 가 최종인데 두 Q function의 역할을 고정하면 두 Q functi
 
 $$ Q(s_t, a_t) = r_{t} + \gamma \max_a Q'(s_{t+1}, argmax_{a} Q(s_{t+1},a)) $$
 
-Double Q-learning에 DQN에도 적용한 것이 Double DQN 입니다. 저자들에 의하면 이러한 작은 수정이 과대평가하는 것을 완전히 고친다고 합니다.
+Double Q-learning을 DQN에도 적용한 것이 Double DQN 입니다. 저자들에 의하면 이러한 작은 수정이 과대평가하는 것을 완전히 고친다고 합니다.
 
 <br>
 
@@ -480,7 +480,6 @@ def calc_loss_double_dqn(batch, net, tgt_net, gamma,
         else:
             next_state_vals = tgt_net(next_states_v).max(1)[0]
         next_state_vals[done_mask] = 0.0
-        # approximated Q-values
         exp_sa_vals = next_state_vals.detach() * gamma + rewards_v
     # MSE loss between Q-values predicted by the network and approximated Q-values.
     return nn.MSELoss()(state_action_vals, exp_sa_vals)
@@ -532,7 +531,7 @@ GTX 1080 Ti 에서 했을 때 백만 프레임 학습은 2시간 정도 걸렸�
 
 이 새로운 네트워크 저자의 해결책은 간단했습니다.
 
-<center>"Network 에 noise 를 추가하여 exploration 을 하자!"</center>
+<center><b>"Network 에 noise 를 추가하여 exploration 을 하자!"</b></center><br>
 
 구체적으로는, 네트워크의 fully connected layer의 가중치에 noise를 추가하고 역전파를 이용해서 학습하는 동안 noise 의 패러미터에 적응해나가도록 한 것입니다. 
 물론 이 방법도 어디를 더 탐험할지 결정하는 방법은 아닙니다. 21장에서 더 진보한 탐험 기법에 대해 다룰 것입니다. 
@@ -540,9 +539,9 @@ GTX 1080 Ti 에서 했을 때 백만 프레임 학습은 2시간 정도 걸렸�
 이 방법의 기안자는 두 가지 noise 추가 방법을 제안하였습니다. 이 둘은 다른 계산 오버헤드를 지닙니다.
 
 1. Independent Gaussian noise 
-    - fully connected layer의 모든 가중치에 정규분포에서 뽑은 랜덤 값을 가집니다. 노이즈의 패러미터 $\mu$, $\sigma$ 는 레이어 안에 저장되고, 일반적인 선형 레이어의 가중치를 학습하는 동일한 방식으로 역전파를 이용해 학습됩니다. noisy layer의 출력값은 선형 레이어와 동일한 방식으로 계산됩니다.
+    - fully connected layer의 모든 가중치에 정규분포에서 뽑은 랜덤 값을 가집니다. 노이즈의 패러미터 $$\mu$$, $$\sigma$$ 는 레이어 안에 저장되고, 일반적인 선형 레이어의 가중치를 학습하는 동일한 방식으로 역전파를 이용해 학습됩니다. noisy layer의 출력값은 선형 레이어와 동일한 방식으로 계산됩니다.
 2. Factorized Gaussian noise
-    - 표집하는 랜덤 값의 개수를 최소화하기 위해 두 개의 랜덤 벡터를 유지합니다. 입력 크기의 벡터, 출력 크기의 벡터입니다. 그 다음, 벡터들 간 외적(텐서곱)을 통해 레이어의 랜덤 행렬이 만들어집니다. 
+    - 표집하는 랜덤 값의 개수를 최소화하기 위해 두 개의 랜덤 벡터를 유지합니다. 입력 크기의 벡터, 출력 크기의 벡터입니다. 그 다음, 벡터들 간 외적(텐서곱)을 통해 레이어의 랜덤 행렬이 만들어집니다. 이 행렬을 노이즈 행렬로 사용합니다.
 
 <br>
 
@@ -666,8 +665,8 @@ figure 8.9 를 보면 두 레이어 모두에서 노이즈 레벨이 빠르게 �
 
 간단히 말하면, 
 * PER은 replay buffer의 성능 개선으로 DQN을 바꾸고자 함
-* replay buffer 의  저장된 경험을 우선순위를 정해 우선순위가 높은 것을 표집하도록 한다.
-* 우선순위는 TD error에 기반한다. TD error 가 클수록 우선순위를 높인다.
+    * replay buffer 의  저장된 경험을 우선순위를 정해 우선순위가 높은 것을 표집하도록 한다.
+    * 우선순위는 TD error에 기반한다. TD error 가 클수록 우선순위를 높인다.
 
 저자가 유의한 점은 양질의 경험을 중요시 여기면서도 샘플의 새로움도 놓치면 안되도록 밸런스를 맞추고자 했다는 점입니다. 버퍼의 작은 섭셋에만 집중하면 i.i.d 속성을 잃고 해당 섭셋에 과적합할 것이기 때문입니다.
 
@@ -709,7 +708,8 @@ $$ P(i) = \frac{p_i^{\alpha}}{\sum _k p_k^{a'}} $$
 
 우선순위를 정의하는 방법은 두 가지가 있으며, 직접적인 방법으로는 **proportional prioritization** 방식으로 TD error 에 비례하지만 작은 constant 값을 포함시켜줌으로써 모든 transition의 방문 확률을 0이 아니도록 만들어줍니다.
 
-$$p_i = |\delta| + \epsilon $$
+$$p_i = |\delta| + \epsilon $$  
+
 $$TD-error : \delta = (R + \gamma \max_a Q(S', a)) - Q(S,A)$$
 
 간접적인 방법인 rank-based prioritization 은 replay memory 내의 transition에 TD error 에 따라 rank 를 매기는 것입니다.
@@ -922,12 +922,11 @@ if __name__ == "__main__":
 
 ## Results
 
-Prioritized replay buffer 는 문제를 푸는데 베이스라인과 거의 유사하게 2시간 걸렸습니다. (왼쪽이 기본 DQN, 오른쪽이 우선순위 DQN)
+Prioritized replay buffer 는 문제를 푸는데 베이스라인과 거의 유사하게 2시간 걸렸습니다. (왼쪽이 기본 DQN, 오른쪽이 우선순위 DQN) 물론 이는 비효율적인 버퍼를 사용해서 그렇습니다. 
 
 <center><img src= "https://liger82.github.io/assets/img/post/20210901-DeepRLHandsOn-ch08-DQN_Extensions/fig8.10.png" width="90%"></center><br>
 
 그렇지만 더 적은 학습 이터레이션과 더 적은 에피소드로 문제를 해결했습니다. 
-물론 이는 비효율적인 버퍼를 사용해서 그렇습니다. 
 
 Figure 8.11에서는 베이스라인보다 Prioritized replay buffer 가 더 낮은 loss 를 가짐을 알 수 있습니다.
 
@@ -937,7 +936,7 @@ Figure 8.11에서는 베이스라인보다 Prioritized replay buffer 가 더 낮
 
 Dueling DQN 은 정확한 값보다 차이를 배우는 것이 더 쉽다는 데에서 시작합니다. 그래서 Q 를 두 가지로 나눕니다. 상태의 가치 V(s) 와 그 상태에서 행동의 advantage A(s,a) 입니다. 
 
-<center><img src= "https://liger82.github.io/assets/img/post/20210901-DeepRLHandsOn-ch08-DQN_Extensions/fig8.12-1.png" width="60%"></center><br>
+<center><img src= "https://liger82.github.io/assets/img/post/20210901-DeepRLHandsOn-ch08-DQN_Extensions/fig8.12-1.png" width="40%"></center><br>
 
 Dueling DQN 은 네트워크 아키텍쳐에서 value와 advantage 를 명백하게 분리하여 (아타리 게임에서) 더 나은 학습 안정성, 빠른 수렴 속도, 더 나은 성능을 가져왔습니다.
 
@@ -1050,14 +1049,15 @@ V와 A를 분리해서도 보면, advantage는 0과 그리 다르지 않지만 �
 
 이 알고리즘에서 Q-value 를 계산하는 방법은 이산확률분포의 기댓값을 구하는 것입니다. 각 action 에 대한 Q-value를 계산하는 식은 다음과 같습니다.
 
-<center><img src= "https://reinforcement-learning-kr.github.io/img/Equation_Q_c51.png" width="80%"></center><br>
+<center><img src= "https://reinforcement-learning-kr.github.io/img/Equation_Q_c51.png" width="40%"></center><br>
 
 결과 분포는 Q-learning 과 정확히 동일한 방식으로, 주어진 상태의 모든 행동에 대한 가치 분포의 더 나은 예측을 제공하도록 네트워크를 학습시키는 데 사용할 수 있습니다. 유일한 차이점은 loss function 이며, 분포 비교에 적합한 것으로 바꿉니다. 여러 가지 대안이 있지만 Kullback-Leibler(KL) divergence(or cross-entropy loss) 를 주로 씁니다. 
 
-<center><img src= "https://reinforcement-learning-kr.github.io/img/Equation_loss_c51.png" width="80%"></center><br>
+<center><img src= "https://reinforcement-learning-kr.github.io/img/Equation_loss_c51.png" width="40%"></center><br>
 
 분포 간 비교시 한 가지 문제가 있는데 두 분포의 x축(atom or support)이 불일치하다는 점입니다. 불일치하는 이유는 target support가 Reward와 $$\gamma$$ 와의 연산 때문에 변경된 것입니다. 그래서 적절한 비교가 어렵습니다. 이에 대해서 target distribution 의 support 를 원래 분포의 support 와 같이 분배해주는 projection 과정을 추가적으로 실행하면 분포 비교를 할 수 있습니다.
 
+<br>
 <center><img src= "https://reinforcement-learning-kr.github.io/img/bellman_operation.png" width="80%"></center><br>
 
 이 알고리즘은 support의 수가 많아질수록 성능이 좋아지는 편입니다. 특히 51개의 support를 이용했을 때 **SeaQuest** 게임에서 아주 좋은 성능을 보였고 그래서 **C51**이라고 불리기도 합니다.
@@ -1066,7 +1066,7 @@ V와 A를 분리해서도 보면, advantage는 0과 그리 다르지 않지만 �
 
 직접적으로는 DQN, Double DQN, Dueling, PER, PER+Deuling 보다도 좋은 성능을 보입니다.
 
-<center><img src= "https://reinforcement-learning-kr.github.io/img/result_c51_2.png" width="80%"></center><br>
+<center><img src= "https://reinforcement-learning-kr.github.io/img/result_c51_2.png" width="60%"></center><br>
 
 ## Limitations
 
@@ -1080,9 +1080,11 @@ V와 A를 분리해서도 보면, advantage는 0과 그리 다르지 않지만 �
 
 이러한 3가지 문제들을 해결한 논문이 C51의 후속작인 [QR-DQN](https://arxiv.org/abs/1710.10044){:target="_blank"}입니다.
 
+<br>
+
 ## Implementation
 
-C51은 다른 것에 비해 복잡한 편입니다. 이 방법의 핵심 부분은 확률 분포입니다. 분포를 표현하는 방법 중 *parametric distribution* 을 사용합니다. 이는 기본적으로 특정 값 범위에 정기적으로 배치된 고정된 수의 값입니다. 값의 범위는 가능한 누적 할인 보상의 범위를 포함해야 합니다. 논문 저자들이 support 의 개수에 대해 여러 실험 해본 결과, 값의 범위가 -10(Vmin=-10) ~ 10(Vmax=10) 에서 support 개수가 51일개 일 때(N_ATOMS=51) 가장 좋은 결과를 얻을 수 있었다고 합니다. 
+C51 의 핵심 부분은 확률 분포입니다. 분포를 표현하는 방법 중 *parametric distribution* 을 사용합니다. 이는 기본적으로 특정 값 범위에 정기적으로 배치된 고정된 수의 값입니다. 값의 범위는 가능한 누적 할인 보상의 범위를 포함해야 합니다. 논문 저자들이 support 의 개수에 대해 여러 실험 해본 결과, 값의 범위가 -10(Vmin=-10) ~ 10(Vmax=10) 에서 support 개수가 51일개 일 때(N_ATOMS=51) 가장 좋은 결과를 얻을 수 있었다고 합니다. 
 
 *lib/dqn_extra.py* 에서 타겟 분포에 projection 시켜주는 함수입니다.
 
@@ -1224,11 +1226,11 @@ def calc_loss(batch, net, tgt_net, gamma, device="cpu"):
 C51은 베이스라인보다 학습 속도가 더 느리고 덜 안정적이었습니다. 놀라운 일이 아닌게 C51의 네트워크 아웃풋은 51배나 더 큽니다. 그래서 하이퍼 패러미터 튜닝이 필수입니다.
 다른 챕터에서 튜닝 부분을 다룰 것이라 여기서는 비교에 집중하였습니다. 
 
-<center><img src= "https://liger82.github.io/assets/img/post/20210901-DeepRLHandsOn-ch08-DQN_Extensions/fig8.19.png" width="80%"></center><br>
+<center><img src= "https://liger82.github.io/assets/img/post/20210901-DeepRLHandsOn-ch08-DQN_Extensions/fig8.19.png" width="60%"></center><br>
 
 DQN 변형 중 유일하게 베이스라인보다 성능이 떨어져 보이는데 이는 벤치마크로 Pong을 써서 그럴 수 있습니다. Pong은 너무 간단한 게임이라 복잡계를 타켓으로 분포를 사용한 C51이 성능이 떨어질 수 있기 때문입니다. 해당 논문에서의 아타리 게임에도 Pong은 없었습니다.
 
-<center><img src= "https://liger82.github.io/assets/img/post/20210901-DeepRLHandsOn-ch08-DQN_Extensions/fig8.20.png" width="80%"></center><br>
+<center><img src= "https://liger82.github.io/assets/img/post/20210901-DeepRLHandsOn-ch08-DQN_Extensions/fig8.20.png" width="60%"></center><br>
 
 > <subtitle> Combining everything </subtitle>
 
