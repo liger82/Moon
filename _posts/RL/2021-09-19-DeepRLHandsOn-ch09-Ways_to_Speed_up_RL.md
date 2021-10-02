@@ -195,11 +195,205 @@ figure 9.6 에서 위 2개의 단계는 replay buffer와 NN 을 통해서 아래
 
 <center><img src= "https://liger82.github.io/assets/img/post/20210919-DeepRLHandsOn-ch09-Ways_to_Speed_up_RL/fig9.7.png" width="70%"></center><br>
 
+Pong 환경에서 이런 복잡한 내용을 불필요해보일 수 있지만, 이 분리는 다른 몇몇 경우에 굉장히 유용합니다. 엄청 느리고, 무거운 환경이 있다고 할 때, 모든 스텝이 연산을 위해 몇 초가 걸릴 것입니다. 이는 부자연스러운 예제가 아니라 현실에서 충분히 가능한 일입니다. 그래서 학습 과정으로부터 경험을 모으는 것을 분리하는 것이 필요합니다. 이렇게 하면 학습 프로세스에 경험을 제공하는 여러 가지 동시 환경을 가질 수 있습니다. 
 
+코드를 병렬화한 것이 *Chapter09/03_parallel.py* 입니다. 주요 차이점만 보겠습니다.
+
+```python
+# python multiprocessing을 거의 코드변환 없이 대체한 torch 내의 multiprocessing module
+# 프로세스 간 공유를 torch tensor로 함
+# 이 공유 시스템은 단일 컴퓨터에서 통신이 이루어질 때 나타나는 병목현상을 제거한다.
+import torch.multiprocessing as mp
+
+BATCH_MUL = 4
+
+EpisodeEnded = collections.namedtuple(
+    'EpisodeEnded', field_names=('reward', 'steps', 'epsilon'))
+
+
+def play_func(params, net, cuda, exp_queue):
+    '''
+    play process 구현한 함수
+    train process에 의해 시작되는 별도의 child process에서 실행됨.
+
+    * 환경으로부터 경험을 얻어 공유 대기열(shared queue)에 넣는다
+    * 에피소드 종료에 대한 정보를 namedtuple로 싸서 동일한 대기열에 밀어넣어 에피소드 보상과 단계 수에 대해 train process에 계속 알려준다.
+    '''
+    env = gym.make(params.env_name)
+    env = ptan.common.wrappers.wrap_dqn(env)
+    env.seed(common.SEED)
+    device = torch.device("cuda" if cuda else "cpu")
+
+    selector = ptan.actions.EpsilonGreedyActionSelector(
+        epsilon=params.epsilon_start)
+    epsilon_tracker = common.EpsilonTracker(selector, params)
+    agent = ptan.agent.DQNAgent(net, selector, device=device)
+    exp_source = ptan.experience.ExperienceSourceFirstLast(
+        env, agent, gamma=params.gamma)
+
+    for frame_idx, exp in enumerate(exp_source):
+        epsilon_tracker.frame(frame_idx/BATCH_MUL)
+        exp_queue.put(exp)
+        for reward, steps in exp_source.pop_rewards_steps():
+            exp_queue.put(EpisodeEnded(reward, steps, selector.epsilon))
+```
 
 <br>
 
+앞 세션에서 소개한 *batch_generator* function은 *BatchGenerator* class로 대체하였습니다. 
+
+*BatchGenerator* class는 배치에 대해 iterator를 제공하고 추가적으로 pop_reward_steps() 메서드를 사용하여 ExperienceSource 인터페이스를 모방하였습니다. 
+
+이 클래스의 오직은 간단합니다.
+* queue(play process 에 의해 채워짐)를 소비하고, 에피소드 보상 및 단계에 대한 정보인 경우 저장한다. 
+* 그렇지 않은 경우 object는 replay buffer에 추가해야 하는 경험의 일부로 간주
+* 큐에서 현재 사용 가능한 모든 object를 소비한 다음 버퍼에서 학습 배치가 샘플링되어 산출됩니다.
+
+```python
+class BatchGenerator:
+    def __init__(self, buffer: ptan.experience.ExperienceReplayBuffer,
+                 exp_queue: mp.Queue,
+                 fps_handler: ptan_ignite.EpisodeFPSHandler,
+                 initial: int, batch_size: int):
+        self.buffer = buffer
+        self.exp_queue = exp_queue
+        self.fps_handler = fps_handler
+        self.initial = initial
+        self.batch_size = batch_size
+        self._rewards_steps = []
+        self.epsilon = None
+
+    def pop_rewards_steps(self) -> List[Tuple[float, int]]:
+        res = list(self._rewards_steps)
+        self._rewards_steps.clear()
+        return res
+
+    def __iter__(self):
+        while True:
+            while exp_queue.qsize() > 0:
+                exp = exp_queue.get()
+                if isinstance(exp, EpisodeEnded):
+                    self._rewards_steps.append((exp.reward, exp.steps))
+                    self.epsilon = exp.epsilon
+                else:
+                    self.buffer._add(exp)
+                    self.fps_handler.step()
+            if len(self.buffer) < self.initial:
+                continue
+            yield self.buffer.sample(self.batch_size * BATCH_MUL)
+```
+
+<br>
+
+```python
+if __name__ == "__main__":
+    # get rid of missing metrics warning
+    warnings.simplefilter("ignore", category=UserWarning)
+
+    # 새로운 프로세스를 시작하는 방법 지정
+    # spawn로 하면, child process가 최소한의 자원만 승계받음 --> 가장 유연함
+    mp.set_start_method('spawn')
+    params = common.HYPERPARAMS['pong']
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--cuda", default=False, action="store_true", help="Enable cuda")
+    args = parser.parse_args()
+    device = torch.device("cuda" if args.cuda else "cpu")
+
+    env = gym.make(params.env_name)
+    env = ptan.common.wrappers.wrap_dqn(env)
+
+    net = dqn_model.DQN(env.observation_space.shape, env.action_space.n).to(device)
+    tgt_net = ptan.agent.TargetNet(net)
+
+    buffer = ptan.experience.ExperienceReplayBuffer(
+        experience_source=None, buffer_size=params.replay_size)
+    optimizer = optim.Adam(net.parameters(), lr=params.learning_rate)
+
+    # start subprocess and experience queue
+    # play process의 산출물을 담을 queue 생성
+    exp_queue = mp.Queue(maxsize=BATCH_MUL*2)
+    # play process를 위한 subprocess 생성
+    play_proc = mp.Process(target=play_func, args=(params, net, args.cuda,
+                                                   exp_queue))
+    # subprocess 시작                                               
+    play_proc.start()
+    fps_handler = ptan_ignite.EpisodeFPSHandler()
+    batch_generator = BatchGenerator(buffer, exp_queue, fps_handler, params.replay_initial, params.batch_size)
+
+    def process_batch(engine, batch):
+        optimizer.zero_grad()
+        loss_v = common.calc_loss_dqn(batch, net, tgt_net.target_model,
+                                      gamma=params.gamma, device=device)
+        loss_v.backward()
+        optimizer.step()
+        if engine.state.iteration % params.target_net_sync == 0:
+            tgt_net.sync()
+        return {
+            "loss": loss_v.item(),
+            "epsilon": batch_generator.epsilon,
+        }
+
+    engine = Engine(process_batch)
+    ptan_ignite.EndOfEpisodeHandler(batch_generator, bound_avg_reward=17.0).attach(engine)
+    fps_handler.attach(engine, manual_step=True)
+
+    @engine.on(ptan_ignite.EpisodeEvents.EPISODE_COMPLETED)
+    def episode_completed(trainer: Engine):
+        print("Episode %d: reward=%s, steps=%s, speed=%.3f frames/s, elapsed=%s" % (
+            trainer.state.episode, trainer.state.episode_reward,
+            trainer.state.episode_steps, trainer.state.metrics.get('avg_fps', 0),
+            timedelta(seconds=trainer.state.metrics.get('time_passed', 0))))
+
+    @engine.on(ptan_ignite.EpisodeEvents.BOUND_REWARD_REACHED)
+    def game_solved(trainer: Engine):
+        print("Game solved in %s, after %d episodes and %d iterations!" % (
+            timedelta(seconds=trainer.state.metrics['time_passed']),
+            trainer.state.episode, trainer.state.iteration))
+        trainer.should_terminate = True
+
+    logdir = f"runs/{datetime.now().isoformat(timespec='minutes')}-{params.run_name}-{NAME}"
+    tb = tb_logger.TensorboardLogger(log_dir=logdir)
+    RunningAverage(output_transform=lambda v: v['loss']).attach(engine, "avg_loss")
+
+    episode_handler = tb_logger.OutputHandler(tag="episodes", metric_names=['reward', 'steps', 'avg_reward'])
+    tb.attach(engine, log_handler=episode_handler, event_name=ptan_ignite.EpisodeEvents.EPISODE_COMPLETED)
+
+    # write to tensorboard every 100 iterations
+    ptan_ignite.PeriodicEvents().attach(engine)
+    handler = tb_logger.OutputHandler(tag="train", metric_names=['avg_loss', 'avg_fps'],
+                                      output_transform=lambda a: a)
+    tb.attach(engine, log_handler=handler, event_name=ptan_ignite.PeriodEvents.ITERS_100_COMPLETED)
+
+    engine.run(batch_generator)
+    # 강제 종료
+    play_proc.kill()
+    # 큐의 모든 항목을 꺼내서 처리할 때까지 block
+    play_proc.join()
+```
+
+<br>
+
+다음 차트의 오른쪽은 병렬 버전의 FPS(402)이며, 베이스라인(159)과 비교하면 152% 이상 증가하였습니다.
+왼쪽은 베이스라인과 병렬화 버전을 비교한 것으로 병렬화 버전의 수렴 속도가 빨라졌습니다. 하지만 앞서 N_envs=3 으로 한 것은 45분 걸렸는데 병렬화 버전은 1시간으로 더 느려졌습니다. 이 문제는 replay buffer에 더 많은 데이터를 공급하기 때문에 발생했으며 이로 인해 학습 시간이 길어졌습니다. (병렬 버전의 일부 하이퍼 파라미터 고치면 수렴 속도를 개선할 수 있을 것으로 보이긴 합니다.) 
+
+<center><img src= "https://liger82.github.io/assets/img/post/20210919-DeepRLHandsOn-ch09-Ways_to_Speed_up_RL/fig9.8.png" width="70%"></center><br>
+
+
 > <subtitle> Tweaking wrappers </subtitle>
+
+이번에는 wrapper를 수정하여 환경에 적용시키는 방법입니다.
+
+wrapper 를 수정하겠다는 생각은 보통 간과하기 쉽습니다. 왜냐하면 보통 wrapper는 딱 한 번 쓰여지거나 다른 코드에서 빌려오고 환경에 적용하면 바꾸지 않기 때문입니다. 
+
+하지만 속도와 수렴의 관점에서 wrapper의 중요성은 꼭 알고 있어야 합니다. 예를 들어, 평범한 DeepMind 스타일의 wrapper stack을 아타리 게임에 적용하면 다음과 같습니다.
+
+1. NoopResetEnv: NOOP(No Operation; 아무 일도 하지 않음)을 게임 리셋시 랜덤하게 적용시킴. 일부 아타리 게임에서 이는 이상한 초기값을 만들어서 지워야 한다.
+2. MaxAndSkipEnv: 
+3. EpisodicLifeEnv:
+4. FireResetEnv:
+5. WarpFrame
+6. ClipRewardEnv:
+7. FrameStack:
 
 <br>
 
