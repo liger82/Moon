@@ -94,23 +94,108 @@ Figure 9.1, Figure 9.2 는 베이스라인을 여러 번 돌려서 평균 낸 �
 
 먼저, 베이스라인의 속도를 높이는 것이 아니라 성능 저하가 발생할 수 있는 일반적인 상황을 살펴보겠습니다. PyTorch는 gradient 계산할 때, 텐서에 대해 수행하는 모든 연산의 그래프를 빌드하고 최종 손실의 backward() 를 호출하면 모델 파라미터의 모든 gradient는 자동으로 계산됩니다. 
 
-이 과정은 지도학습보다 강화학습에서 좀 더 복잡해서 현재 학습하고 있는 RL 모델은 에이전트가 환경에서 수행해야 하는 조치를 얻기 위해 적용되고 있습니다. 타겟 네트워크는 훨씬 더 까다롭습니다. 따라서 DQN에서 뉴럴넷은 일반적으로 세 가지 다른 상황에서 사용됩니다.
+이 과정은 off-policy RL의 경우 더 복잡합니다. 2개의 policy를 위해 각각의 네트워크를 운용해야 하기 때문입니다. DQN에서 뉴럴넷은 세 가지 다른 상황에서 사용됩니다.
 
 1. 벨만 방정식에 의해 근사된 기준 Q-value 에 대한 loss 를 얻기 위해 네트워크에 의해 예측된 Q-value를 계산하고자 할 때
 2. 타켓 네트워크를 적용하여 Bellman 근사치를 계산하기 위한 다음 상태의 Q 값을 얻고자 할 때
 3. 작동하는 액션에 대한 결정을 에이전트가 할 때
 
+첫 번째 상황에서만 그래디언트 계산을 하게 하는 것이 매우 중요합니다. target network에서는 그래디언트 계산을 막기 위해 *detach()* 를 사용합니다(두 번째 상황). 세 번째 상황에서는, 네트워크 결과를 NumPy array 로 변환함으로써 그래디언트 계산을 중지시킵니다. 
 
+또한 그래디언트 계산을 하지 않더라도 파이토치는 computation graph 를 만드는데 이를 막기 위해 *torch.no_grad()* 를 사용하면 됩니다. 이는 쓸데없는 메모리 소비를 줄여주는 역할을 합니다. 
 
+torch.no_grad() 의 효과를 알기 위해 no_grad()를 제외하고 모두 같은 *Chapter09/00_slow_grads.py* 와 비교해보았습니다.
 
-<br>
+<center><img src= "https://liger82.github.io/assets/img/post/20210919-DeepRLHandsOn-ch09-Ways_to_Speed_up_RL/fig9.3.png" width="70%"></center><br>
+
+figure 9.3에서 엄청나게 큰 차이는 없어보이지만 더 복잡한 구조의 대규모 네트워크에서는 차이가 더 클 것입니다. 
+
 <br>
 
 > <subtitle> Several environments </subtitle>
 
+deep learning 학습 속도를 높이는 첫 번째 방법은 **batch size 를 크게** 하는 것입니다. 일반적인 지도학습의 경우 큰 배치 사이즈는 더 좋다는 규칙이 보통 맞습니다. 
+
+RL의 경우는 조금 다릅니다. RL의 수렴은 보통 학습과 탐험 사이의 깨지기 쉬운 균형에 놓여 있는데 다른 조치 없이 batch size 만 키우면, 현재 데이터에 쉽게 과적합될 수 있기 때문입니다. 
+
+*Chapter09/02_n_envs.py* 에서 에이전트는 학습 데이터를 모으기 위해 동일한 환경의 복제본을 사용합니다. 매 학습 iteration에서 모든 환경에서 replay buffer 를 샘플로 채운 다음, 기존 코드에서보다 큰 배치사이즈로 샘플링을 합니다. 이렇게 하면 inference time 이 약간 빨라지긴 합니다.
+
+<br>
+
+구현 측면에서 8장의 로직에서 몇 가지를 변경하였습니다.
+
+* PTAN은 여러 환경을 지원하므로 N개의 Gym 환경을 ExperienceSource 인스턴스로 전달하기만 하면 된다.
+* agent code(DQNAgent)는 배치에 맞게 이미 최적화되어 있음.
+
+baseline과 차이나는 부분만 설명한 코드입니다.
+
+```python
+# 말그대로 배치를 생성하는 함수
+def batch_generator(buffer: ptan.experience.ExperienceReplayBuffer,
+                    initial: int, batch_size: int, steps: int):
+    buffer.populate(initial)
+    while True:
+        buffer.populate(steps)
+        """
+        Populates samples into the buffer
+        :param samples: how many samples to populate
+        """
+        yield buffer.sample(batch_size)
+
+(생략)
+
+    # 여러 개의 환경을 생성해서 목록에 넣는다.
+    envs = []
+    for _ in range(args.envs):
+        env = gym.make(params.env_name)
+        env = ptan.common.wrappers.wrap_dqn(env)
+        env.seed(common.SEED)
+        envs.append(env)
+
+(생략)
+
+    # 단일 환경이 아니라 환경 목록을 입력으로 받음
+    exp_source = ptan.experience.ExperienceSourceFirstLast(
+        envs, agent, gamma=params.gamma)
+```
+
+<br>
+
+환경의 개수가 새로운 hyperparameter 가 됐기 때문에 환경의 개수 설정을 위한 실험을 하였습니다. 1개(베이스라인)와 2~6개의 환경으로 했을 때의 결과입니다.
+
+<center><img src= "https://liger82.github.io/assets/img/post/20210919-DeepRLHandsOn-ch09-Ways_to_Speed_up_RL/fig9.4.png" width="70%"></center><br>
+
+<center><img src= "https://liger82.github.io/assets/img/post/20210919-DeepRLHandsOn-ch09-Ways_to_Speed_up_RL/fig9.5.png" width="70%"></center><br>
+
+figure 9.4를 보면 환경이 1개일 때(베이스라인)보다 2, 3개로 늘어날수록 수렴 속도도 빨라지고 FPS도 증가했습니다. 
+하지만 그 이상 환경을 늘리면 FPS는 증가하지만 수렴 속도가 느려지는 부정적인 효과가 있습니다. N=3 인 것이 최적값으로 보입니다.
+
 <br>
 
 > <subtitle> Play and train in separate processes </subtitle>
+
+학습 과정은 다음과 같은 단계를 반복합니다.
+
+1. 현재 네트워크에 선택할 행동들을 물어보고, 환경 목록들에서 행동들을 실행한다.
+2. 관찰값들을 replay buffer에 넣는다
+3. replay buffer로부터 학습 배치를 랜덤 샘플링한다.
+4. 그 배치에서 학습
+
+1,2 단계는 환경으로부터 얻은 샘플을 replay buffer에 축적하는 데 목표가 있습니다. 3,4 단계는 네트워크 학습을 위한 것이고요.
+
+다음 figure 9.6 은 잠재적인 병렬화(potential parallelism) 적용되기 전 단계의 예입니다.  
+* 왼쪽에는 학습 흐름이 표시
+* 학습 단계에서는 환경, replay buffer, 학습 뉴럴넷을 사용
+* 실선은 데이터와 코드 흐름을 나타냄
+* 점선은 학습과 추론을 위한 뉴럴넷의 흐름을 나타냄
+
+<center><img src= "https://liger82.github.io/assets/img/post/20210919-DeepRLHandsOn-ch09-Ways_to_Speed_up_RL/fig9.6.png" width="70%"></center><br>
+
+figure 9.6 에서 위 2개의 단계는 replay buffer와 NN 을 통해서 아래 두 단계와 연결됩니다. 이는 이 과정을 별도의 과정으로 분리할 수 있다는 것을 뜻하며 그 과정이 아래 그림입니다.
+
+<center><img src= "https://liger82.github.io/assets/img/post/20210919-DeepRLHandsOn-ch09-Ways_to_Speed_up_RL/fig9.7.png" width="70%"></center><br>
+
+
 
 <br>
 
