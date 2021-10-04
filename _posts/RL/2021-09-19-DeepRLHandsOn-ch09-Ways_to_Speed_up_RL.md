@@ -388,31 +388,227 @@ wrapper 를 수정하겠다는 생각은 보통 간과하기 쉽습니다. 왜�
 하지만 속도와 수렴의 관점에서 wrapper의 중요성은 꼭 알고 있어야 합니다. 예를 들어, 평범한 DeepMind 스타일의 wrapper stack을 아타리 게임에 적용하면 다음과 같습니다.
 
 1. NoopResetEnv: NOOP(No Operation; 아무 일도 하지 않음)을 게임 리셋시 랜덤하게 적용시킴. 일부 아타리 게임에서 이는 이상한 초기값을 만들어서 지워야 한다.
-2. MaxAndSkipEnv: 
-3. EpisodicLifeEnv:
-4. FireResetEnv:
-5. WarpFrame
-6. ClipRewardEnv:
-7. FrameStack:
+2. MaxAndSkipEnv: N개의 관찰값(default: 4)을 모아서 최대값을 step의 관찰값으로 반환한다. 이러면 짝수 프레임과 홀수 프레임에 다른 부분을 그릴 경우 발생하는 "깜빡임" 문제를 해결할 수 있다.
+3. EpisodicLifeEnv: 게임에서 죽은 것을 탐지해내서 에피소드르 종료시킨다. 에피소드가 더 짧아지기 때문에 수렴도가 상당히 올라간다. 이는 아타리 일부 게임에만 해당한다.
+4. FireResetEnv: 게임 리셋할 때 FIRE action을 실행한다. 
+5. WarpFrame(ProcessFrame84) : image 를 그레이스케일로 바꾸고 84*84 사이즈로 변환해준다.
+6. ClipRewardEnv: 보상을 -1~1 사이로 자른다. 이 방식이 최고의 방법은 아니지만 여러 아타리게임에서 다양한 점수를 얻을 수 있는 효과적인 솔루션이다.
+7. FrameStack: N개의 연속적인 관찰값을 쌓는다(default: 4). 
+
+<br>
+
+이 wrapper 들의 코드는 여러 사람들에 의해 만들어지고 최적화되어 버전도 여럿 있습니다. 그 중 OpenAI 의 것은 좋은 옵션이 될 수 있습니다. ([https://github.com/openai/baselines/blob/master/baselines/common/atari_wrappers.py](https://github.com/openai/baselines/blob/master/baselines/common/atari_wrappers.py){:target="_blank"}) 물론 구체적으로 바꿀 요소가 있다면 이를 수정해서 사용해도 됩니다. 
+
+이 세션에서는 다음과 같은 환경 wrapper를 사용하여 성능을 올렸습니다.
+
+* *cv2* 라이브러리를 *pillow-simd* 로 대체
+    - pillow-simd 설치 방법
+        - pip install pillow-simd
+* NoopResetEnv 비활성화
+* MaxAndSkipEnv 를 max pooling 없이 4개 프레임을 생략하는 환경으로 대체
+* FrameStack 은 2개의 프레임 사용
+
+파일은 3개가 있습니다.  
+* *Chapter09/04_new_wrappers_n_env.py*
+* *Chapter09/04_new_wrappers_parallel.py*
+* *Chapter09/lib/atari_wrappers.py* 
+
+<br>
+
+OpenAI Baselines repository에서 가져온 atari_wrappers.py는 텐서플로우에 맞는 tensor shape 으로 구현되어 있어서 pytorch에 맞는 tensor shape으로 변환한 것이 *Chapter09/lib/atari_wrappers.py* 입니다.  
+(width, height, channel) --> (channel, width, height)
+
+이 형식 변경을 반영하기 위해 FrameStack과 LazyFrames class에서 일부 변경이 있습니다.
+
+```python
+class ImageToPyTorch(gym.ObservationWrapper):
+    """
+    Change image shape to CWH
+    """
+    def __init__(self, env):
+        super(ImageToPyTorch, self).__init__(env)
+        # for tensorflow
+        old_shape = self.observation_space.shape
+        # for pytorch
+        new_shape = (old_shape[-1], old_shape[0], old_shape[1])
+        self.observation_space = gym.spaces.Box(
+            low=0.0, high=1.0, shape=new_shape, dtype=np.uint8)
+
+    def observation(self, observation):
+        return np.swapaxes(observation, 2, 0)
+```
+
+<br>
+
+WarpFrame 에서는 cv2 대신에 pillow-simd 를 사용하는 부분을 수정했습니다.
+
+```python
+USE_PIL = True
+if USE_PIL:
+    # you should use pillow-simd, as it is faster than stardand Pillow
+    from PIL import Image
+else:
+    import cv2
+    cv2.ocl.setUseOpenCL(False)
+
+
+class WarpFrame(gym.ObservationWrapper):
+    ...(생략)...
+
+    def observation(self, obs):
+        if self._key is None:
+            frame = obs
+        else:
+            frame = obs[self._key]
+        if USE_PIL:
+            frame = Image.fromarray(frame)
+            if self._grayscale:
+                frame = frame.convert("L")
+            frame = frame.resize((self._width, self._height))
+            frame = np.array(frame)
+        else:
+            if self._grayscale:
+                frame = cv2.cvtColor(frame, cv2.COLOR_RGB2GRAY)
+            frame = cv2.resize(
+                frame, (self._width, self._height),
+                interpolation=cv2.INTER_AREA
+            )
+        if self._grayscale:
+            frame = np.expand_dims(frame, -1)
+
+        if self._key is None:
+            obs = frame
+        else:
+            obs = obs.copy()
+            obs[self._key] = frame
+        return obs
+```
+
+<br>
+
+앞서 말한대로 MaxAndSkipEnv 가 아니라 SkipEnv 로 사용합니다. maxpool이 없습니다.
+
+```python
+class SkipEnv(gym.Wrapper):
+    def __init__(self, env, skip=4):
+        """Return only every `skip`-th frame"""
+        gym.Wrapper.__init__(self, env)
+        self._skip = skip
+
+    def step(self, action):
+        """Repeat action, sum reward, and max over last observations."""
+        total_reward = 0.0
+        done = None
+        for i in range(self._skip):
+            obs, reward, done, info = self.env.step(action)
+            total_reward += reward
+            if done:
+                break
+        return obs, total_reward, done, info
+
+    def reset(self, **kwargs):
+        return self.env.reset(**kwargs)
+
+```
+
+<br>
+
+*make_atari* 함수와  *wrap_deepmind* 함수는 둘 다 환경을 커스텀하는 역할을 합니다. (한 번에 구성할 수 있을 것 같은데 분리를 했네요)
+
+```python
+def make_atari(env_id, max_episode_steps=None,
+               skip_noop=False, skip_maxskip=False):
+    env = gym.make(env_id)
+    assert 'NoFrameskip' in env.spec.id
+    if not skip_noop:
+        env = NoopResetEnv(env, noop_max=30)
+    if not skip_maxskip:
+        env = MaxAndSkipEnv(env, skip=4)
+    else:
+        env = SkipEnv(env, skip=4)
+    if max_episode_steps is not None:
+        env = TimeLimit(env, max_episode_steps=max_episode_steps)
+    return env
+
+def wrap_deepmind(env, episode_life=True, clip_rewards=True,
+                  frame_stack=False, scale=False, pytorch_img=False,
+                  frame_stack_count=4, skip_firereset=False):
+    """Configure environment for DeepMind-style Atari.
+    """
+    if episode_life:
+        env = EpisodicLifeEnv(env)
+    if 'FIRE' in env.unwrapped.get_action_meanings():
+        if not skip_firereset:
+            env = FireResetEnv(env)
+    env = WarpFrame(env)
+    if pytorch_img:
+        env = ImageToPyTorch(env)
+    if scale:
+        env = ScaledFloatFrame(env)
+    if clip_rewards:
+        env = ClipRewardEnv(env)
+    if frame_stack:
+        env = FrameStack(env, frame_stack_count)
+    return env
+```
+
+환경 구성시에 위 함수 호출은 다음과 같이 사용합니다.
+
+```python
+env = atari_wrappers.make_atari(params.env_name,
+                                skip_noop=True,
+                                skip_maxskip=True)
+env = atari_wrappers.wrap_deepmind(env, pytorch_img=True,
+                                   frame_stack=True,
+                                   frame_stack_count=2)
+```
+
+이 내용을 n_env(N개의 환경 사용), parallel 버전에 적용하여 결과를 본 것이 아래 그림입니다. (코드상 차이는 환경 호출 부분이라 생략)
+
+<center><img src="https://liger82.github.io/assets/img/post/20210919-DeepRLHandsOn-ch09-Ways_to_Speed_up_RL/fig9.9.png" width="70%"></center><br>
+
+wrapper를 수정하고 3개 환경을 쓴 경우가 baseline보다 성능이 좋았고, wrapper를 사용하지 않은 경우와 비교하면 수렴속도는 거의 비슷했습니다. FPS는 wrapper 수정 없을 때가 더 작았습니다. 
+
+<center><img src="https://liger82.github.io/assets/img/post/20210919-DeepRLHandsOn-ch09-Ways_to_Speed_up_RL/fig9.10.png" width="70%"></center><br>
+
+parallel 버전은 wrapper 수정했을 때 수렴 시간을 30분이나 단축할 수 있었습니다.(1시간 -> 30분) 
 
 <br>
 
 > <subtitle> Benchmark summary </subtitle>
 
+지금까지 한 실험들의 결과를 다음 테이블로 정리했습니다.
+
+<center><img src="https://liger82.github.io/assets/img/post/20210919-DeepRLHandsOn-ch09-Ways_to_Speed_up_RL/comparison_table.png" width="80%"></center><br>
+
+괄호 안의 퍼센티지는 베이스라인과 비교하여 변화한 정도를 뜻합니다. wrapper 를 수정하고 병렬화한 버전이 가장 많은 성능 개선을 보였습니다.
+
 <br>
 
 > <subtitle> Going hardcore: CuLE </subtitle>
 
+NVIDIA 연구자들은 GPU에서 Atari emulator를 돌리는 내용의 논문과 코드를 공개했습니다.(Steven Dalton, Iuri Frosio, GPU-Accelerated Atari Emulation for Reinforcement Learning, 2019) 이를 CuLE(CUDA Learning Environment)라고 부르고 코드는 다음 깃헙에 공개했습니다.  
+* [https://github.com/NVlabs/cule](https://github.com/NVlabs/cule){:target="_blank"}
+
+이 논문에 의하면 A2C로 Pong 게임을 2분 만에 풀고 FPS는 50k까지 도달했습니다. 성능 개선의 핵심 포인트는 CPU와 GPU 간 상호작용을 없앰으로써 속도를 올린 것입니다.
+
 <br>
 
-
-<br>
-
+또 다른 하드코어한 방법은 환경 구현을 위해 field-programmable gate array(FPGA) 를 사용한 것입니다. 이런 방식의 프로젝트 중 하나는 Verilog로 Game Boy를 구현한 것입니다.([https://github.com/krocki/gb](https://github.com/krocki/gb){:target="_blank"})
 
 <br>
 
 > <subtitle> Summary </subtitle>
 
+8장이 DQN을 알고리즘적인 측면에서 개선한 것이라면 9장은 엔지니어링적인 측면에서 개선한 내용을 소개하였습니다.
+
+주요 방법은 다음과 같았습니다.
+
+1. N 개의 환경
+2. 병렬화 버전
+3. wrapper 수정
+
+다음 장에서는 주식 시장에 DQN을 적용해보는 시간을 갖겠습니다.
 
 <br>
 
@@ -420,6 +616,5 @@ wrapper 를 수정하겠다는 생각은 보통 간과하기 쉽습니다. 왜�
 
 > <subtitle> References </subtitle>
 * Deep Reinforcement Learning Hands On 2/E Chapter 09 : Ways to Speed up RL
-* [](){:target="_blank"}
 
 <br>
