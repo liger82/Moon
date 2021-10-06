@@ -88,7 +88,7 @@ GTX 1080 Ti 하나로 11,340 GFLOPS 성능을 낼 수 있습니다. 가격도 �
 
 Figure 9.1, Figure 9.2 는 베이스라인을 여러 번 돌려서 평균 낸 보상, 에피소드 스텝, Loss, FPS의 시간에 따른 수치를 보여주고 있습니다. 2개의 x 축을 지니고 있는데 아래 것은 wall clock time, 위는 step number 입니다. 
 
-<center><img src= "https://liger82.github.io/assets/img/post/20210919-DeepRLHandsOn-ch09-Ways_to_Speed_up_RL/fig9.1_2.png" width="70%"></center><br>
+<center><img src= "https://liger82.github.io/assets/img/post/20210919-DeepRLHandsOn-ch09-Ways_to_Speed_up_RL/fig9.1_2.png" width="90%"></center><br>
 
 > <subtitle> The computation graph in PyTorch </subtitle>
 
@@ -106,7 +106,7 @@ Figure 9.1, Figure 9.2 는 베이스라인을 여러 번 돌려서 평균 낸 �
 
 torch.no_grad() 의 효과를 알기 위해 no_grad()를 제외하고 모두 같은 *Chapter09/00_slow_grads.py* 와 비교해보았습니다.
 
-<center><img src= "https://liger82.github.io/assets/img/post/20210919-DeepRLHandsOn-ch09-Ways_to_Speed_up_RL/fig9.3.png" width="70%"></center><br>
+<center><img src= "https://liger82.github.io/assets/img/post/20210919-DeepRLHandsOn-ch09-Ways_to_Speed_up_RL/fig9.3.png" width="90%"></center><br>
 
 figure 9.3에서 엄청나게 큰 차이는 없어보이지만 더 복잡한 구조의 대규모 네트워크에서는 차이가 더 클 것입니다. 
 
@@ -118,7 +118,7 @@ deep learning 학습 속도를 높이는 첫 번째 방법은 **batch size 를 �
 
 RL의 경우는 조금 다릅니다. RL의 수렴은 보통 학습과 탐험 사이의 깨지기 쉬운 균형에 놓여 있는데 다른 조치 없이 batch size 만 키우면, 현재 데이터에 쉽게 과적합될 수 있기 때문입니다. 
 
-*Chapter09/02_n_envs.py* 에서 에이전트는 학습 데이터를 모으기 위해 동일한 환경의 복제본을 사용합니다. 매 학습 iteration에서 모든 환경에서 replay buffer 를 샘플로 채운 다음, 기존 코드에서보다 큰 배치사이즈로 샘플링을 합니다. 이렇게 하면 inference time 이 약간 빨라지긴 합니다.
+*Chapter09/02_n_envs.py* 에서 batch size를 늘리기 위한 방식 중 하나로 동일한 환경 여러 개를 사용합니다. 에이전트는 학습 데이터를 모으기 위해 동일한 환경의 복제본을 사용하고 매 학습 iteratio마다 모든 환경에서 replay buffer 를 샘플로 채운 다음, 기존 코드에서보다 큰 배치사이즈로 샘플링을 합니다. 이렇게 하면 inference time 이 약간 빨라집니다.
 
 <br>
 
@@ -151,6 +151,9 @@ def batch_generator(buffer: ptan.experience.ExperienceReplayBuffer,
         env = ptan.common.wrappers.wrap_dqn(env)
         env.seed(common.SEED)
         envs.append(env)
+    
+    # 환경 개수만큼 곱해준다.
+    params.batch_size *= args.envs
 
 (생략)
 
@@ -163,9 +166,9 @@ def batch_generator(buffer: ptan.experience.ExperienceReplayBuffer,
 
 환경의 개수가 새로운 hyperparameter 가 됐기 때문에 환경의 개수 설정을 위한 실험을 하였습니다. 1개(베이스라인)와 2~6개의 환경으로 했을 때의 결과입니다.
 
-<center><img src= "https://liger82.github.io/assets/img/post/20210919-DeepRLHandsOn-ch09-Ways_to_Speed_up_RL/fig9.4.png" width="70%"></center><br>
+<center><img src= "https://liger82.github.io/assets/img/post/20210919-DeepRLHandsOn-ch09-Ways_to_Speed_up_RL/fig9.4.png" width="90%"></center><br>
 
-<center><img src= "https://liger82.github.io/assets/img/post/20210919-DeepRLHandsOn-ch09-Ways_to_Speed_up_RL/fig9.5.png" width="70%"></center><br>
+<center><img src= "https://liger82.github.io/assets/img/post/20210919-DeepRLHandsOn-ch09-Ways_to_Speed_up_RL/fig9.5.png" width="90%"></center><br>
 
 figure 9.4를 보면 환경이 1개일 때(베이스라인)보다 2, 3개로 늘어날수록 수렴 속도도 빨라지고 FPS도 증가했습니다. 
 하지만 그 이상 환경을 늘리면 FPS는 증가하지만 수렴 속도가 느려지는 부정적인 효과가 있습니다. N=3 인 것이 최적값으로 보입니다.
@@ -195,7 +198,7 @@ figure 9.6 에서 위 2개의 단계는 replay buffer와 NN 을 통해서 아래
 
 <center><img src= "https://liger82.github.io/assets/img/post/20210919-DeepRLHandsOn-ch09-Ways_to_Speed_up_RL/fig9.7.png" width="70%"></center><br>
 
-Pong 환경에서 이런 복잡한 내용을 불필요해보일 수 있지만, 이 분리는 다른 몇몇 경우에 굉장히 유용합니다. 엄청 느리고, 무거운 환경이 있다고 할 때, 모든 스텝이 연산을 위해 몇 초가 걸릴 것입니다. 이는 부자연스러운 예제가 아니라 현실에서 충분히 가능한 일입니다. 그래서 학습 과정으로부터 경험을 모으는 것을 분리하는 것이 필요합니다. 이렇게 하면 학습 프로세스에 경험을 제공하는 여러 가지 동시 환경을 가질 수 있습니다. 
+Pong 환경에서 이런 복잡한 내용은 불필요해보일 수 있지만, 이 분리는 다른 몇몇 경우에 굉장히 유용합니다. 엄청 느리고, 무거운 환경이 있다고 할 때, 모든 스텝이 연산을 위해 몇 초가 걸릴 것입니다. 이는 부자연스러운 예제가 아니라 현실에서 충분히 가능한 일입니다. 그래서 학습 과정으로부터 경험을 모으는 것을 분리하는 것이 필요합니다. 이렇게 하면 학습 프로세스에 경험을 제공하는 여러 가지 동시 환경을 가질 수 있습니다. 
 
 코드를 병렬화한 것이 *Chapter09/03_parallel.py* 입니다. 주요 차이점만 보겠습니다.
 
@@ -244,9 +247,9 @@ def play_func(params, net, cuda, exp_queue):
 
 *BatchGenerator* class는 배치에 대해 iterator를 제공하고 추가적으로 pop_reward_steps() 메서드를 사용하여 ExperienceSource 인터페이스를 모방하였습니다. 
 
-이 클래스의 오직은 간단합니다.
-* queue(play process 에 의해 채워짐)를 소비하고, 에피소드 보상 및 단계에 대한 정보인 경우 저장한다. 
-* 그렇지 않은 경우 object는 replay buffer에 추가해야 하는 경험의 일부로 간주
+이 클래스의 로직은 간단합니다.
+* queue(play process 에 의해 채워짐)를 소비하고, 에피소드 보상 및 단계에 대한 정보인 경우(EpisodeEnded) self._rewards_steps에 저장한다. 
+* 그렇지 않은 경우 replay buffer에 추가해야 하는 경험의 일부로 간주
 * 큐에서 현재 사용 가능한 모든 object를 소비한 다음 버퍼에서 학습 배치가 샘플링되어 산출됩니다.
 
 ```python
@@ -389,7 +392,7 @@ wrapper 를 수정하겠다는 생각은 보통 간과하기 쉽습니다. 왜�
 
 1. NoopResetEnv: NOOP(No Operation; 아무 일도 하지 않음)을 게임 리셋시 랜덤하게 적용시킴. 일부 아타리 게임에서 이는 이상한 초기값을 만들어서 지워야 한다.
 2. MaxAndSkipEnv: N개의 관찰값(default: 4)을 모아서 최대값을 step의 관찰값으로 반환한다. 이러면 짝수 프레임과 홀수 프레임에 다른 부분을 그릴 경우 발생하는 "깜빡임" 문제를 해결할 수 있다.
-3. EpisodicLifeEnv: 게임에서 죽은 것을 탐지해내서 에피소드르 종료시킨다. 에피소드가 더 짧아지기 때문에 수렴도가 상당히 올라간다. 이는 아타리 일부 게임에만 해당한다.
+3. EpisodicLifeEnv: 게임에서 죽은 것을 탐지해내서 에피소드를 종료시킨다. 에피소드가 더 짧아지기 때문에 수렴도가 상당히 올라간다. 이는 아타리 일부 게임에만 해당한다.
 4. FireResetEnv: 게임 리셋할 때 FIRE action을 실행한다. 
 5. WarpFrame(ProcessFrame84) : image 를 그레이스케일로 바꾸고 84*84 사이즈로 변환해준다.
 6. ClipRewardEnv: 보상을 -1~1 사이로 자른다. 이 방식이 최고의 방법은 아니지만 여러 아타리게임에서 다양한 점수를 얻을 수 있는 효과적인 솔루션이다.
