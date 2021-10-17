@@ -512,7 +512,23 @@ $ python train_model_conv.py --cuda -r 1dconv-211011
 
 1년짜리 1개 기업(Yandex) 데이터의 수렴은 10M 학습스텝이 필요했고(GTX 1080 ti 기준) 학습하는 동안, 테스트 동안의 시간에 따른 평균 보상값의 변화는 다음과 같습니다.
 
+<center><img src= "https://liger82.github.io/assets/img/post/20211011-DeepRLHandsOn-ch10-Stocks_Trading_Using_RL/fig10.3.png" width="90%"></center><br>
 
+<center><img src= "https://liger82.github.io/assets/img/post/20211011-DeepRLHandsOn-ch10-Stocks_Trading_Using_RL/fig10.4.png" width="90%"></center><br>
+
+에피소드 길이도 1M 학습 iteration 이후에 증가하였습니다. 
+
+<center><img src= "https://liger82.github.io/assets/img/post/20211011-DeepRLHandsOn-ch10-Stocks_Trading_Using_RL/fig10.5.png" width="90%"></center><br>
+
+학습 시 보상 평균도 꾸준히 늘었습니다.
+
+<center><img src= "https://liger82.github.io/assets/img/post/20211011-DeepRLHandsOn-ch10-Stocks_Trading_Using_RL/fig10.6.png" width="90%"></center><br>
+
+하지만 검증 데이터로 할 때는 학습에서 보인 추세가 보이지 않습니다. 이는 에이전트가 과적합된 것이라고 추측해볼 수 있습니다. 하지만 보상값이 -0.2% 보다는 높았습니다.(0.2% 는 broker commission 임) 즉 이는 에이전트가 랜덤 매매보다는 낫다는 의미입니다. 
+
+<center><img src= "https://liger82.github.io/assets/img/post/20211011-DeepRLHandsOn-ch10-Stocks_Trading_Using_RL/fig10.7.png" width="90%"></center><br>
+
+학습하는 동안 최신 실험에 대해 모델을 저장해두었습니다. held-out states의 평균 Q값을 최대값으로 갱신하거나 검증 데이터의 보상값이 이전 기록보다 좋을 때마다 모델을 저장하였습니다. *Chapter10/run_model.py* 코드는 모델을 로드하고 매매를 하고 시간에 따른 수익 변화를 그려줍니다. 
 
 <br>
 
