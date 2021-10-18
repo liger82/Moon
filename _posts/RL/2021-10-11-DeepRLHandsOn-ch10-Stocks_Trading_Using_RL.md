@@ -530,19 +530,58 @@ $ python train_model_conv.py --cuda -r 1dconv-211011
 
 학습하는 동안 최신 실험에 대해 모델을 저장해두었습니다. held-out states의 평균 Q값을 최대값으로 갱신하거나 검증 데이터의 보상값이 이전 기록보다 좋을 때마다 모델을 저장하였습니다. *Chapter10/run_model.py* 코드는 모델을 로드하고 매매를 하고 시간에 따른 수익 변화를 그려줍니다. 
 
+명령어 옵션은 다음과 같습니다.  
+* -d : data path
+* -m : model file path
+* -b : 모델에 제공할 봉 개수(default: 10)
+* -n : 생성할 이미지의 접미사로 붙일 텍스트
+* --commission : 수수료 퍼센트(default: 0.1)
+
+<br>
+
+그림 10.8은 2016년 Yandex의 주식 데이터로 학습한 결과입니다. 2만5천 스텝이 넘어가면 200% 이상의 수익이 납니다. 
+
+<center><img src= "https://liger82.github.io/assets/img/post/20211011-DeepRLHandsOn-ch10-Stocks_Trading_Using_RL/fig10.8.png" width="90%"></center><br>
+
+하지만 학습한 모델을 2015년 데이터에 검증을 하면 아래처럼 결과가 정말 안좋습니다. 
+
+<center><img src= "https://liger82.github.io/assets/img/post/20211011-DeepRLHandsOn-ch10-Stocks_Trading_Using_RL/fig10.9.png" width="90%"></center><br>
+
+수수료를 0으로 해서 15년 데이터로 검증을 해봤더니 마이너스는 아닙니다. 조금 떨어질 때도 있지만 전반적으로 좋습니다. 10.8과 10.9의 차이는 수수료 적용 여부만의 문제는 아닙니다. 주문 시뮬레이션 환경이 매우 원시적이고 실제 상황을 고려하지 않은 채로 실제 결과만 사용한 점이 큽니다.
+
+<center><img src= "https://liger82.github.io/assets/img/post/20211011-DeepRLHandsOn-ch10-Stocks_Trading_Using_RL/fig10.10.png" width="90%"></center><br>
+
+제가 직접 오래 돌려보니 더 좋은 성과가 있는 모델로 돌리면 나아지긴 했지만 엄청난 차이를 만들진 못했습니다. 앞서 말한바 대로 주식 예측에 단일 변수로 하여 너무 단순화한 것이 아닌가 싶었습니다.
+
 <br>
 
 ## The convolution model
 
-<br>
+두 번째 모델은 주식 가격 데이터로부터 feature를 뽑는데 1D convolution filter를 사용했습니다. 컨볼루션 필터 사용은 네트워크 사이즈를 엄청 크게 하지 않으면서도 에이전트가 볼 수 있는 컨텍스트 윈도우에서의 봉 개수를 늘려줬습니다. 기본적으로 봉 50개를 컨텍스트로 사용했습니다.(FFN 모델은 10개) 학습 코드는 *Chapter10/train_model_conv.py* 이고, FFN모델과 명령어 구조는 동일합니다.
 
-> <subtitle> Things to try </subtitle>
+학습 과정의 모습은 거의 동일합니다(figure 10.13). 
 
+<center><img src= "https://liger82.github.io/assets/img/post/20211011-DeepRLHandsOn-ch10-Stocks_Trading_Using_RL/fig10.13.png" width="90%"></center><br>
 
-<br>
+검증 셋에서의 보상값은 FFN모델보다 조금 더 높고 과적합되는 구간도 더 나중에 나타났습니다.
+
+<center><img src= "https://liger82.github.io/assets/img/post/20211011-DeepRLHandsOn-ch10-Stocks_Trading_Using_RL/fig10.14.png" width="90%"></center><br>
 
 > <subtitle> Summary </subtitle>
 
+이 챕터에서는  
+* 주식 거래 에이전트를 구현해보고 custom Gym 환경을 구축함
+* DQN 기반의 두 개의 다른 아키텍쳐로 테스트
+    - Feed-forward network
+    - 1D convolution network
+
+<br>
+
+처음 실제 예제를 접해본다는 기대보다는 환경도 엄청 단순하게 만들어서 기존 아타리게임보다 단순하게 아닌가 싶어서 실망이 큽니다.
+
+머신러닝 기법으로 주식 예측을 해볼 때 사용했던 여러 변수들도 관찰값에 추가해보고 아키텍쳐도 더 상세하게 해보면 어떨까 싶습니다.
+
+이 챕터는 파트 2의 마지막입니다. 파트 3에서는 policy gradients에 대해 다룹니다. 여기서는 REINFORCE, A3C 등에 대해 자세히 살펴보도록 하겠습니다.
 
 <br>
 
@@ -550,7 +589,6 @@ $ python train_model_conv.py --cuda -r 1dconv-211011
 
 > <subtitle> References </subtitle>
 * Deep Reinforcement Learning Hands On 2/E Chapter 10 : Stocks Trading Using RL
-* [](){:target="_blank"}
 
 
 <br>
