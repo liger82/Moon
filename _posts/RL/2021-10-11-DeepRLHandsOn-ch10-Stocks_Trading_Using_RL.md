@@ -195,7 +195,7 @@ StockEnv의 constructor 를 보면, 환경이나 관찰값 표현을 바꾸는 �
 * prices : 1개 이상의 주식 가격을 지님. data.Prices 포맷
 * bars_count : 관찰값에서 나타나는 봉의 개수(default=10)
 * commission : 주식 거래시 발생하는 수수료로 주식 가격의 일부를 뜻하며 defalut는 0.1%
-* reset_on_close : True(defalut)면, 에이전트가 주식을 팔 것인지 물어볼 때마다 에피소드를 중지한다. 그렇지 않으면, 그 해의 데이턱 끝날 때까지 에피소드는 계속된다.
+* reset_on_close : True(defalut)면, 에이전트가 주식을 팔 것인지 물어볼 때마다 에피소드를 중지한다. 그렇지 않으면, 그 해의 데이터가 끝날 때까지 에피소드는 계속된다.
 * state_1d : True 면 1D convolution 을 위한 *State1D* class를 사용한다.(데이터 인코딩 matrix 형태) False(defalut)면 *State* class를 사용한다. (데이터 인코딩 vector 형태)
 
 <center><img src= "https://liger82.github.io/assets/img/post/20211011-DeepRLHandsOn-ch10-Stocks_Trading_Using_RL/fig10.2.png" width="90%"></center><br>
@@ -330,7 +330,7 @@ class State:
         close = self._cur_close()
         '''
         현재 봉의 종가로 즉시 주문 실행을 가정하고 있음.(단순화한 결과) 
-        일반적으로 주문이 다른 가격으로 실행될 수 있으며, 이를 가격 미끄러짐(price slippage)이라고 한다.
+        현실에선 일반적으로 주문이 다른 가격으로 실행될 수 있으며, 이를 가격 미끄러짐(price slippage)이라고 한다.
         '''
         # 매수 행동이고, 주식을 가지고 있지 않을 때
         if action == Actions.Buy and not self.have_position:
@@ -577,7 +577,7 @@ $ python train_model_conv.py --cuda -r 1dconv-211011
 
 <br>
 
-처음 실제 예제를 접해본다는 기대보다는 환경도 엄청 단순하게 만들어서 기존 아타리게임보다 단순하게 아닌가 싶어서 실망이 큽니다.
+처음 실제 예제를 접해본다는 기대보다는 커스텀 환경을 만들어본다는 것이 이 챕터의 의의로 보입니다.
 
 머신러닝 기법으로 주식 예측을 해볼 때 사용했던 여러 변수들도 관찰값에 추가해보고 아키텍쳐도 더 상세하게 해보면 어떨까 싶습니다.
 
