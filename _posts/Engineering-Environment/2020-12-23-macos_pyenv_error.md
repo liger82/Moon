@@ -25,7 +25,7 @@ comments: true
 
 다음과 같은 에러메시지가 나온다. 
  
-```
+```shell
 $pyenv install 3.9.0
 
 python-build: use readline from homebrew
