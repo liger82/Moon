@@ -91,7 +91,6 @@ gem:
     - jekyll-sitemap
     - jekyll-feed
     - wdm
-theme: type-theme
 exclude:
   - Gemfile
   - Gemfile.lock
