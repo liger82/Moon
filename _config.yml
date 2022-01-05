@@ -13,7 +13,7 @@ theme_settings:
 
   # Header and footer text
   header_text: >
-     <p>NLP/Dialogue Developer</p>
+     <p>NLP/Dialogue Engineer</p>
 
   header_text_feature_image:
   footer_text: >
@@ -44,7 +44,7 @@ theme_settings:
 
   # Scripts
   google_analytics: UA-111748939-1 # Tracking ID, e.g. "UA-000000-01"
-  disqus_shortname: liger82
+  disqus_shortname: liger82-github-io
   katex: true # Enable if using math markup
   search: true # Enable the search feature
 
