@@ -22,6 +22,12 @@ layout: default
 </div>
 {% endif %} -->
 
+{% if page.comments %}<a href="https://liger82.github.io{{ page.url }}#utterances_thread"></a>
+<div class="comments">
+  {% include utterances.html %}
+</div>
+{% endif %}
+
 <!-- Post navigation -->
 {% if site.theme_settings.post_navigation %}
   {% include post_nav.html %}

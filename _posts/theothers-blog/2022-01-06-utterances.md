@@ -53,9 +53,36 @@ comments: true
 
 ## 2. github io에 적용
 
-이 부분은 각자의 웹 환경에 따라 다르겠지만 기본적으로 _layout/post.html 맨 아래에 넣는 경우가 많습니다.
+이 부분은 각자의 웹 환경에 따라 다르겠지만 기본적으로 _layout/post.html 맨 아래에 넣는 경우가 많습니다. 결국 post 마다 댓글을 달려고 하는 거니깐요.
 
-음 제 블로그는 footer 가 별도록 있어서 그 부분에 붙여넣기 했어요. 기존에 disqus는 모두 주석처리하거나 지웠고요.
+음 제 블로그는 기존에 disqus 를 사용하는 테마여서 disqus를 주석처리하고 disqus 가 적용된 동일한 형태를 사용하였습니다.
+
+_includes/utterances.html 을 만들고 그 안에 아래처럼 집어넣었습니다.
+
+```html
+<div id="utterances_thread"></div>
+
+<script src="https://utteranc.es/client.js"
+        repo="liger82/liger82.github.io"
+        issue-term="pathname"
+        label="comments"
+        theme="github-light"
+        crossorigin="anonymous"
+        async>
+</script>
+```
+
+그 다음 _layouts/post.html 에서 아래처럼 추가했어요.
+
+page.comments 는 실제 포스트 글에서 comments 라는 플래그를 true로 놓으면 댓글창이 나오도록 한 것입니다.
+
+```html
+{% if page.comments %}<a href="https://liger82.github.io{{ page.url }}#utterances_thread"></a>
+<div class="comments">
+  {% include utterances.html %}
+</div>
+{% endif %}
+```
 
 이제 이렇게 등록하면 아래처럼 나옵니다!
 
