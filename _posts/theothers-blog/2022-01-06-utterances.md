@@ -29,21 +29,32 @@ comments: true
 
 * [https://github.com/apps/utterances](https://github.com/apps/utterances){:target="_blank"}
 
-1.  "install" 버튼 클릭
+#### 1. "install" 버튼 클릭
 
-<br><center><img src= "https://liger82.github.io/assets/img/post/20220106-utterances/fig1.png" width="70%"></center><br>
+<br><center><img src= "https://liger82.github.io/assets/img/post/20220106-utterances/fig1.png" width="100%"></center><br>
 
-2. Only select repositories > 댓글을 이슈로 관리할 저장소를 선택 > "install" 버튼 클릭 > 비밀번호 입력
+#### 2. Only select repositories > 댓글을 이슈로 관리할 저장소를 선택 > "install" 버튼 클릭 > 비밀번호 입력
 
-<br><center><img src= "https://liger82.github.io/assets/img/post/20220106-utterances/fig2.png" width="70%"></center><br>
+<br><center><img src= "https://liger82.github.io/assets/img/post/20220106-utterances/fig2.png" width="100%"></center><br>
 
-3. 아래와 같은 페이지가 나오면 configuration > Repository > repo: 빈칸에 **github 계정명/저장소 이름** 을 입력한다.
+#### 3. 아래와 같은 페이지가 나오면 configuration > Repository > repo: 빈칸에 **github 계정명/저장소 이름** 을 입력한다.
 
 <br><center><img src= "https://liger82.github.io/assets/img/post/20220106-utterances/fig3.png" width="70%"></center><br>
 
+#### 4. 다음과 같이 선택했습니다.
 
-## 2. 
+<br><center><img src= "https://liger82.github.io/assets/img/post/20220106-utterances/fig4.png" width="70%"></center><br>
 
+#### 5. copy 합니다.
+
+<br><center><img src= "https://liger82.github.io/assets/img/post/20220106-utterances/fig5.png" width="70%"></center><br>
+
+
+## 2. github io에 적용
+
+이 부분은 각자의 웹 환경에 따라 다르겠지만 기본적으로 _layout/post.html 맨 아래에 넣는 경우가 많습니다.
+
+음 제 블로그는 footer 가 별도록 있어서 그 부분에 붙여넣기 했어요. 기존에 disqus는 모두 주석처리하거나 지웠고요.
 
 ## 3. 
 
