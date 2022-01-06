@@ -76,7 +76,7 @@ _includes/utterances.html 을 만들고 그 안에 아래처럼 집어넣었습�
 
 page.comments 는 실제 포스트 글에서 comments 라는 플래그를 true로 놓으면 댓글창이 나오도록 한 것입니다.
 
-```html
+```
 {% if page.comments %}<a href="https://liger82.github.io{{ page.url }}#utterances_thread"></a>
 <div class="comments">
   {% include utterances.html %}
