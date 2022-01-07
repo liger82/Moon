@@ -191,6 +191,8 @@ PPTOD 를 3개의 벤치마크 과제로 테스트하였습니다.
 
 ## 4.1 End-to-End Dialogue Modeling
 
+* PPTOD 검증 1번째 과제 - End-to-End Dialogue Modeling
+
 End-to-End Dialogue Modeling 은 가장 현실적이고 완전히 end-to-end 설정에서 모델을 검증하는 작업입니다.
 
 이는 생성된 dialogue states 를 데이터베이스 검색과 응답 생성에 사용한다는 것을 의미합니다.
@@ -247,20 +249,61 @@ End-to-End Dialogue Modeling 은 가장 현실적이고 완전히 end-to-end 설
 * 결과는 PPTOD 가 다른 베이스라인보다 꽤 큰 차이로 점수가 높은 편
 * 데이터가 적을 때 차이가 더 크다
     * PPTOD 가 사전학습으로부터 나온 사전 지식을 더 잘 활용하기 때문에 극단적으로 데이터가 적은 상황에서 성능이 더 높은 것이다.
-* 
+* 학습데이터로 데이터의 20%를 사용했을 때, PPTOD 는 (table 2) SOLOIST가 전체 데이터로 학습한 성능에 가깝게 수치를 보였다.
 
 <br>
 
 ## 4.2 Dialogue State Tracking
 
+* PPTOD 검증 2번째 과제 - DST
+* 앞서와 같이 MultiWOZ 2.0, 2.1 데이터셋 사용
+* metric : joint goal accuracy
+
+<br>
+
+## 4.2.1 Baselines
+
+두 종류의 베이스라인
+
+1. 분류 기반 접근법
+2. 생성 기반 접근법
+
+<br>
+
+## 4.2.2 Full Training Evaluation
+
+<center><img src= "https://liger82.github.io/assets/img/post/20220104-PPTOD/table4.png" width="90%"></center><br>
+
+* table 4 : DST 결과
+
+<br>
+
+## 4.2.3 Few-Shot Evaluation
+
+<br>
+
+## 4.3 Intent Classification
+
+<br>
+
+> <subtitle> 5 Further Analysis </subtitle>
+
+<br>
+
+## 5.1 Plug-and-Play vs Cascaded Generation
 
 
 <br>
 
+## 5.2 Multi-Task Pre-Training Investigation
 
 <br>
 
-> <subtitle> Conclusion </subtitle>
+## 5.3 Human Evaluation
+
+<br>
+
+> <subtitle> 6 Conclusion </subtitle>
 
 
 <br>
