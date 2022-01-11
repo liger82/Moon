@@ -44,7 +44,7 @@ TOD 는 보통 3개의 하위 과제로 구성됩니다.
 
 <br>
 
-** TOD 접근 방법  **  
+**TOD 접근 방법**  
 1. modularized pipeline : 하위 과제들을 구분된 모듈로 각기 처리하며 이를 파이프라인 형태로 엮음
 2. 모든 기능들을 뉴럴넷으로 통합하는 방법
 3. PLM 에 기반한 각기 다른 기능을 하는 시스템
@@ -202,19 +202,23 @@ End-to-End Dialogue Modeling 은 가장 현실적이고 완전히 end-to-end 설
 ### 4.1.1 Dataset and Evaluation Metric
 
 * 검증 데이터셋: MultiWOZ 2.0 & 2.1 datasets
-* MultiWOZ 에서 응답 생성은 대화 맥락과 관계되어 있을 뿐만 아니라 데이터베이스의 state 에 기반한다.
-* 데이터베이스 state 는 생성된 dialogue state(DST) 를 이용하여 자동으로 사전 정의된 데이터베이스로부터 추출된다.
 
+<br>
 
-* inference 하는 동안, PPTOD 는 먼저 DB state 를 추출하기 위해 DST 결과를 예측한다.
-* 그 다음, 추출된 DB state 와 대화 맥락에 기반하여, POL 과 NLG 를 동시에 수행한다.
-* 섹션 5 에서 DB state 를 입력으로 주었을 때와 아닐 때를 비교해볼 것이다.
+* process
+    1. inference 하는 동안, PPTOD 는 DST 수행
+    2. dialogue state 활용하여 DB state 를 추출
+    3. 추출된 DB state 와 대화 맥락에 기반하여, POL 과 NLG 를 동시에 수행
+    
+    * 대화 맥락 뿐만 아니라 사전 구축되어 있는 데이터베이스로부터도 정보를 얻을 수 있다는 특징!
 
+<br>
 
-* 검증을 위해 원래 MultiWOZ 가이드에 있는 각 메트릭을 모두 사용한다
-    - Inform, Success, BLEU
-* 최종 결합된 점수(combined score)는 다음과 같이 계산된다.
-    - Combined = (Inform + Success) x 0.5 + BLEU
+* Evaludation Metric
+    * 검증을 위해 원래 MultiWOZ 가이드에 있는 메트릭을 모두 사용
+        - Inform, Success, BLEU
+    * 최종 결합된 점수(combined score)는 다음과 같이 계산
+        - Combined = (Inform + Success) x 0.5 + BLEU
 
 <br>
 
@@ -231,7 +235,7 @@ End-to-End Dialogue Modeling 은 가장 현실적이고 완전히 end-to-end 설
 
 * table 2 : 주요 실험 결과
 * MultiWOZ 2.0, 2.1 모두에서 PPTOD 는 8개의 메트릭 중 7개에서 다른 베이스라인 모델들보다 성능이 좋다.
-* 특히, PPTOD 는 TOP+NOD 에서처럼 출력값을 re-ranking 하기 위해 추가적인 언어 모델을 필요로 하지 않는 단일 아키텍쳐라고 말할 수 있다.
+* TOP+NOD 는 출력값을 re-ranking 하기 위해 추가적인 언어 모델을 요구하지만 PPTOD 는 유사성능을 내면서도 단일 모델
 
 <br>
 
