@@ -16,7 +16,7 @@ comments: true
 
 <br>
 
-발표장표 : [구글드라이브](https://drive.google.com/drive/folders/1XmZTtDPIT3V4ApN6t9bdPHDYcEbicRUA?usp=sharing){:target="_blank"}  
+**발표장표** : [구글드라이브](https://drive.google.com/drive/folders/1XmZTtDPIT3V4ApN6t9bdPHDYcEbicRUA?usp=sharing){:target="_blank"}  
 
 <br>
 
