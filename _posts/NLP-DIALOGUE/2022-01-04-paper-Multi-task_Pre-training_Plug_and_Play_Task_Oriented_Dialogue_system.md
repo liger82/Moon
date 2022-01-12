@@ -16,6 +16,10 @@ comments: true
 
 <br>
 
+발표장표 : [구글드라이브](https://drive.google.com/drive/folders/1XmZTtDPIT3V4ApN6t9bdPHDYcEbicRUA?usp=sharing){:target="_blank"}  
+
+<br>
+
 > <subtitle> Abstract </subtitle>
 
 사전학습 모델을 사용하는 것은 Task-Oriented Dialogue(TOD) system 성능 향상에 많은 도움을 주었습니다. 그러나 기존 방법들은 종종 TOD 과제에 cascade generation 문제를 만듭니다. 이는 서로 다른 하위 과제에서 오류를 누적, 전파하고 학습 데이터를 만들기 위해 데이터에 주석을 다는 것이 복잡해져서 오버헤드를 증가시킬 수 있습니다. 
@@ -216,7 +220,9 @@ End-to-End Dialogue Modeling 은 가장 현실적이고 완전히 end-to-end 설
 
 * Evaludation Metric
     * 검증을 위해 원래 MultiWOZ 가이드에 있는 메트릭을 모두 사용
-        - Inform, Success, BLEU
+        - Inform: 시스템이 적절한 entity 를 제공했는지
+        - Success: 시스템이 모든 요구하는 속성에 대답을 했는지
+        - BLEU score - fluency 판단에 사용
     * 최종 결합된 점수(combined score)는 다음과 같이 계산
         - Combined = (Inform + Success) x 0.5 + BLEU
 
@@ -305,7 +311,7 @@ End-to-End Dialogue Modeling 은 가장 현실적이고 완전히 end-to-end 설
 
 ## 4.3 Intent Classification
 
-* PPTOD 검증 1번째 과제 - 인텐트 분류
+* PPTOD 검증 3번째 과제 - 인텐트 분류
 * 인텐트 분류 : 사용자 발화에 근거하여 사용자의 의도를 분류하는 과제
 * dataset : Banking77 (77 개의 인텐트 포함한 데이터셋)
 * baselines : BERT-Fixed, BERT-Tuned, USE+ConveRT, USE, ConveRT, SOLOIST
@@ -438,6 +444,8 @@ DB에서 DB state를 결합시킬 수 있도록 한 것도 기존 데이터베�
 > <subtitle> References </subtitle>
 
 * [Fleiss' Kappa 계수: https://m.blog.naver.com/itisik/221457347219](https://m.blog.naver.com/itisik/221457347219){:target="_blank"}
+* [MultiWOZ https://aclanthology.org/D18-1547.pdf](https://aclanthology.org/D18-1547.pdf){:target="_blank"}
+
 
 
 
