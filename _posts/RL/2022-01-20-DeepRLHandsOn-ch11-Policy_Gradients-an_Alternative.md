@@ -55,7 +55,7 @@ $$ \pi(s) = argmax_{a} Q(s,a) $$
 정책을 어떻게 표현할까요?  
 Q 값의 경우 행동 값을 스칼라로 반환하는 뉴럴넷에 의해 매개 변수화되었습니다. 네트워크에서 행동을 매개 변수화하려면 몇 가지 방법이 있습니다. 가장 간단한 첫 번째 방법은 (이산 행동 집합의 경우) 행동의 식별자를 반환하는 것일 수 있습니다. 그러나 이 방법이 이산 집합을 처리하는 가장 좋은 방법은 아닙니다. 분류 작업에서 많이 사용되는 훨씬 일반적인 해결책은 행동의 확률 분포를 반환하는 것입니다. 즉, 상호 배타적인 N 개의 행동의 경우, 주어진 상태(네트워크에 입력으로 전달)에서 각 행동을 취할 확률을 나타내는 숫자 N 개를 반환합니다. 이 표현은 다음 다이어그램에 나와 있습니다.
 
-<center><img src= "https://liger82.github.io/assets/img/post/20220120-DeepRLHandsOn-ch11-Policy-gradients/fig11.1.png" width="80%"></center><br>
+<center><img src= "https://liger82.github.io/assets/img/post/20220120-DeepRLHandsOn-ch11-Policy-gradients/figure11.1.png" width="80%"></center><br>
 
 확률로 행동을 표현한 것은 **smooth representation** 이라는 이점을 가집니다. 뉴럴넷의 weights 를 조금 바꾸면 그 출력값도 바뀝니다. 많지 않은 행동을 가진 경우도 조금의 가중치 변화는 행동 선택에 있어서 큰 차이를 가져올 수 있습니다. 하지만 출력값이 확률 분포라면 가중치의 조그만 변화는 보통 출력값 분포의 작은 변화로 이어질 것입니다. 이는 gradient 최적화 방법들이 모델 개선을 위해 아주 조금씩 패러미터를 조정한다는 점에서 매우 좋은 속성입니다. 정책은 $$ \pi(s) $$ 로 표현합니다.
 
@@ -111,17 +111,228 @@ REINFORCE 는 큐러닝과 몇몇 중요한 양상에서 다른 면을 보입니
 
 REINFORCE 구현 코드를 익숙한 CartPole 환경에서 먼저 다뤄보도록 하겠습니다. 전체 코드는 *Chapter11/02_cartpole_reinforce.py* 입니다. 
 
+코드에 설명을 한 번에 달았습니다.
+
 ```python
-# code
+#!/usr/bin/env python3
+import gym
+import ptan
+import numpy as np
+from tensorboardX import SummaryWriter
+
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
+import torch.optim as optim
+
+# hyperparameters settings
+GAMMA = 0.99
+LEARNING_RATE = 0.01
+# 학습에서 사용할 완전한 에피소드 개수
+EPISODES_TO_TRAIN = 4
+
+
+class PGN(nn.Module):
+    '''
+    Policy Gradient Network
+    dqn 코드와 다를 게 없다. 
+    이론상으로 PGN 은 확률값을 반환해야 하지만 코드를 보면 그렇지 않다. 
+    출력값에 softmax의 비선형성을 적용하지 않았다.
+    이 부분은 PGN의 출력값을 처리하는 log_softmax 함수가 출력값을 softmax 하여 
+    로그 계산하는 것을 한번에 하기 때문입니다.
+    이 계산 방법이 수치적으로 더 안정되어 있어서 이렇게 사용한다.
+    '''
+    def __init__(self, input_size, n_actions):
+        super(PGN, self).__init__()
+
+        self.net = nn.Sequential(
+            nn.Linear(input_size, 128),
+            nn.ReLU(),
+            nn.Linear(128, n_actions)
+        )
+
+    def forward(self, x):
+        return self.net(x)
+
+
+def calc_qvals(rewards):
+    '''
+    이 함수는 약간 트릭이 있다. 
+    rewards 라는 모든 에피소드의 보상 목록을 받아서
+    매 스텝마다 할인된 총 보상을 계산해야 한다. 
+    효율적으로 진행하기 위해 지역적인 보상 목록의 마지막에서 계산했다.
+    실제로, 에피소드 마지막 스텝은 지역 보상과 동일한 총 보상을 가질 것이다. 
+    마지막 직전 스텝은  r_{t-1} + \gamma r_t 총 보상을 가질 것이다.
+    '''
+    res = []
+    sum_r = 0.0
+    for r in reversed(rewards):
+        # sum_r 은 단계별 할인된 총 보상(local reward)
+        sum_r *= GAMMA
+        sum_r += r
+        res.append(sum_r)
+    return list(reversed(res))
+
+
+if __name__ == "__main__":
+    # 환경 설정
+    env = gym.make("CartPole-v0")
+    # SummaryWriter instance 생성
+    writer = SummaryWriter(comment="-cartpole-reinforce")
+
+    # PGN
+    net = PGN(input_size=env.observation_space.shape[0], n_actions=env.action_space.n)
+    print(net)
+
+    '''ptan.agent.PolicyAgent는 모든 관찰값에 대한 행동을 결정한다. 
+    PGN은 행동의 확률값을 정책으로 반환한다.
+    취할 행동을 선택하기 위해 agent 는 pgn으로부터 확률값을 받아 해당 확률분포로부터 random sampling 을 수행한다.
+
+    DQN의 경우 첫 번째 행동의 Q값(net 출력값)이 0.4, 두 번째 행동의 Q값이 0.5 면 무조건 두 번째 행동을 선택한다.
+    PGN의 경우는 40%의 확률로 첫 번째 행동을, 50%의 확률로 두 번째 행동을 선택한다.
+
+    다만, 현재 코드에선 두번째 행동을 100% 선택하는데 이는 첫 번째 행동에 대해 확률 0, 두번째 행동에 대해 확률 1을 반환하기 때문
+
+    * PolicyAgent 는 내부적으로 확률값(from PGN)으로 NumPy 의 random.choice function 을 호출한다.
+    * preprocessor=ptan.agent.float32_preprocessor
+        - Gym의 CartPole env 는 float64 타입으로 관찰값을 주는데, PyTorch 는 float32 를 요구하기 때문에 전처리한 것이다.
+    * apply_softmax 는 네트워크 출력값을 확률로 바꾸는 작업을 먼저 하라는 의미
+    '''
+    agent = ptan.agent.PolicyAgent(net, preprocessor=ptan.agent.float32_preprocessor,
+                                   apply_softmax=True)
+    '''
+    # ExperienceSourceFirstLast
+    주어진 환경에서 (state, action, reward, last_state) objects list로 제공
+    full subtrajectories 가 아니라 n step 상황에서 첫번째(현재 스텝)와 마지막 스텝의 정보만 반환하는 특징
+    
+    - state: 현재 상태
+    - action: 현재 상태에서 수행된 동작
+    - reward: 현재 상태에서 n-step 을 보고 계산한 할인된 보상
+    - last_state: 행동을 취하고 나온 상태(마지막이면 None)
+    '''
+    exp_source = ptan.experience.ExperienceSourceFirstLast(env, agent, gamma=GAMMA)
+
+    # Adam Optimizer
+    optimizer = optim.Adam(net.parameters(), lr=LEARNING_RATE)
+
+    # variables for reporting
+    # 보상 목록
+    total_rewards = []
+    step_idx = 0
+    # 끝난 에피소드 개수
+    done_episodes = 0
+
+    # variables for gathering the training data
+    batch_episodes = 0
+    # batch_states, batch_actions 는 가장 최근 학습에서 본 states와 actions 담고 있는 리스트
+    # batch_qvals: 에피소드 끝에 calc_qvals function 사용해서 local rewards 를 가지고 할인된 총 보상을 계산하는데 그 결과값을 batch_qvals 에 담는다.
+    batch_states, batch_actions, batch_qvals = [], [], []
+    # cur_rewards 는 진행 중인 에피소드의 local reward 를 담은 리스트
+    cur_rewards = []
+
+    for step_idx, exp in enumerate(exp_source):
+        batch_states.append(exp.state)
+        batch_actions.append(int(exp.action))
+        cur_rewards.append(exp.reward)
+
+        # 에피소드 마지막엔 None
+        if exp.last_state is None:
+            # local rewards 로 할인된 총 보상 계산
+            batch_qvals.extend(calc_qvals(cur_rewards))
+            cur_rewards.clear()
+            batch_episodes += 1
+
+        # 에피소드 마지막이면 수행하는 학습 절차
+        # 현재 학습 진행 상황 보고
+        # handle new rewards
+        new_rewards = exp_source.pop_total_rewards()
+        if new_rewards:
+            # 완료한 에피소드 개수 증가
+            done_episodes += 1
+            reward = new_rewards[0]
+            total_rewards.append(reward)
+            # 최근 100개에 대한 보상들의 평균값을 사용
+            mean_rewards = float(np.mean(total_rewards[-100:]))
+            print("%d: reward: %6.2f, mean_100: %6.2f, episodes: %d" % (
+                step_idx, reward, mean_rewards, done_episodes))
+            writer.add_scalar("reward", reward, step_idx)
+            writer.add_scalar("reward_100", mean_rewards, step_idx)
+            writer.add_scalar("episodes", done_episodes, step_idx)
+            # 평균 보상이 195보다 크면 문제 풀었다고 간주
+            if mean_rewards > 195:
+                print("Solved in %d steps and %d episodes!" % (step_idx, done_episodes))
+                break
+
+        if batch_episodes < EPISODES_TO_TRAIN:
+            continue
+        
+        # 초기화 및 torch form 으로 변경
+        optimizer.zero_grad()
+        states_v = torch.FloatTensor(batch_states)
+        batch_actions_t = torch.LongTensor(batch_actions)
+        batch_qvals_v = torch.FloatTensor(batch_qvals)
+
+        # net(PGN)의 출력값은 log_softmax() 을 통해 확률값으로 계산된다.
+        logits_v = net(states_v)
+        log_prob_v = F.log_softmax(logits_v, dim=1)
+        # 행동들로부터 log probabilities 를 선택하여 q value로 scaling
+        log_prob_actions_v = batch_qvals_v * log_prob_v[range(len(batch_states)), batch_actions_t]
+        # 마이너스 붙이면 loss 는 줄여야, policy gradient는 최대화해야 정책을 개선할 수 있다.
+        loss_v = -log_prob_actions_v.mean()
+
+        loss_v.backward()
+        optimizer.step()
+
+        batch_episodes = 0
+        batch_states.clear()
+        batch_actions.clear()
+        batch_qvals.clear()
+
+    writer.close()
+
 ```
 
 <br>
 
 ## Results
 
+REINFORCE와 거의 동일한 hyperparameters 를 가지고 DQN으로 CartPole을 풀었을 때는 167,825 steps, 2,012 episodes 에 문제가 풀렸습니다. (Chapter11/01_cartpole_dqn.py)
+
+<center><img src= "https://liger82.github.io/assets/img/post/20220120-DeepRLHandsOn-ch11-Policy-gradients/result1-1.png" width="80%"></center>
+<center><img src= "https://liger82.github.io/assets/img/post/20220120-DeepRLHandsOn-ch11-Policy-gradients/result1-2.png" width="80%"></center><br>
+
+*Chapter11/02_cartpole_reinforce.py* 를 돌리면 다음과 같이 나옵니다.
+
+<center><img src= "https://liger82.github.io/assets/img/post/20220120-DeepRLHandsOn-ch11-Policy-gradients/result2-1.png" width="80%"></center>
+<center><img src= "https://liger82.github.io/assets/img/post/20220120-DeepRLHandsOn-ch11-Policy-gradients/result2-2.png" width="80%"></center><br>
+
+dqn 과 비교해봤을 때 REINFORCE 가 훨씬 빨리 학습을 끝냈습니다. 이게 제가 돌린건데 dqn은 예상보다 더 헤맸고 REINFORCE 는 예상보다 빨리 풀은 결과인 것 같습니다. dqn은 거의 4분인데 REINFORCE는 11초네요.
+
+<center><img src= "https://liger82.github.io/assets/img/post/20220120-DeepRLHandsOn-ch11-Policy-gradients/result2-3.png" width="80%"></center><br>
+
+아래는 두 모델의 최근 100개 스텝의 보상 평균이 어떻게 변화했는지입니다. 
+
+<center><img src= "https://liger82.github.io/assets/img/post/20220120-DeepRLHandsOn-ch11-Policy-gradients/result2-4.png" width="80%"></center><br>
+
+
 <br>
 
 ## Policy-based versus value-based methods
+
+두 방법을 비교해보겠습니다.
+
+* policy-based method 는 행동을 직접적으로 최적화한다.
+* value-based method(e.g. DQN) 는 간접적으로 최적화한다. 가치를 먼저 학습하고 이 가치에 기반한 정책을 제공한다.
+
+* policy-based method: on-policy이며 환경으로부터 새로운 샘플을 원함
+* value-based method: off-policy 면, 이전 데이터도 학습에 사용 가능
+
+* policy-based method: sample-efficient(low)
+* value-based method: sample-efficient(high)
+    - value-based method 가 계산적으로 더 효율적이라는 말은 아님. 이는 거의 반대임
+
+* policy-based method: 
+* value-based method
 
 <br>
 
@@ -182,6 +393,6 @@ REINFORCE 구현 코드를 익숙한 CartPole 환경에서 먼저 다뤄보도�
 
 > <subtitle> References </subtitle>
 * Deep Reinforcement Learning Hands On 2/E Chapter 11 : Policy Gradients - an Alternative
-
+* [ptan ExperienceSource code](https://github.com/Shmuma/ptan/blob/master/ptan/experience.py){:target="_blank"}
 
 <br>
