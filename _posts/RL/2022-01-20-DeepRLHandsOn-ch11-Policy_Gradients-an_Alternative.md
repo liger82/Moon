@@ -392,27 +392,408 @@ $$ H(\pi) = - \sum \pi(a|s) log \pi(a|s) $$
 
 ## Correlation between samples
 
-단일 에피소드에 있는 학습 샘플들은 보통 강한 상관관계를 가지고 이는 SGD 학습에 안 좋습니다. DQN 의 경우 큰 replay buffer 를 사용하는 것으로 문제를 해결합니다. pg가 on-policy 이기 때문에 pg 에는 적용할 수 없습니다. 
+단일 에피소드에 있는 학습 샘플들은 보통 강한 상관관계를 가지고 이는 SGD 학습에 안 좋습니다. DQN 의 경우 큰 replay buffer 를 사용하는 것으로 문제를 해결합니다. pg가 on-policy 이기 때문에 pg 에는 적용할 수 없습니다. 오래된 데이터와 오래된 정책을 사용하면 현재가 아니라 오래된 정책을 위한 pg 를 얻게 될 것입니다.
+
+이 문제를 해결하기 위해서는 보통 병렬적인(parallel) 환경을 사용합니다. 하나의 환경과만 상호작용하는 게 아니라, 여러 개의 환경을 사용하고 그에 따른 transition 들을 학습 데이터로 활용하는 것입니다.
 
 <br>
 
 > <subtitle> Policy gradient methods on CartPole </subtitle>
 
+최근에는 vanilla policy gradient 를 사용하는 사람은 거의 없지만 vanilla model 이 가지는 중요한 개념과 pg 성능 체크를 하는 척도를 살펴보기 위해 구현해보도록 하겠습니다.
+
 <br>
 
 ## Implemenation
+
+처음에는 CartPole 을 대상으로 하고 다음은 Pong game으로 해보겠습니다.
+
+```python
+#!/usr/bin/env python3
+import gym
+import ptan
+import numpy as np
+from tensorboardX import SummaryWriter
+from typing import Optional
+
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
+import torch.optim as optim
+
+# hyperparameters settings
+GAMMA = 0.99
+LEARNING_RATE = 0.001
+# the scale of the entropy bonus
+ENTROPY_BETA = 0.01
+BATCH_SIZE = 8
+# 각 transition의 할인된 총 보상을 추정하기 위해 벨만 방정식을 몇 스텝을 앞서 살펴봐야 하는지
+REWARD_STEPS = 10
+
+
+class PGN(nn.Module):
+    '''
+    앞선 02_cartpole_reinforce.py 에서의 PGN과 동일
+    '''
+    def __init__(self, input_size, n_actions):
+        super(PGN, self).__init__()
+
+        self.net = nn.Sequential(
+            nn.Linear(input_size, 128),
+            nn.ReLU(),
+            nn.Linear(128, n_actions)
+        )
+
+    def forward(self, x):
+        return self.net(x)
+
+
+def smooth(old: Optional[float], val: float, alpha: float = 0.95) -> float:
+    # 이 함수는 이전 스텝의 값을 95%, 새로운 값을 5%로 하여 반환
+    # 왜 쓰는지 교재에 언급이 없음.
+    if old is None:
+        return val
+    return old * alpha + (1-alpha)*val
+
+
+if __name__ == "__main__":
+    env = gym.make("CartPole-v0")
+    writer = SummaryWriter(comment="-cartpole-pg")
+
+    net = PGN(env.observation_space.shape[0], env.action_space.n)
+    print(net)
+
+    agent = ptan.agent.PolicyAgent(net, preprocessor=ptan.agent.float32_preprocessor,
+                                   apply_softmax=True)
+    # n-step ahead 할 때는 steps_count=n 주면 됨.
+    exp_source = ptan.experience.ExperienceSourceFirstLast(
+        env, agent, gamma=GAMMA, steps_count=REWARD_STEPS)
+
+    optimizer = optim.Adam(net.parameters(), lr=LEARNING_RATE)
+
+    total_rewards = []
+    step_rewards = []
+    step_idx = 0
+    done_episodes = 0
+    reward_sum = 0.0
+    bs_smoothed = entropy = l_entropy = l_policy = l_total = None
+
+    batch_states, batch_actions, batch_scales = [], [], []
+
+    for step_idx, exp in enumerate(exp_source):
+        reward_sum += exp.reward
+        # baseline 을 평균으로 상정
+        baseline = reward_sum / (step_idx + 1)
+        writer.add_scalar("baseline", baseline, step_idx)
+        batch_states.append(exp.state)
+        batch_actions.append(int(exp.action))
+        batch_scales.append(exp.reward - baseline)
+
+        # handle new rewards
+        new_rewards = exp_source.pop_total_rewards()
+        if new_rewards:
+            done_episodes += 1
+            reward = new_rewards[0]
+            total_rewards.append(reward)
+            mean_rewards = float(np.mean(total_rewards[-100:]))
+            print("%d: reward: %6.2f, mean_100: %6.2f, episodes: %d" % (
+                step_idx, reward, mean_rewards, done_episodes))
+            writer.add_scalar("reward", reward, step_idx)
+            writer.add_scalar("reward_100", mean_rewards, step_idx)
+            writer.add_scalar("episodes", done_episodes, step_idx)
+            if mean_rewards > 195:
+                print("Solved in %d steps and %d episodes!" % (step_idx, done_episodes))
+                break
+
+        if len(batch_states) < BATCH_SIZE:
+            continue
+
+        states_v = torch.FloatTensor(batch_states)
+        batch_actions_t = torch.LongTensor(batch_actions)
+        batch_scale_v = torch.FloatTensor(batch_scales)
+
+        optimizer.zero_grad()
+        logits_v = net(states_v)
+        log_prob_v = F.log_softmax(logits_v, dim=1)
+        log_prob_actions_v = batch_scale_v * log_prob_v[range(BATCH_SIZE), batch_actions_t]
+        loss_policy_v = -log_prob_actions_v.mean()
+
+        '''
+        배치마다 엔트로피를 계산하여 loss 에서 엔트로피 값을 빼는 방식으로 entropy bonus 를 loss에 결합시킨다.
+        엔트로피는 균일한 확률분포를 위한 최대값을 가지고 있고 우리는 이 최대값으로 학습을 하고 싶기 때문에 손실에서 빼야 한다.
+        '''
+        prob_v = F.softmax(logits_v, dim=1)
+        entropy_v = -(prob_v * log_prob_v).sum(dim=1).mean()
+        entropy_loss_v = -ENTROPY_BETA * entropy_v
+        loss_v = loss_policy_v + entropy_loss_v
+
+        loss_v.backward()
+        optimizer.step()
+
+        '''
+        old policy 와 new policy 간 KL divergence 를 계산한다
+        KL div는 하나의 확률 분포가 다른 기대 확률분포와 얼마나 다른지 측정하는 척도이다.
+        이 예제에서는 최적화 단계 전후에 모델에 의해 반환된 정책을 비교하는 데 사용된다. 
+        KL의 high spikes 는 대개 정책이 이전 정책과 너무 멀리 멀어졌음을 보여주는 나쁜 신호이다
+        (NN은 고차원 공간에서 비선형 함수이므로 모델 가중치의 큰 변화는 정책에 매우 강력한 영향을 미칠 수 있음).
+        '''
+        # calc KL-div
+        new_logits_v = net(states_v)
+        new_prob_v = F.softmax(new_logits_v, dim=1)
+        kl_div_v = -((new_prob_v / prob_v).log() * prob_v).sum(dim=1).mean()
+        writer.add_scalar("kl", kl_div_v.item(), step_idx)
+
+        '''
+        학습 단계에서 gradient 에 대한 통계치 계산
+        gradient 최대값, gradient에 L2 norm 적용한 값의 변화를 볼 수 있다.
+        '''
+        grad_max = 0.0
+        grad_means = 0.0
+        grad_count = 0
+        for p in net.parameters():
+            grad_max = max(grad_max, p.grad.abs().max().item())
+            grad_means += (p.grad ** 2).mean().sqrt().item()
+            grad_count += 1
+
+        bs_smoothed = smooth(bs_smoothed, np.mean(batch_scales))
+        entropy = smooth(entropy, entropy_v.item())
+        l_entropy = smooth(l_entropy, entropy_loss_v.item())
+        l_policy = smooth(l_policy, loss_policy_v.item())
+        l_total = smooth(l_total, loss_v.item())
+
+        writer.add_scalar("baseline", baseline, step_idx)
+        writer.add_scalar("entropy", entropy, step_idx)
+        writer.add_scalar("loss_entropy", l_entropy, step_idx)
+        writer.add_scalar("loss_policy", l_policy, step_idx)
+        writer.add_scalar("loss_total", l_total, step_idx)
+        writer.add_scalar("grad_l2", grad_means / grad_count, step_idx)
+        writer.add_scalar("grad_max", grad_max, step_idx)
+        writer.add_scalar("batch_scales", bs_smoothed, step_idx)
+
+        batch_states.clear()
+        batch_actions.clear()
+        batch_scales.clear()
+
+    writer.close()
+
+```
 
 <br>
 
 ## Results
 
-<br>
+보라색이 10-step ahead vanilla pg 의 보상 변화그래프이고, 하늘색이 REINFORCE 의 보상 변화그래프입니다. 엄청 다르진 않습니다.
+
+<center><img src= "https://liger82.github.io/assets/img/post/20220120-DeepRLHandsOn-ch11-Policy-gradients/result4-1-reward.png" width="80%"></center><br>
+
+다음은 pg의 베이스라인으로 $$1 + 0.99 + 0.99^2 + ... + 0.99^9$$ 로 수렴할 것입니다. 
+
+<center><img src= "https://liger82.github.io/assets/img/post/20220120-DeepRLHandsOn-ch11-Policy-gradients/result4-2-baseline.png" width="80%"></center><br>
+
+scale은 0 근처에서 요동치는 모습을 볼 수 있습니다.
+
+<center><img src= "https://liger82.github.io/assets/img/post/20220120-DeepRLHandsOn-ch11-Policy-gradients/result4-3-scales.png" width="80%"></center><br>
+
+엔트로피는 0.69에서 0.52로 시간이 지남에 따라 떨어졌습니다. 시작 점은 두 행동의 최고 엔트로피로 약 0.69입니다.
+
+$$ H(\pi) = - \sum \pi(a|s) log \pi(a|s) = -(\frac{1}{2} \log (\frac{1}{2}) + \frac{1}{2} \log (\frac{1}{2})) \approx 0.69$$
+
+학습 과정에서 엔트로피가 떨어진다는 것은 정책이 균일 분포에서 점점 더 결정론적인 행동으로 바뀌고 있다는 것을 보여줍니다.
+
+<center><img src= "https://liger82.github.io/assets/img/post/20220120-DeepRLHandsOn-ch11-Policy-gradients/result4-4-entropy.png" width="80%"></center><br>
+
+다음은 policy loss, entropy loss, total loss 의 변화 그래프입니다. 
+
+entropy loss는 이전 엔트로피 차트를 상당히 반영하고 있습니다. 거울을 맞댄 형상입니다. 
+
+<center><img src= "https://liger82.github.io/assets/img/post/20220120-DeepRLHandsOn-ch11-Policy-gradients/result4-5-entropy_loss.png" width="80%"></center><br>
+
+policy loss 는 배치 내에서 mean scale 과 policy gradient의 방향을 보여줍니다.
+
+<center><img src= "https://liger82.github.io/assets/img/post/20220120-DeepRLHandsOn-ch11-Policy-gradients/result4-6-policy_loss.png" width="80%"></center><br>
+
+두 loss 를 더한 total loss는 다음과 같이 변화합니다.
+
+<center><img src= "https://liger82.github.io/assets/img/post/20220120-DeepRLHandsOn-ch11-Policy-gradients/result4-7-total_loss.png" width="80%"></center><br>
+
+
+다음은 gradient 의 L2 값, 최대값, KL divergence 값입니다.
+이 정도면 너무 크거나 너무 작지 않고 spike 도 적당한 것이라고 합니다. 세로축 단위를 보면 실제로 범위가 넓지 않음을 알 수 있습니다.
+
+<center><img src= "https://liger82.github.io/assets/img/post/20220120-DeepRLHandsOn-ch11-Policy-gradients/result4-8-l2.png" width="80%"></center><br>
+
+<center><img src= "https://liger82.github.io/assets/img/post/20220120-DeepRLHandsOn-ch11-Policy-gradients/result4-9-grad_max.png" width="80%"></center><br>
+
+<center><img src= "https://liger82.github.io/assets/img/post/20220120-DeepRLHandsOn-ch11-Policy-gradients/result4-10-kl.png" width="80%"></center><br>
+
 
 > <subtitle> Policy gradient methods on Pong </subtitle>
+
+Pong 에 하면 결과가 안 좋을 것이라는 것은 예상이 됩니다. DQN은 pong을 풀었는데 pg가 못한 것에 결과가 pg가 별로라는 말은 아닙니다. 다음 챕터에서 나올 actor-critic model은 성능이 좋습니다. 또한, 성공치 못한 결과도 가치가 있습니다. 좋지 않은 수렴 변화 그래프를 볼 수 있습니다. 
 
 <br>
 
 ## Implemenation
+
+*Chapter11/05_pong_pg.py* 에 구현 코드가 있습니다. 이전 코드와 다른 세 가지는 다음과 같습니다.
+
+* baseline 을 모든 예제가 아니라 1M 과거 transitions 에 대한 이동 평균으로 함
+* 동시에 여러 환경 사용
+* 학습 안정성을 향상시키기 위해 gradient clipping 함
+
+```python
+#!/usr/bin/env python3
+import gym
+import ptan
+import numpy as np
+import argparse
+import collections
+from tensorboardX import SummaryWriter
+
+import torch
+import torch.nn.functional as F
+import torch.nn.utils as nn_utils
+import torch.optim as optim
+
+from lib import common
+
+GAMMA = 0.99
+LEARNING_RATE = 0.0001
+ENTROPY_BETA = 0.01
+BATCH_SIZE = 128
+
+REWARD_STEPS = 10
+BASELINE_STEPS = 1000000
+GRAD_L2_CLIP = 0.1
+
+ENV_COUNT = 32
+
+
+def make_env():
+    return ptan.common.wrappers.wrap_dqn(gym.make("PongNoFrameskip-v4"))
+
+
+class MeanBuffer:
+    '''이동평균 계산을 빨리하기 위해서 deque buffer를 사용
+    '''
+    def __init__(self, capacity):
+        self.capacity = capacity
+        self.deque = collections.deque(maxlen=capacity)
+        self.sum = 0.0
+
+    def add(self, val):
+        if len(self.deque) == self.capacity:
+            self.sum -= self.deque[0]
+        self.deque.append(val)
+        self.sum += val
+
+    def mean(self):
+        if not self.deque:
+            return 0.0
+        return self.sum / len(self.deque)
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--cuda", default=False, action="store_true", help="Enable cuda")
+    parser.add_argument("-n", '--name', required=True, help="Name of the run")
+    args = parser.parse_args()
+    device = torch.device("cuda" if args.cuda else "cpu")
+
+    # 여러 개의 환경 사용하기 위한 작업
+    envs = [make_env() for _ in range(ENV_COUNT)]
+    writer = SummaryWriter(comment="-pong-pg-" + args.name)
+
+    net = common.AtariPGN(envs[0].observation_space.shape, envs[0].action_space.n).to(device)
+    print(net)
+
+    agent = ptan.agent.PolicyAgent(net, apply_softmax=True, device=device)
+    # 여러 개의 환경을 넣어도 자동으로 transition을 받을 수 있다.
+    exp_source = ptan.experience.ExperienceSourceFirstLast(envs, agent, gamma=GAMMA, steps_count=REWARD_STEPS)
+
+    optimizer = optim.Adam(net.parameters(), lr=LEARNING_RATE, eps=1e-3)
+
+    total_rewards = []
+    step_idx = 0
+    done_episodes = 0
+    train_step_idx = 0
+    baseline_buf = MeanBuffer(BASELINE_STEPS)
+
+    batch_states, batch_actions, batch_scales = [], [], []
+    m_baseline, m_batch_scales, m_loss_entropy, m_loss_policy, m_loss_total = [], [], [], [], []
+    m_grad_max, m_grad_mean = [], []
+    sum_reward = 0.0
+
+    with common.RewardTracker(writer, stop_reward=18) as tracker:
+        for step_idx, exp in enumerate(exp_source):
+            baseline_buf.add(exp.reward)
+            baseline = baseline_buf.mean()
+            batch_states.append(np.array(exp.state, copy=False))
+            batch_actions.append(int(exp.action))
+            batch_scales.append(exp.reward - baseline)
+
+            # handle new rewards
+            new_rewards = exp_source.pop_total_rewards()
+            if new_rewards:
+                if tracker.reward(new_rewards[0], step_idx):
+                    break
+
+            if len(batch_states) < BATCH_SIZE:
+                continue
+
+            train_step_idx += 1
+            states_v = torch.FloatTensor(np.array(batch_states, copy=False)).to(device)
+            batch_actions_t = torch.LongTensor(batch_actions).to(device)
+
+            scale_std = np.std(batch_scales)
+            batch_scale_v = torch.FloatTensor(batch_scales).to(device)
+
+            optimizer.zero_grad()
+            logits_v = net(states_v)
+            log_prob_v = F.log_softmax(logits_v, dim=1)
+            log_prob_actions_v = batch_scale_v * log_prob_v[range(BATCH_SIZE), batch_actions_t]
+            loss_policy_v = -log_prob_actions_v.mean()
+
+            prob_v = F.softmax(logits_v, dim=1)
+            entropy_v = -(prob_v * log_prob_v).sum(dim=1).mean()
+            entropy_loss_v = -ENTROPY_BETA * entropy_v
+            loss_v = loss_policy_v + entropy_loss_v
+            loss_v.backward()
+            # gradient clipping for training stability
+            nn_utils.clip_grad_norm_(net.parameters(), GRAD_L2_CLIP)
+            optimizer.step()
+
+            # calc KL-div
+            new_logits_v = net(states_v)
+            new_prob_v = F.softmax(new_logits_v, dim=1)
+            kl_div_v = -((new_prob_v / prob_v).log() * prob_v).sum(dim=1).mean()
+            writer.add_scalar("kl", kl_div_v.item(), step_idx)
+
+            grad_max = 0.0
+            grad_means = 0.0
+            grad_count = 0
+            for p in net.parameters():
+                grad_max = max(grad_max, p.grad.abs().max().item())
+                grad_means += (p.grad ** 2).mean().sqrt().item()
+                grad_count += 1
+
+            writer.add_scalar("baseline", baseline, step_idx)
+            writer.add_scalar("entropy", entropy_v.item(), step_idx)
+            writer.add_scalar("batch_scales", np.mean(batch_scales), step_idx)
+            writer.add_scalar("batch_scales_std", scale_std, step_idx)
+            writer.add_scalar("loss_entropy", entropy_loss_v.item(), step_idx)
+            writer.add_scalar("loss_policy", loss_policy_v.item(), step_idx)
+            writer.add_scalar("loss_total", loss_v.item(), step_idx)
+            writer.add_scalar("grad_l2", grad_means / grad_count, step_idx)
+            writer.add_scalar("grad_max", grad_max, step_idx)
+
+            batch_states.clear()
+            batch_actions.clear()
+            batch_scales.clear()
+
+    writer.close()
+
+```
 
 <br>
 
