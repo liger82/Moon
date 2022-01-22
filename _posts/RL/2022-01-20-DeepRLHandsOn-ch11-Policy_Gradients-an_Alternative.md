@@ -75,7 +75,7 @@ pg 는 축적된 총 보상의 관점에서 정책을 개선시키기 위해 네
 실용적인 관점에서 pg 는 다음 loss function 의 최적화를 수행하여 구현될 수 있습니다.  
 $$L = -Q(s,a) \log \pi(a|s) $$
 
-마이너스 표시인 이유는 stochastic gradient descent(SGD) 할 때, 손실 함수는 최소화해야 하기 때문입니다. 하지만 여기선 pg 를 최대화하고자 합니다. 
+마이너스 표시인 이유는 stochastic gradient descent(SGD) 할 때, 손실 함수는 최소화해야 하기 때문입니다. 그러면 pg 는 최대화 됩니다. 
 
 <br>
 
@@ -331,8 +331,12 @@ dqn 과 비교해봤을 때 REINFORCE 가 훨씬 빨리 학습을 끝냈습니�
 * value-based method: sample-efficient(high)
     - value-based method 가 계산적으로 더 효율적이라는 말은 아님. 이는 거의 반대임
 
-* policy-based method: 
-* value-based method
+* policy-based method: 행동의 확률값을 얻기 위해 뉴럴넷에 한 번만 접근하면 됨.
+* value-based method: 현재 상태에 대해, 벨만 업데이트를 위한 다음 상태에 대해, 총 2번 절차를 진행
+
+완전히 무엇이 나은 선택지다 라고 말할 수 없다는 것을 알 수 있습니다. 두 방법의 특징을 파악하여 상황에 맞게 쓰는 것이 중요합니다.
+
+다음 섹션에서는 REINFORCE 방법의 한계와 이를 극복하는 방법, pg를 pong game에 적용하는 내용에 대해 소개하도록 하겠습니다.
 
 <br>
 
@@ -342,17 +346,53 @@ dqn 과 비교해봤을 때 REINFORCE 가 훨씬 빨리 학습을 끝냈습니�
 
 ## Full episodes are required
 
+학습을 위해 완전한 에피소드가 필요합니다. 에피소드가 많을수록 성능이 올라갑니다. CartPole 같이 잘 정리되어 있고 짧은 에피소드로 구성되어 있으면 문제가 없지만 Pong 같이 에피소드마다 수백, 수천 프레임을 지속하는 경우는 문제가 될 수 있습니다. 학습 관점에서는 학습 배치가 커져야 해서 문제고, sample efficiency 관점에서는 환경과 더 많이 상호작용해야 한다는 문제가 있습니다. 
+
+완전한 에피소드가 필요한 이유는 가능한 한 정확한 Q-estimation 을 하기 위함입니다. DQN 에서는 할인된 보상의 정확한 값을 1-step 벨만 방정식( $$ Q(s,a) = r_a + \gamma V(s') $$ )을 이용해서 추정치로 대체할 수 있습니다. pg 의 경우 V(s) 나 Q(s,a) 가 없어서 DQN처럼 할 수가 없습니다.
+
+이를 극복하기 위한 방법이 두 가지 있습니다.  
+1. *Actor-Critic method*
+    - 네트워크에 V(s) 를 추정하도록 만든 후에 이를 Q를 얻는 데 사용한다.
+    - 다음 챕터에서 다룰 예정이고, 인기가 많다.
+2. Bellman equation, unrolling N steps ahead
+    - 벨만 방정식을 사용하여 N 스텝 앞서 보는 방식
+    - $$\gamma < 1$$ 일 때, 가치의 기여도가 감소한다는 사실을 효과적으로 이용
+        - $$\gamma = 0.9$$ 일 때, 10 step에서 value coefficient 는 $$0.9^{10}=0.35$$, 50 step 에서는 0.00515 이다.
+
 <br>
 
 ## High gradients variance
+
+$$ \triangledown J \approx \mathbb{E}[Q(s,a)\triangledown \log \pi(a|s)] $$
+
+pg 의 공식에서 할인된 보상에 비례하는 gradient 를 발견할 수 있습니다. 보상의 범위는 굉장히 환경에 의존적입니다. 
+
+예를 들어, CartPole 환경에서 막대기를 수직으로 유지만 하면 매 timestamp 마다 1점을 보상으로 받습니다. 5 스텝을 버틴 것과 100 스텝을 버틴 것은 (할인 고려 안하면) 보상으로 치면 20배가 차이가 납니다. 운 좋은 에피소드 하나가 최종 gradient 를 지배할 수도 있기 때문에 이러한 큰 차이는 학습 dynamics에 심각한 영향을 끼칠 수 있습니다. 
+
+수학적인 관점에서 pg는 큰 분산을 가졌습니다. 복잡한 환경에서 이에 대해 대처하지 않으면 학습 프로세스가 불안정해 질 수 있습니다. 보통 이 경우 Q에서 baseline 이라는 값을 빼는 것이 해결 방법입니다. baseline에 사용할 수 있는 옵션은 다음과 같습니다.
+
+* 일반적으로 할인된 보상의 평균값(상수)
+* 할인된 보상의 이동평균
+* 상태값 V(s)
 
 <br>
 
 ## Exploration
 
+정책이 확률 분포로 표현된다 해도, 에이전트 지역적으로 최적화된 정책에 수렴되거나 환경 탐험을 그만 둘 여지는 충분합니다. DQN 의 경우 epsilon-greedy action selection 방법을 썼는데 pg 에서도 쓸 수 있습니다. pg에서는 이를 *entropy bonus* 라고 부릅니다.
+
+정보이론에서 엔트로피는 불확실성의 정도입니다. 어떤 정책을 적용했을 때, 엔트로피는 에이전트가 그 행동을 했을 때 얼마나 불확실한지 보여줍니다. 수학 표기로 정책의 엔트로피는 다음과 같이 정의됩니다.
+
+$$ H(\pi) = - \sum \pi(a|s) log \pi(a|s) $$
+
+엔트로피 값은 항상 0 이상이고, 정책이 균일할 때, 즉 모든 행동이 동일한 확률을 가질 때 단일한 최대값을 가집니다. 
+엔트로피는 정책이 하나의 행동에 대해 1 이고 나머지에 대해 0 일 때, 최소값이 됩니다. local minimum 에 에이전트가 빠지는 것을 방지하기 위해 loss function 에서 엔트로피를 빼고, 에이전트가 취한 행동에 과한 확실성을 보이면 제재를 가했습니다. 
+
 <br>
 
 ## Correlation between samples
+
+단일 에피소드에 있는 학습 샘플들은 보통 강한 상관관계를 가지고 이는 SGD 학습에 안 좋습니다. DQN 의 경우 큰 replay buffer 를 사용하는 것으로 문제를 해결합니다. pg가 on-policy 이기 때문에 pg 에는 적용할 수 없습니다. 
 
 <br>
 
