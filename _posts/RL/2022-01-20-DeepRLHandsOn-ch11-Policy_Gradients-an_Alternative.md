@@ -800,18 +800,34 @@ if __name__ == "__main__":
 
 ## Results
 
-<center><img src= "https://liger82.github.io/assets/img/post/20220120-DeepRLHandsOn-ch11-Policy-gradients/result5-1-reward.png" width="80%"> <img src= "https://liger82.github.io/assets/img/post/20220120-DeepRLHandsOn-ch11-Policy-gradients/result5-2-reward-100.png" width="80%"></center><br>
+예상했던 바와 같이 보상 점수는 좋지 않습니다. -21 보다는 안 내려가는 동일한 모습을 보여주고 있습니다.
 
+<center><img src= "https://liger82.github.io/assets/img/post/20220120-DeepRLHandsOn-ch11-Policy-gradients/figure11.14.png" width="80%"></center><br>
 
+엔트로피 관련 플랏들입니다. 엔트로피가 0 일 때, 나머지 플랏에서도 점수가 0인 것을 확인할 수 있습니다. 이는 에이전트가 행동에 대해 100% 확신이 있다는 의미입니다.
+이 기간에 gradient 도 0이었는데, 이러한 평탄한 지역에서 학습 과정을 회복할 수 있었다는 사실이 주목할만 합니다.
+
+ <center><img src= "https://liger82.github.io/assets/img/post/20220120-DeepRLHandsOn-ch11-Policy-gradients/figure11.15.png" width="80%"></center><br>
+
+다음 차트에서는 베이스라인이 보상을 대부분 따르고 동일한 패턴을 보여준다는 것을 확인할 수 있습니다.
+
+ <center><img src= "https://liger82.github.io/assets/img/post/20220120-DeepRLHandsOn-ch11-Policy-gradients/figure11.16.png" width="80%"></center><br>
+
+KL 플랏에서는 zero entropy 전환 시점 사이에 큰 spike 를 가지는데 이는 정책이 분포를 반환하는 과정에서 심한 점프로 인해 어려움을 겪었음을 보여줍니다.
+
+ <center><img src= "https://liger82.github.io/assets/img/post/20220120-DeepRLHandsOn-ch11-Policy-gradients/figure11.17.png" width="80%"></center><br>
 
 <br>
 
 > <subtitle> Summary </subtitle>
 
-이 챕터에서는  
+이 챕터에서는 RL 문제를 푸는 다른 방법인 Policy Gradient 에 대해 알아보았습니다. 
 
-<br>
+* pg의 기본 방법인 REINFORCE 에 대해 다룸 -> CartPole 에서 실험
+* vanilla pg 모델로 CartPole, Pong 에서 실험
+    - CartPole 은 잘하지만, Pong 에서는 잘 못함
 
+다음 챕터에서는 policy-based 방법에 value-based 방법을 결합하여 policy gradient 의 안정성을 향상시킨 actor-critic 방법에 대해 다룰 예정입니다.
 
 <br>
 
