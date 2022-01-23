@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "[Deep Reinforcement Learning Hands On 2/E] Chapter 11 : Policy Gradients - an Alternative"
+title: "초안 작성 중 - [Deep Reinforcement Learning Hands On 2/E] Chapter 11 : Policy Gradients - an Alternative"
 date: 2022-01-20
 excerpt: ""
 categories: [RL/RL]
@@ -724,6 +724,7 @@ if __name__ == "__main__":
     m_grad_max, m_grad_mean = [], []
     sum_reward = 0.0
 
+    # RewardTracker 는 mean reward 계산하고 report, 추가로 mean_reward > stop_reward 일 때 종료시킴
     with common.RewardTracker(writer, stop_reward=18) as tracker:
         for step_idx, exp in enumerate(exp_source):
             baseline_buf.add(exp.reward)
@@ -798,6 +799,10 @@ if __name__ == "__main__":
 <br>
 
 ## Results
+
+<center><img src= "https://liger82.github.io/assets/img/post/20220120-DeepRLHandsOn-ch11-Policy-gradients/result5-1-reward.png" width="80%"> <img src= "https://liger82.github.io/assets/img/post/20220120-DeepRLHandsOn-ch11-Policy-gradients/result5-2-reward-100.png" width="80%"></center><br>
+
+
 
 <br>
 
