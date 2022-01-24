@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "초안 작성 중 - [Deep Reinforcement Learning Hands On 2/E] Chapter 11 : Policy Gradients - an Alternative"
+title: "[Deep Reinforcement Learning Hands On 2/E] Chapter 11 : Policy Gradients - an Alternative"
 date: 2022-01-20
 excerpt: ""
 categories: [RL/RL]
