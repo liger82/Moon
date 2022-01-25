@@ -3,7 +3,7 @@ layout: post
 title: "[Clustering] Affinity Propagation"
 date: 2021-05-01
 excerpt: " "
-categories: [The Others/Statistics]
+categories: [etc/further_study]
 tags : [AP, Affinity Propagation, Statistics]
 comments: true
 ---

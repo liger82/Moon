@@ -1,5 +1,5 @@
 ---
 layout: category
-title: The Others/Blog
-permalink: '/theothers/Blog/'
+title: etc/Blog
+permalink: '/etc/Blog/'
 ---

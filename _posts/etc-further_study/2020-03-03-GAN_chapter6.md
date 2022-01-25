@@ -3,7 +3,7 @@ layout: post
 title: "Generative Deep Learning Chapter 6 : Write"
 date: 2020-03-03
 excerpt: ""
-categories: [The Others/GAN]
+categories: [etc/further_study]
 tags : [GAN, Generative Deep Learning, David Foster]
 comments: true
 ---

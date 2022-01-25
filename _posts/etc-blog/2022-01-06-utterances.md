@@ -3,7 +3,7 @@ layout: post
 title: "github.io 에 댓글 기능 달기; utterances"
 date: 2022-01-06
 excerpt: ""
-categories: [The Others/Blog]
+categories: [etc/Blog]
 tags : [utterances, disqus, 댓글 기능, comments]
 comments: true
 ---
