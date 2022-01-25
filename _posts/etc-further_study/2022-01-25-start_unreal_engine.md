@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "초안 작성 중 - Unreal Engine Meta Human Tutorial 1: Install & Basic instructions"
+title: "Unreal Engine Meta Human Tutorial 1: Install & Basic instructions"
 date: 2022-01-25
 excerpt: " "
 categories: [etc/further_study]
@@ -17,7 +17,7 @@ comments: true
 진짜 사람 같습니다. 한국에서 보이는 어떤 가상인간보다 더 현실적인 모습을 투영한 것처럼 보입니다.
 
 <center><img src= "https://liger82.github.io/assets/img/post/20220125-unreal_metahuman_tutorial1/unreal_metahuman1.jpg" width="70%"></center><br>
-<center><img src= "https://liger82.github.io/assets/img/post/20220125-unreal_metahuman_tutorial1/unreal_metahuman2.jpg" width="70%"></center><br>
+<center><img src= "https://liger82.github.io/assets/img/post/20220125-unreal_metahuman_tutorial1/unreal_metahuman2.jpeg" width="70%"></center><br>
 
 
 여기서는 무료로 가상인간을 만들 수 있도록 해주더라고요.
@@ -33,10 +33,6 @@ comments: true
 [https://metahuman.unrealengine.com/](https://metahuman.unrealengine.com/){:target="_blank"} 
 
 이 사이트에서 에픽게임즈 계정에 로그인합니다. 저는 구글로 로그인해서 가입했어요.
-
-아 그리고 [https://www.unrealengine.com/ko/metahuman-creator](https://www.unrealengine.com/ko/metahuman-creator){:target="_blank"} 여기서 아래 내리다 보면 "퀵셀 브리지 다운로드"가 있는데 다운 받을게요!
-
-언리얼 엔진은 웹 브라우저에서도 메타휴먼을 만들 수 있지만 
 
 <br>
 
@@ -63,7 +59,7 @@ comments: true
 
 > <subtitle> 기본 편집 기능 </subtitle>
 
-<center><img src= "https://liger82.github.io/assets/img/post/20220125-unreal_metahuman_tutorial1/capture3-4box.png" width="70%"></center><br>
+<center><img src= "https://liger82.github.io/assets/img/post/20220125-unreal_metahuman_tutorial1/capture3-4box.png" width="100%"></center><br>
 
 ## 1. 단축키
 
