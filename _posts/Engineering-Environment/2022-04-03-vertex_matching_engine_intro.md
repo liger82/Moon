@@ -70,7 +70,7 @@ VME를 사용하는 방법은 어렵지 않습니다.
 * 새로운 임베딩으로부터 업데이트된 인덱스가 생성될 것이고, 새로운 인덱스가 기존 인덱스를 지연 시간 없이 대체한다.
 
 인덱스를 생성할 때, 지연 시간과 recall 사이의 밸런스를 조정하기 위해 인덱스를 튜닝하는 것은 중요합니다.
-- 주요 튜닝 패러미터는 (여기)[https://cloud.google.com/vertex-ai/docs/matching-engine/using-matching-engine#tuning_the_index]{:target="_blank"} 에 정리되어 있다.
+- 주요 튜닝 패러미터는 [여기](https://cloud.google.com/vertex-ai/docs/matching-engine/using-matching-engine#tuning_the_index){:target="_blank"} 에 정리되어 있다.
 - Matching engine은 미세한 조정을 하기 위한 brute-force search 할 수 있는 기능도 제공한다. 
     - 이 기능은 느리기 때문에 production 단계에서는 사용하지 않는 게 좋다.
 
