@@ -162,11 +162,8 @@ features {
 matching engine 을 사용하기 앞서 사전 준비가 필요합니다. 
 
 1. 프로젝트 생성 및 결제 계정 등록
-
 2. compute engine api, vertex ai api, service networking api 사용 설정
-
 3. 네트워크 관리자 역할 필요(프로젝트 소유자나 편집자가 아닌 경우)
-
 4. VPC의 비공개 서비스 액세스 설정하려면 서시스 제작자를 위한 IP 범위를 예약한 다음 Vertex AI와 피어링 연결
     - [자세한 내용](https://cloud.google.com/vertex-ai/docs/general/vpc-peering#set-up-psa){:target="_blank"}
 
@@ -187,7 +184,7 @@ matching engine 을 사용하기 앞서 사전 준비가 필요합니다.
 
 공부용이라면 싼 지역으로 해보는 것을 추천드리면서 아래 미국/캐나다 지역이 가장 싼 것을 볼 수 있습니다.
 
-<center><img src= "https://liger82.github.io/assets/img/post/20220406-Verticla_matching_engine-tutorial/vpc_price_by_region.png" width="70%"></center><br>
+<center><img src= "https://liger82.github.io/assets/img/post/20220406-Verticla_matching_engine-tutorial/vpc_price_by_region.png" width="100%"></center><br>
 
 서브넷 생성 모드는 자동으로 선택해놓는 게 편합니다. 리전 선택하면 그에 따른 서브넷이 활성화됩니다.
 
@@ -195,8 +192,8 @@ matching engine 을 사용하기 앞서 사전 준비가 필요합니다.
 
 동적 라우팅 모드 > 리전
 
-<center><img src= "https://liger82.github.io/assets/img/post/20220406-Verticla_matching_engine-tutorial/make_vpc.png" width="70%"></center><br>
-<center><img src= "https://liger82.github.io/assets/img/post/20220406-Verticla_matching_engine-tutorial/make_vpc2.png" width="70%"></center><br>
+<center><img src= "https://liger82.github.io/assets/img/post/20220406-Verticla_matching_engine-tutorial/make_vpc.png" width="100%"></center><br>
+<center><img src= "https://liger82.github.io/assets/img/post/20220406-Verticla_matching_engine-tutorial/make_vpc2.png" width="100%"></center><br>
 
 
 <br>
