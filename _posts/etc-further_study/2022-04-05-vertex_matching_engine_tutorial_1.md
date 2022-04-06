@@ -164,7 +164,7 @@ matching engine 을 사용하기 앞서 사전 준비가 필요합니다.
 1. 프로젝트 생성 및 결제 계정 등록
 2. compute engine api, vertex ai api, service networking api 사용 설정
 3. 네트워크 관리자 역할 필요(프로젝트 소유자나 편집자가 아닌 경우)
-4. VPC의 비공개 서비스 액세스 설정하려면 서시스 제작자를 위한 IP 범위를 예약한 다음 Vertex AI와 피어링 연결
+4. VPC의 비공개 서비스 액세스 설정하려면 서비스 제작자를 위한 IP 범위를 예약한 다음 Vertex AI와 피어링 연결
     - [자세한 내용](https://cloud.google.com/vertex-ai/docs/general/vpc-peering#set-up-psa){:target="_blank"}
 
 * 공유 vpc를 사용할 경우 vpc 호스트 프로젝트와 별도의 프로젝트에서 vertex ai를 사용한다  
