@@ -175,32 +175,33 @@ matching engine 을 사용하기 앞서 사전 준비가 필요합니다.
 * On-premise 네트워크와 비공개 연결을 원하면 커스텀 경로 내보내기 
     - [자세한 내용](https://cloud.google.com/vertex-ai/docs/general/vpc-peering#export-custom-routes){:target="_blank"}
 
+<br>
 
+### VPC(Virtual Private Cloud)
 
+회사에서 가상사설망(VPN)을 많이 쓰는데 VPC는 클라우드 내에서의 가상의 클라우드라고 보면 됩니다.
 
+<center><img src= "https://miro.medium.com/max/1400/1*Ehn4uEQMtbmdPsU6MxVc3Q.png" width="80%"></center><br>
 
+구글 클라우드에서도 VPC를 제공하는데 리전별로 또 가격이 다르네요. 
 
-VPC 네트워크 > VPC 네트워크
+공부용이라면 싼 지역으로 해보는 것을 추천드리면서 아래 미국/캐나다 지역이 가장 싼 것을 볼 수 있습니다.
 
-미국 or 캐나다 리전으로 선택. 요금이 저렴
+<center><img src= "https://liger82.github.io/assets/img/post/20220406-Verticla_matching_engine-tutorial/vpc_price_by_region.png" width="70%"></center><br>
 
-이름 지정
+서브넷 생성 모드는 자동으로 선택해놓는 게 편합니다. 리전 선택하면 그에 따른 서브넷이 활성화됩니다.
 
-서브넷 생성 모드는 자동으로 선택 -> 리전 선택하면 그에 따른 서브넷 지정된거 활성화
-
-방화벽은 맘대로~ 어차피 나중에 인스턴스 연결시 따로 지정 가능
+방화벽은 맘대로~ 어차피 나중에 인스턴스 연결시 따로 지정 가능하니까요.
 
 동적 라우팅 모드 > 리전
 
+<center><img src= "https://liger82.github.io/assets/img/post/20220406-Verticla_matching_engine-tutorial/make_vpc.png" width="70%"></center><br>
+<center><img src= "https://liger82.github.io/assets/img/post/20220406-Verticla_matching_engine-tutorial/make_vpc2.png" width="70%"></center><br>
 
-
-
-VPC 네트워크 > VPC 네트워크 피어링
 
 <br>
 
-> <subtitle> Opinion </subtitle>
-
+[vertex_matching_engine_example](https://github.com/GoogleCloudPlatform/vertex-ai-samples/blob/main/notebooks/community/matching_engine/matching_engine_for_indexing.ipynb){:target="_blank"}
 
 <br>
 
@@ -211,6 +212,6 @@ VPC 네트워크 > VPC 네트워크 피어링
 * [google cloud vpc 리전별 요금](https://cloud.google.com/vpc/network-pricing?hl=ko){:target="_blank"}
 * [vertex matching engine 사용하기 전에 할 것](https://cloud.google.com/vertex-ai/docs/general/vpc-peering#before_you_begin){:target="_blank"}
 * [two-tower built-in algorithm](https://cloud.google.com/vertex-ai/docs/matching-engine/train-embeddings-two-tower){:target="_blank"}
-* [](){:target="_blank"}
+* [vpc 개념 설명 블로그](https://medium.com/harrythegreat/aws-%EA%B0%80%EC%9E%A5%EC%89%BD%EA%B2%8C-vpc-%EA%B0%9C%EB%85%90%EC%9E%A1%EA%B8%B0-71eef95a7098){:target="_blank"}
 
 <br>
