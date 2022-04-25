@@ -8,12 +8,16 @@ tags : [virtual human, faceformer, transformer, facial animation, adobe research
 comments: true
 ---
 
->Authors : Zihang Dai,    Zhilin Yang,   Yiming Yang,   William W. Cohen, Jaime Carbonell,   Quoc V. Le ,    Ruslan Salakhutdinov
->Institution : Carnegie Mellon University,    Google Brain,    Google AI
->Publication Date : June 2, 2019
->ACL 2019
->github : [https://github.com/kimiyoung/transformer-xl](https://github.com/kimiyoung/transformer-xl){:target="_blank"}
->paper : [https://arxiv.org/abs/1901.02860](https://arxiv.org/abs/1901.02860){:target="_blank"}
+
+>Authors : Yingruo Fan, Zhaojiang Lin, Jun Saito, Wenping Wang, Taku Komura  
+>Institution : The University of Hong Kong, The Hong Kong University of Science and Technology, Adobe Research, Texas A&M University  
+>Publication Date : Mar 17, 2022  
+>github : [https://github.com/EvelynFan/FaceFormer](https://github.com/EvelynFan/FaceFormer){:target="_blank"}  
+>paper : [https://arxiv.org/pdf/2112.05329.pdf](https://arxiv.org/pdf/2112.05329.pdf){:target="_blank"}  
+
+---
+
+<br>
 
 > <subtitle> Abstract </subtitle>
 
@@ -54,7 +58,23 @@ long-tern context 와 3D audio-visual data의 부족 문제를 해결하기 위�
 1. 시간적으로 안정적인 얼굴 영상을 제작하기 위해 얼굴 움직임의 히스토리를 고려한다.
 
 Transformer 는 NLP 영역 뿐만 아니라 컴퓨터 비전 영역에서도 놀라울 만한 성과를 내고 있다. transformer 의 성공에는 self-attention mechanism 이 있다. self-attention 은 표현의 모든 부분에 명시적으로 attention을 계산하여 장, 단거리 관계를 모델링하는 데 효과적이다.
-Speech-driven 3D facial animation 은 이 방향으로 탐구된 적이 없다. 
+
+이렇게 좋은 transformer를 Speech-driven 3D facial animation 연구에 사용된 적이 적다. 다만 vanilla transformer 를 바로 적용하는 것은 잘 되지 않는다. 
+
+1. transformer 는 학습에 많은 데이터를 필요로 한다 -> self-supervised pre-trained speech model(wav2vec 2.0) 사용
+    - wav2vec 2.0 은 대용량 unlabeled speech 데이터로 학습하여 풍부한 음소 정보를 가지고 있다.
+    - 거대한 사전학습 모델이 기반이 되기 때문에 적은 3D audio-visual 데이터로도 커버 가능
+1. 기본 transformer 는 modality alignment를 통제하기 어렵다 -> audio-motion alignment를 위해 alignment bias 를 추가
+1. speech 와 face motion 간의 상관관계를 모델링하는 것은 long-term audio context dependency를 고려해야 한다 -> 인코더 self-attention 의 attention 범위를 제한하지 않아서 긴 범위의 audio context dependency 를 잡도록 하였다.
+1. 사인파 포지션 인코딩을 하는 transformer 는 학습 때 보이는 것보다 긴 길이의 시퀀스를 일반화하는 능력이 떨어진다 -> Attention with Linear Biases(ALiBi) 에 영감을 받아, 더 긴 오디오 시퀀스를 일반화하는 능력을 향상시키기 위해, 시간적 bias 를 query-key attention score 에 추가하고, 주기적인 positional encoding 전략을 설계했다
+
+<br>
+
+본 연구의 주요 기여는 다음과 같다.
+
+1. An autoregressive transformer-based architecture for speech-driven 3D facial animation
+
+
 
 <br>
 
