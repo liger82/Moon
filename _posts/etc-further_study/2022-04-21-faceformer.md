@@ -73,8 +73,15 @@ Transformer 는 NLP 영역 뿐만 아니라 컴퓨터 비전 영역에서도 놀
 본 연구의 주요 기여는 다음과 같다.
 
 1. An autoregressive transformer-based architecture for speech-driven 3D facial animation
-
-
+    - faceformer 는 long-term audio context 와 face motion의 역사를 인코딩하여 autoregressive하게 움직이는 3D face mesh 시퀀스를 예측한다
+    - 매우 현실적이고 얼굴의 위아래 모두에서 안정적인 모습을 보여준다
+1. The biased attention modules and a periodic position encoding strategy
+    - the biased cross-modal MH attention : 다른 modality 를 align 하기 위해 설계
+    - the biased causal MH self-attention with a periodic position encoding strategy : 더 긴 오디오 시퀀스를 일반화하는 능력을 향상시키기 위해 설계
+1. Effective utilization of the self-supvervised pre-trained speech model
+    - 사전학습 모델을 사용하여 데이터 제한 문제에 대처할 뿐만 아니라 입 움직임의 정확도도 향상시킴
+1. Extensive experiments and the user study to assess the quality of synthesized face motions
+    - 2개의 3D 데이터셋에서 현실적인 얼굴 움직임과 립싱크 관점으로 봤을 때, FaceFormer 가 현재 SOTA 보다 성능이 우수하다
 
 <br>
 
@@ -82,10 +89,41 @@ Transformer 는 NLP 영역 뿐만 아니라 컴퓨터 비전 영역에서도 놀
 
 ## 2.1 Speech-Driven 3D Facial Animation
 
+* the history of facial animation
+- 2D 기반 접근법
+- 절차적 방법: 명확한 룰로 구성된 셋 사용
+    - 통제 가능성이 높아 입 움직임의 정확도를 보장
+    - 수작업이 엄청나게 많이 필요
+- Data-driven 3D facial animation
+    1. Expressive speech-driven facial animation(Cao et al, 2005)
+        - Anime Graph 구조와 검색 기반 기술 사용
+    1. sliding window 접근법 
+    1. end-to-end conv net
+    1. three-stage network - 음소 그룹, 랜드마크, 오디오 피쳐를 결합하여 얼굴 움직임 커브를 예측
+    1. speaker-independent 3D facial animation method - 다양한 말하는 스타일을 잡아내지만 얼굴 아래쪽에만 거의 집중
+    1. (MeshTalk) 범주 잠재 공간 학습
+        - 오디오 관련과 관련 없은 얼굴 모션을 성공적으로 풀어냄
+        - 꽤 성공적인 얼굴의 움직임을 보여주지만 많은 양의 정확한 3D 얼굴 데이터를 필요로 한다.
+
 <br>
 
-> <subtitle>  </subtitle>
+> <subtitle> 3. Our Approach: FaceFormer </subtitle>
 
+* speech-driven 3D facial animation 과제를 seq2seq 학습 문제로 만들었다.
+* 새로운 seq2seq 아키텍쳐(Fig. 2)를 제안
+    - audio context와 과거 얼굴 움직임 시퀀스가 모두 있는 얼굴 움직임을 autoregressive하게 예측한다.
+* 간단 설명
+    - ground-truth 3D face movements $$ Y_T = (y_1, ... , y_T) $$ 있다고 하자. T는 이미지 프레임 번호
+    - 목표는 얼굴 움직임 $$\hat{Y}$$ 를 합성해낼 수 있는 모델을 만드는 것
+        - $$\hat{Y}$$ 는 raw audio $$ \chi $$ 가 주어졌을 때 $$\hat{Y}$$ 와 유사한 값
+    - 인코더는 $$ \chi $$ 를 speech representations $$A_{T'} = (a_1, ..., a_{T'})$$ 로 변환
+        - $$T'$$ 는 speech representation 의 frame 길이
+    - style embedding layer 는 speaker identities $$ S = (s_1, ..., s_N) $$ 를 표현하는 학습가능한 임베딩 셋을 포함한다
+    - 디코더는 autoregressive하게 $$ A_{T'} $$, style embedding $$s_n$$ (n번째 speaker), 과거 얼굴 움직임 조건 하에 T번째 얼굴 움직임 $$ \hat{Y}_T = (\hat{y}_1, ... , \hat{y}_T) $$ 예측한다
+    - $$ \hat{y}_t = FaceFormer_{\theta}(\hat{y}_{<t}, s_n, \chi )$$
+        - $$\theta$$ 는 model parameters
+        - t 는 현재 시간 스텝
+        - $$\hat{y}_t \in \hat{Y}_T $$
 
 <br>
 
