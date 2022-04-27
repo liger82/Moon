@@ -181,6 +181,7 @@ Transformer 는 NLP 영역 뿐만 아니라 컴퓨터 비전 영역에서도 놀
         - 각 period p 안에서 재귀적으로 위치 정보를 삽입하는 방식
 * PPE 전에 motion encoder를 사용하여 face motion $$\hat{y}_t$$ 를 d 차원 공간에 projection 한다
 * 말하는 스타일을 모델링하기 위해서 style embedding도 추가  
+
 $$f_t = \left\{\begin{matrix} (W^f \cdot \hat{y}_{t-1} + b^f) +s_n, \; 1 < t \leq T,
  \\ s_n, \; \;\;\;\;\;\; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; t=1
 \end{matrix}\right. $$
@@ -192,6 +193,7 @@ $$f_t = \left\{\begin{matrix} (W^f \cdot \hat{y}_{t-1} + b^f) +s_n, \; 1 < t \le
     * $$s_n$$ : style embedding
 
 * 시간 순서 정보를 주기적으로 부여하기 위해 PPE 와 $$f_t$$ 더한다.  
+
 $$ \hat{f}_t = f_t + PPE(t) $$
 
 <br>
@@ -205,7 +207,7 @@ $$ \hat{f}_t = f_t + PPE(t) $$
 
 $$Att(Q^{\hat{F}}, K^{\hat{F}}, V^{\hat{F}}, B^{\hat{F}}) = softmax(\frac{Q^{\hat{F}}(K^{\hat{F}})^T}{\sqrt{d_k}} + B^{\hat{F}})V^{\hat{F}}$$
 
-- $$B^{\hat{F}}$$ : temporal bias, 인과성 보장과 더 긴 시퀀스를 일반화하는 능력 개선을 위해 추가
+* $$B^{\hat{F}}$$ : temporal bias, 인과성 보장과 더 긴 시퀀스를 일반화하는 능력 개선을 위해 추가
 
 * $$B^{\hat{F}}$$ 는 현재 예측을 위해 미래의 프레임을 보는 것을 피하기 위해 upper triangle에 음의 무한대를 가지는 행렬이다
 * 일반화 능력을 위해, $$B^{\hat{F}}$$ 의 lower triangle 에 정적이면서 학습 안되는 biases 를 추가
@@ -223,6 +225,10 @@ $$ B^{\hat{F}}(i, j) = \left\{\begin{matrix}
 
 <br>
 
+multi head attention 은 attention 결과인 head 값을 concat 한 후 가중치에 곱한 값이다.
+
+$$MH(Q^{\hat{F}}, K^{\hat{F}}, V^{\hat{F}}, B^{\hat{F}}) = Concat(head_1, ..., head_H) W^{\hat{F}} $$
+$$ where \, head_h = Att(Q^{\hat{F}}_h, K^{\hat{F}}_h, V^{\hat{F}}_h, B^{\hat{F}}_h)$$
 
 
 <br>
