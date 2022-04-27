@@ -109,6 +109,8 @@ Transformer 는 NLP 영역 뿐만 아니라 컴퓨터 비전 영역에서도 놀
 
 > <subtitle> 3. Our Approach: FaceFormer </subtitle>
 
+<center><img src= "https://liger82.github.io/assets/img/post/20220421-faceformer/fig2.png" width="100%"></center><br>
+
 * speech-driven 3D facial animation 과제를 seq2seq 학습 문제로 만들었다.
 * 새로운 seq2seq 아키텍쳐(Fig. 2)를 제안
     - audio context와 과거 얼굴 움직임 시퀀스가 모두 있는 얼굴 움직임을 autoregressive하게 예측한다.
@@ -123,7 +125,65 @@ Transformer 는 NLP 영역 뿐만 아니라 컴퓨터 비전 영역에서도 놀
     - $$ \hat{y}_t = FaceFormer_{\theta}(\hat{y}_{<t}, s_n, \chi )$$
         - $$\theta$$ 는 model parameters
         - t 는 현재 시간 스텝
-        - $$\hat{y}_t \in \hat{Y}_T $$
+        - $$\hat{y}_t \in \hat{Y}_T $$ .
+
+<br>
+
+## 3.1 FaceFormer Encoder
+
+### 3.1.1 Self-Supervised Pre-Trained Speech Model
+
+* faceformer 의 인코더는 SOTA 이자 self-supervised pre-trained speech model 인 **wav2vec 2.0** 을 따른다
+* 인코더는 audio feature extractor 와 multi-layer transformer encoder 로 구성된다
+    - **audio feature extractor**
+        - 여러 개의 temporal convolutions layers(TCN) 로 구성
+        - raw waveform input 을 frequency $$f_a$$ 가 있는 feature vectors 로 변환
+    - **transformer encoder**
+        - 적층된 multi-head self-attention, feed-forward layers 로 구성
+        - audio feature vectors 를 contextualized speech representations 로 변환
+* TCN 의 출력물은 양자화 모듈을 거쳐 유한한 speech unit 으로 쪼개진다.
+* MLM과 비슷하게 wav2vec 2.0 은 진짜 speech unit 을 확인하는 작업을 수행하기 위해 마스킹된 타임스텝 주변의 맥락 정보를 사용한다.
+
+<br>
+    
+* 인코더를 wav2vec 2.0 의 가중치로 초기화
+* 인코더 젤 위에 임의로 초기화한 linear projection layer 추가
+* linear interpolation layer
+    - TCN 거치면서 frequency 가 $$ f_a $$ 인 audio feature vectors 가 들어오는데 face motion 의 frequency $$ f_m $$ 가 다르기 때문에 audio features 를 resampling 하기 위해 추가
+    - 길이가 $$kT$$인 출력물을 만들어냄
+        - where $$ k = \left \lceil \frac{f_a}{f_m}\right \rceil $$
+    - 결과적으로 linear projection layer 의 아웃풋은 $$A_{kT} = (a_1, ..., a_{kT}) $$로 표현될 수 있다.
+    - --> 이런 식으로 audio, motion의 modalities 를 align 시켰다.
+        - 더 자세한 내용은 biased cross-modal multi-head attention 에서 다룰 예정
+
+<br>
+
+## 3.2. FaceFormer Decoder
+
+### 3.2.1 Periodic Positional Encoding
+
+* 사인파 positional encoding -> ALiBi 로 교체
+    - 사인파 positional encoding(sinusoidal positional encoding)
+        - 긴 시퀀스에서 제한된 일반화 능력을 갖게 함
+    - **Attention with Linear Biases(ALiBi)**
+        - query-key attention score 에 constant bias 를 추가하여 일반화 능력을 향상시킴
+    - 문제는 이 교체로 인해 inference 하는 동안 얼굴 표현이 정적인 모습을 보여줌
+        - ALiBi 는 입력 임베딩에 어떤 위치 정보도 추가하지 않는다
+    - 위 문제를 경감시키기 위해 Periodic Positional Encoding(**PPE**) 를 ALiBi 와 함께 씀
+        - 시간 순서 정보를 삽입하는 역할
+        - 원래 sinusoidal positional encoding 방법을 변형함
+        - $$PPE_{(t, 2i)} = sin((\mathbf{t}\, mod \,\textbf{p})/10000^{2i/d})$$
+        - $$PPE_{(t, 2i+1)} = cos((\mathbf{t}\, mod \,\textbf{p})/10000^{2i/d})$$
+            - t 는 토큰 위치 혹은 현재 타임 스텝
+            - d 는 model dimension
+            - i 는 dimension index
+            - p 는 period 를 가리키는 hyper-parameter
+        - 각 period p 안에서 재귀적으로 위치 정보를 삽입하는 방식
+* PPE 전에 motion encoder를 사용하여 face motion $$\hat{y}_t$$ 를 d 차원 공간에 projection 한다
+* 말하는 스타일을 모델링하기 위해서 style embedding도 추가
+* $$f_t = \left\{\begin{matrix} (W^f \cdot \hat{y}_{t-1} + b^f) +s_n, \; 1 < t \leq T,
+ \\ s_n, \; \;\;\;\;\;\; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; t=1
+\end{matrix}\right. $$
 
 <br>
 
