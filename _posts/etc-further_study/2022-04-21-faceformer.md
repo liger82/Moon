@@ -180,10 +180,50 @@ Transformer 는 NLP 영역 뿐만 아니라 컴퓨터 비전 영역에서도 놀
             - p 는 period 를 가리키는 hyper-parameter
         - 각 period p 안에서 재귀적으로 위치 정보를 삽입하는 방식
 * PPE 전에 motion encoder를 사용하여 face motion $$\hat{y}_t$$ 를 d 차원 공간에 projection 한다
-* 말하는 스타일을 모델링하기 위해서 style embedding도 추가
-* $$f_t = \left\{\begin{matrix} (W^f \cdot \hat{y}_{t-1} + b^f) +s_n, \; 1 < t \leq T,
+* 말하는 스타일을 모델링하기 위해서 style embedding도 추가  
+$$f_t = \left\{\begin{matrix} (W^f \cdot \hat{y}_{t-1} + b^f) +s_n, \; 1 < t \leq T,
  \\ s_n, \; \;\;\;\;\;\; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; t=1
 \end{matrix}\right. $$
+
+* 용어
+    * $$W^f$$ : 가중치
+    * $$b^f$$ : bias
+    * $$\hat{y}_{t-1}$$ : 이전 스텝로부터의 예측값
+    * $$s_n$$ : style embedding
+
+* 시간 순서 정보를 주기적으로 부여하기 위해 PPE 와 $$f_t$$ 더한다.  
+$$ \hat{f}_t = f_t + PPE(t) $$
+
+<br>
+
+### 3.2.2 Biased Causal Multi-Head Self-Attention
+
+* ALiBi 기반으로 biased causal multi-head(MH) self-attention 을 설계
+* 시간 순으로 인코딩된 facial motion representation sequence $$\hat{F}_t = (\hat{f}_1 , ..., \hat{f}_t)$$ 가 주어진 상황에서, biased causal MH self-attention 은 $$\hat{F}_t$$ 를 queries $$Q^{\hat{F}}$$, keys $$K^{\hat{F}}$$, values $$V^{\hat{F}}$$ 에 linear하게 projection 시킨다.
+
+과거의 facial motion sequence 맥락에서 각 프레임 간 의존성을 학습하기 위해, scaled dot-product attention 을 수행하여 가중치 맥락 임베딩을 계산한다.
+
+$$Att(Q^{\hat{F}}, K^{\hat{F}}, V^{\hat{F}}, B^{\hat{F}}) = softmax(\frac{Q^{\hat{F}}(K^{\hat{F}})^T}{\sqrt{d_k}} + B^{\hat{F}})V^{\hat{F}}$$
+
+- $$B^{\hat{F}}$$ : temporal bias, 인과성 보장과 더 긴 시퀀스를 일반화하는 능력 개선을 위해 추가
+
+* $$B^{\hat{F}}$$ 는 현재 예측을 위해 미래의 프레임을 보는 것을 피하기 위해 upper triangle에 음의 무한대를 가지는 행렬이다
+* 일반화 능력을 위해, $$B^{\hat{F}}$$ 의 lower triangle 에 정적이면서 학습 안되는 biases 를 추가
+    - period p 를 도입하고 각 period에 temporal bias 를 주입한다 ([1:p], [p+1:2p], ...)
+
+$$ B^{\hat{F}}(i, j) = \left\{\begin{matrix}
+\left \lfloor (i, j)/p \right \rfloor, & j\leq i \\
+-\infty,  & otherwise. \\
+\end{matrix}\right. $$
+
+<br>
+
+더 높은 attention weights 를 더 가까운 기간에 할당함으로써 causal attention 을 편향시킨다. 가장 가까운 facial frames period ($$\hat{y}_{t-p}, ..., \hat{y}_{t-1}$$) 가 $$\hat{y}_t$$ 의 현재 예측에 가장 영향을 줄 가능성이 높다.  
+-> 본 연구에서 제안한 temporal bias 는 ALiBi 의 일반화 포맷으로 볼 수 있고 ALiBi 는 p=1 인 특수 케이스이다.
+
+<br>
+
+
 
 <br>
 
