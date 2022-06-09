@@ -45,7 +45,7 @@ minikube start --driver=docker --alsologtostderr
 현재 떠 있는 docker container를 살펴보면 minikube가 떠 있는 것을 확인할 수 있습니다.
 
 ```
-docker ps
+$ docker ps
 CONTAINER ID   IMAGE                                 COMMAND                  CREATED          STATUS          PORTS                                                                                                                                  NAMES
 debb44186fe3   gcr.io/k8s-minikube/kicbase:v0.0.30   "/usr/local/bin/entr…"   45 seconds ago   Up 44 seconds   127.0.0.1:50292->22/tcp, 127.0.0.1:50293->2376/tcp, 127.0.0.1:50295->5000/tcp, 127.0.0.1:50296->8443/tcp, 127.0.0.1:50294->32443/tcp   minikube
 ```
@@ -56,4 +56,4 @@ debb44186fe3   gcr.io/k8s-minikube/kicbase:v0.0.30   "/usr/local/bin/entr…"   
 
 > <subtitle> References </subtitle>
 
-* [https://kubernetes.io/ko/docs/tasks/tools/install-kubectl-macos/](https://kubernetes.io/ko/docs/tasks/tools/install-kubectl-macos/){:target="_blank"}
+* [https://medium.com/@seohee.sophie.kwon/how-to-run-a-minikube-on-apple-silicon-m1-8373c248d669](https://medium.com/@seohee.sophie.kwon/how-to-run-a-minikube-on-apple-silicon-m1-8373c248d669){:target="_blank"}
