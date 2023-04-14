@@ -31,7 +31,7 @@ comments: true
 
 사고의 연쇄는 복잡한 추론 작업을 해결하기 위해 문제를 중간 단계로 분해하고 각 단계를 해결하여 최종 답을 도출하는 과정입니다. 
 
-<center><img src= "https://liger82.github.io/assets/img/post/20230414-chain-of-thougts/fig1.png" width="100%"></center><br>
+<center><img src= "https://liger82.github.io/assets/img/post/20230414-chain-of-thougts/fig1.png" width="80%"></center><br>
 
 예를 들어, "로저에게 5개의 공이 있다. 3개씩 들어있는 2개의 테니스 볼 캔은 총 6개다. 5+6=11. 답은 11 이다."와 같은 방식으로 문제를 해결합니다. 이러한 사고의 연쇄를 사용하는 언어 모델에는 다음과 같은 장점이 있습니다.
 
@@ -41,7 +41,7 @@ comments: true
 충분히 큰 규모의 언어 모델에서는 사고의 연쇄 시퀀스를 몇 가지 예시에 포함시키는 것만으로 사고의 연쇄 추론을 쉽게 유도할 수 있습니다.
 실험 결과, 사고의 연쇄를 사용하는 것은 모델 규모에 따른 새로운 능력이 나타나는 것으로 확인되었습니다. 작은 모델에서는 사고의 연쇄가 성능에 긍정적인 영향을 미치지 않지만, 약 100B 파라미터 정도의 큰 모델에서는 성능 향상이 이루어집니다. 작은 규모의 모델에서는 유창하지만 논리적이지 않은 사고의 연쇄가 생성되어, 표준 프롬프팅보다 성능이 낮아집니다.
 
-<center><img src= "https://liger82.github.io/assets/img/post/20230414-chain-of-thougts/fig2.png" width="100%"></center><br>
+<center><img src= "https://liger82.github.io/assets/img/post/20230414-chain-of-thougts/fig2.png" width="60%"></center><br>
 
 또한, 사고의 연쇄 프롬프팅은 더 복잡한 문제에 대한 성능 향상이 더 큽니다. 예를 들어, 기준 성능이 가장 낮은 GSM8K 데이터셋에서는 가장 큰 GPT와 PaLM 모델의 성능이 두 배 이상 향상되었습니다. 반면, SingleOp와 같이 한 단계만으로 해결할 수 있는 가장 쉬운 부분 집합의 경우 성능 개선이 부정적이거나 매우 작았습니다.
 
