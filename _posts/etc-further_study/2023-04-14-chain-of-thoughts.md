@@ -11,8 +11,8 @@ comments: true
 
 
 >Authors : Jason Wei, Xuezhi Wang, Dale Schuurmans, Maarten Bosma, Brian Ichter, Fei Xia, Ed Chi, Quoc Le, Denny Zhou  
->Institution : Google Research, Brain Team
->Publication Date : Jan 10, 2023
+>Institution : Google Research, Brain Team  
+>Publication Date : Jan 10, 2023  
 >paper : [https://arxiv.org/abs/2201.11903](https://arxiv.org/abs/2201.11903){:target="_blank"}  
 
 ---
