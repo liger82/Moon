@@ -9,12 +9,8 @@ comments: true
 ---
 
 >Authors : Zihan Zhang, Meng Fang, Ling Chen, Mohammad-Reza Namazi-Rad, Jun Wang  
-
->Institution : University of Technology Sydney, University of Liverpool, 
-University of Wollongong, University College London  
-
+>Institution : University of Technology Sydney, University of Liverpool, University of Wollongong, University College London  
 >Publication Date : Oct 11, 2023   
-
 >Paper link : [https://arxiv.org/abs/2310.07343v1](https://arxiv.org/abs/2310.07343v1){:target="_blank"}  
 
 ---
@@ -112,12 +108,17 @@ University of Wollongong, University College London
 * 사용자 입력에 대해 검색을 한 번 사용 + LLM 활용
 * 각 입력에 대해 유사한 설명을 검색하여 문맥 내에서 편집 수행
 * 범용 retriever 이 최선이 아닐 수 있음 - Augmentation-Adapted Retriever (AAR)
+    - AAR은 블랙박스인 LM의 다운스트림 태스크를 돕기 위해 범용 플러그인으로 활용하기 위해 제안됨.
     - 사전 학습된 retriever 을 활용하여 사용자 쿼리에 대한 N개의 문서를 검색
+    - 작은 인코더-디코더 모델을 사용했고 그 모델의 FiD attention score를 활용하여 LM 선호 문서에 대한 라벨링을 수행했음 + 인간 선호 문서와 함께 positive sample로 활용
+    - 사전 학습된 retriever로는 ANCE 샘플링 기법으로 negative sample을 가져옴
+    - AAR은 이 두 종류의 표본을 활용하여 파인튜닝
+    - 추론 시에 AAR은 제로샷 생성 태스크를 위한 unseen LM을 보조함
+
     - source LM(인코더-디코더 모델; Flan T5)은 LM 선호 신호를 제공(작은 LM 활용)
     - FiD(디코더 모델; InstructGPT)로는 쿼리에 검색된 내용을 FiD 기법으로 답변 생성
     - FiD cross-attention(FiDAtt) score를 활용하여 생성 답변의 Top-k 의 positive sample 을 선택
     - 사전 학습된 retriever로는 ANCE 샘플링 기법으로 negative sample을 가져옴
-    - AAR은 이 두 종류의 표본을 활용하여 파인튜닝
     - target tasks를 위한 target LMs에 AAR 결과 활용
         - target은 source와 겹치는 내용 없음(unseen)
 
@@ -150,15 +151,25 @@ University of Wollongong, University College London
 
 <br>
 
-> <subtitle> 논의 </subtitle>
+> <subtitle> 장단 </subtitle>
 
 * memory-enhanced, retrieval-enhanced 방식이 효율적이긴 하나 주기적인 지식 업데이트가 필요함
 * Internet-enhanced 방식은 real-time web search를 통해 최신 정보에 대한 이슈는 없지만 정제되지 않은 품질이 떨어지는 데이터에 대한 문제는 남아있음.
-* single-stage retrieval 방식에 비해 multi-stage retrieval은 복잡한 문제를 더 잘 풀지만 상당한 추론 오버헤드가 있음.
-
+* single-stage retrieval 방식에 비해 multi-stage retrieval은 복잡한 문제를 더 잘 풀지만 상당한 추론 오버헤드가 있음. 
 * 추출된 지식의 필터링이 필요 -> 관련 없는 내용 줄여서 LLM에 부담 줄임, 입력 길이 제한
 * 추출 자체를 제한적으로 수행 -> 추론 오버헤드 줄임
-* 지식의 충돌: 프롬프트의 내용과 LLM 내의 지식이 충돌을 일으켰을 때 어떻게 처리해야 하는지, 어떻게 우선순위를 잡을 수 있을지
+
+<br>
+
+> <subtitle> 활용 및 논의점 </subtitle>
+
+* 프롬프트에 지식을 추가하는 것 이외에 지식을 LLM의 결과에 보간하는 과정을 추가해보는 건 어떨지
+* 추후에는 피드백을 반영하는 시스템을 구축
+* 과거와 현재 들어온 지식 간의 충돌이 벌어졌을 때 옳은 것이 어떤 것인지 판단을 할 수 있을까?
+* 현재 사용하는 필터링을 AAR로 대체할 수 있나?
+* 필요한 시점의 검색을 어떻게 정하는가
+* 인터넷 지식을 가져올 때 신뢰도와 노이즈 제거는 어떤 방식이 좋을까?
+* 프롬프트의 내용과 LLM 내의 지식이 충돌을 일으켰을 때 어떻게 처리해야 하는지, 어떻게 우선순위를 잡을 수 있을지
 
 <br>
 
